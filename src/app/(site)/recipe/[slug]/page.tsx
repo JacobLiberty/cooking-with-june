@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { client } from "@/sanity/lib/client";
 import {
   RECIPE_QUERY,
@@ -9,8 +10,10 @@ import type { RecipeDetailData } from "@/sanity/types";
 import { totalTime } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
+import { getViewer } from "@/lib/viewer";
+import { EditorActions } from "@/components/editor-actions";
 
-export const revalidate = 60;
+// revalidate removed — getViewer() (auth()) makes this page dynamic
 
 export async function generateStaticParams() {
   const slugs = await client
@@ -41,10 +44,15 @@ export default async function RecipePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const recipe = await client.fetch<RecipeDetailData | null>(RECIPE_QUERY, {
-    slug,
-  });
+  const [recipe, viewer] = await Promise.all([
+    client.fetch<RecipeDetailData | null>(RECIPE_QUERY, { slug }),
+    getViewer(),
+  ]);
   if (!recipe) notFound();
+
+  const myRating = viewer.editorId
+    ? (recipe.ratings?.find((r) => r._key === `rating-${viewer.editorId}`)?.value ?? null)
+    : null;
 
   const time = totalTime(recipe.prepTime, recipe.cookTime);
   const meta = [time, recipe.servings ? `serves ${recipe.servings}` : null]
@@ -59,6 +67,13 @@ export default async function RecipePage({
           {recipe.title}
         </h1>
         <div className="rule-draw mt-5 h-px w-full bg-heather/40" />
+        {viewer.isEditor ? (
+          <div className="mt-2">
+            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-heather hover:text-heather-deep">
+              Edit recipe
+            </Link>
+          </div>
+        ) : null}
       </header>
 
       <div className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15">
@@ -146,6 +161,14 @@ export default async function RecipePage({
             </span>
           ))}
         </div>
+      ) : null}
+
+      {viewer.isEditor ? (
+        <EditorActions
+          recipeId={recipe._id}
+          initialMyRating={myRating}
+          initialWishlist={Boolean(recipe.wishlist)}
+        />
       ) : null}
     </article>
   );
