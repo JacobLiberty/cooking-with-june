@@ -3,6 +3,7 @@ import { navItems } from "@/lib/nav";
 import { NavLink } from "@/components/nav-link";
 import { PawMark } from "@/components/paw-mark";
 import { AuthControls } from "@/components/auth-controls";
+import { JunePeek } from "@/components/june";
 
 export function SiteHeader() {
   return (
@@ -21,6 +22,7 @@ export function SiteHeader() {
           <AuthControls />
         </nav>
       </div>
+      <JunePeek className="pointer-events-none absolute bottom-0 left-6 h-5 w-12 translate-y-px text-clay/80" />
     </header>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { rateRecipe, toggleWishlist, markMade } from "@/app/actions/recipe-actions";
+import { shouldCelebrate } from "@/lib/celebrate";
+import { PawMark } from "@/components/paw-mark";
 
 export function EditorActions({
   recipeId,
@@ -15,10 +17,24 @@ export function EditorActions({
   const [pending, start] = useTransition();
   const [myRating, setMyRating] = useState(initialMyRating ?? 0);
   const [wishlist, setWishlist] = useState(initialWishlist);
+  const [celebrate, setCelebrate] = useState(false);
+  const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
+    },
+    [],
+  );
 
   const rate = (v: number) => {
     setMyRating(v);
     start(() => rateRecipe(recipeId, v));
+    if (shouldCelebrate(v)) {
+      setCelebrate(true);
+      if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
+      celebrateTimer.current = setTimeout(() => setCelebrate(false), 900);
+    }
   };
 
   return (
@@ -27,7 +43,7 @@ export function EditorActions({
       <div className="mt-3 flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-2">
           <span className="kicker text-ink-soft">Your rating</span>
-          <div className="flex gap-1" role="group" aria-label="Set your rating">
+          <div className="relative flex gap-1" role="group" aria-label="Set your rating">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
@@ -41,6 +57,17 @@ export function EditorActions({
                 ★
               </button>
             ))}
+            {celebrate ? (
+              <span className="pointer-events-none relative" aria-hidden>
+                {[-20, -8, 6, 18].map((x, i) => (
+                  <PawMark
+                    key={i}
+                    className="paw-pop absolute h-4 w-4 text-clay"
+                    style={{ left: `${x}px`, ["--r" as string]: `${x * 2}deg` }}
+                  />
+                ))}
+              </span>
+            ) : null}
           </div>
         </div>
 

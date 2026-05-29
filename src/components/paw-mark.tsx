@@ -6,15 +6,18 @@
 export function PawMark({
   className,
   title,
+  style,
 }: {
   className?: string;
   title?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
       className={className}
+      style={style}
       role={title ? "img" : undefined}
       aria-hidden={title ? undefined : true}
       aria-label={title}
