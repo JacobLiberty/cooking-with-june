@@ -1,26 +1,16 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Warm Kitchen — pastel palette */
+  --color-cream: #fff8f0;
+  --color-terracotta: #f3c6a8;
+  --color-sage: #bfd8b8;
+  --color-butter: #f7d9a0;
+  --color-apricot: #e8a87c;
+  --color-clay: #c8753d;
+  --color-cocoa: #6b5d4f;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Type: serif body, handwritten accent (vars set by next/font in layout) */
+  --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-hand: var(--font-caveat), "Comic Sans MS", cursive;
 }
