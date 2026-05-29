@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Newsreader } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/providers";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -31,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fraunces.variable} ${newsreader.variable}`}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
