@@ -15,7 +15,12 @@ export type RecipeCardData = {
   madeCount?: number;
   tags: string[] | null;
   ratings: RatingView[] | null;
+  ingredientIds: string[] | null;
+  createdAt: string;
 };
+
+export type IngredientOption = { _id: string; name: string; category?: string };
+export type TagOption = { _id: string; name: string };
 
 export type IngredientLineView = {
   _key: string;
