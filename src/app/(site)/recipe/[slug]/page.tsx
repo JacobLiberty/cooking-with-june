@@ -117,8 +117,13 @@ export default async function RecipePage({
       </div>
 
       {recipe.ratings?.length ? (
-        <section className="mt-10 border-t border-heather/25 pt-6">
-          <h2 className="kicker text-heather">Ratings</h2>
+        <section
+          className="mt-10 border-t border-heather/25 pt-6"
+          aria-labelledby="ratings-heading"
+        >
+          <h2 id="ratings-heading" className="kicker text-heather">
+            Ratings
+          </h2>
           <ul className="mt-3 flex flex-wrap gap-6">
             {recipe.ratings.map((r) => (
               <li key={r._key} className="flex items-center gap-2">

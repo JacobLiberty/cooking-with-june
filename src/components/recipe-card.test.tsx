@@ -36,7 +36,7 @@ describe("RecipeCard", () => {
   it("shows a typographic placeholder title when there is no cover image", () => {
     render(<RecipeCard recipe={base} />);
     // title appears in both the placeholder cover and the heading
-    expect(screen.getAllByText("Weeknight Beef Ragù").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Weeknight Beef Ragù").length).toBeGreaterThanOrEqual(2);
   });
 
   it("shows 'To try' for an unrated wishlist recipe", () => {
