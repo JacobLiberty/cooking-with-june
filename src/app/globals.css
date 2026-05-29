@@ -32,12 +32,27 @@ body {
   font-feature-settings: "onum" 1, "liga" 1;
 }
 
+/* Heather focus ring on the warm paper — keyboard nav, on-brand */
+:focus-visible {
+  outline: 2px solid var(--color-heather);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
 /* ── Editorial type utilities ───────────────────────────────────────── */
+/* Large display headings only — line-height 0.95 is tuned for big type;
+   don't apply to small or multi-line text without overriding leading. */
 .editorial-display {
   font-family: var(--font-display);
   font-variation-settings: "opsz" 144, "SOFT" 40, "WONK" 1;
   letter-spacing: -0.012em;
   line-height: 0.95;
+}
+
+/* June's voice / pull-quotes — Fraunces italic (pair with text-heather) */
+.editorial-aside {
+  font-family: var(--font-display);
+  font-style: italic;
 }
 
 .kicker {

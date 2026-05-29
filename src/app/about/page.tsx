@@ -17,10 +17,7 @@ export default function AboutPage() {
         cookbook Jacob &amp; Lily are building around him — a place for the meals
         worth making twice.
       </p>
-      <p
-        className="set set-4 mt-5 max-w-2xl text-xl italic text-heather"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
+      <p className="editorial-aside set set-4 mt-5 max-w-2xl text-xl text-heather">
         More of his story is coming soon.
       </p>
     </section>
