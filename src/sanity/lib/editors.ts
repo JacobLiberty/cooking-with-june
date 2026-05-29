@@ -3,7 +3,7 @@ import { client } from "@/sanity/lib/client";
 import { normalizeEmail, type EditorRecord } from "@/lib/editor-allowlist";
 
 const EDITOR_BY_EMAIL_QUERY = defineQuery(
-  `*[_type == "editor" && defined(email) && lower(email) == $email][0]{ _id, name, email }`,
+  `*[_type == "editor" && defined(email) && lower(email) == $email][0]{ _id, name }`,
 );
 
 // Server-only: resolve the editor doc for a signed-in email, or null.
