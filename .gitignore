@@ -3,3 +3,10 @@ node_modules/
 .next/
 .env*.local
 .DS_Store
+
+# next.js
+next-env.d.ts
+*.tsbuildinfo
+
+# test coverage
+/coverage
