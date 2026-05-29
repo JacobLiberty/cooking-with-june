@@ -114,7 +114,14 @@ export async function saveRecipe(
     .map((s) => String(s).trim())
     .filter(Boolean);
 
-  const tagIds = formData.getAll("tag").map((t) => String(t));
+  // Only keep tag ids that point to real tag documents (drop any forged ids).
+  const submittedTagIds = formData.getAll("tag").map((t) => String(t));
+  const tagIds = submittedTagIds.length
+    ? await reader().fetch<string[]>(
+        `*[_type == "tag" && _id in $ids]._id`,
+        { ids: submittedTagIds },
+      )
+    : [];
 
   // ingredient rows: parallel arrays ingName / ingQty / ingUnit
   const names = formData.getAll("ingName").map((n) => String(n).trim());
@@ -146,6 +153,10 @@ export async function saveRecipe(
   if (image instanceof File && image.size > 0) {
     if (!image.type.startsWith("image/")) {
       return { ok: false, error: "Cover photo must be an image file" };
+    }
+    const MAX_IMAGE_BYTES = 20 * 1024 * 1024; // 20 MB
+    if (image.size > MAX_IMAGE_BYTES) {
+      return { ok: false, error: "Cover photo must be under 20 MB" };
     }
     const asset = await write.assets.upload("image", image, {
       filename: image.name,

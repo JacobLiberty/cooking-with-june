@@ -1,7 +1,9 @@
 .superpowers/
 node_modules/
 .next/
-.env*.local
+.env
+.env.*
+!.env.example
 .DS_Store
 
 # next.js

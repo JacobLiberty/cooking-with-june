@@ -15,11 +15,14 @@
 ---
 
 ## Conventions
+
 - App code under `src/sanity/lib/**`, `src/lib/**`, components, and pages may use the `@/` alias (only the Sanity CLI-bundled `sanity.config.ts`/`sanity.cli.ts`/`src/sanity/env.ts` must stay relative — do not change those).
 - Data-added sort and "newest" use Sanity's built-in `_createdAt`.
 
 ## File Structure
+
 Created:
+
 - `src/sanity/lib/client.ts` — read client (`useCdn: true`)
 - `src/sanity/lib/image.ts` — `urlForImage()` builder
 - `src/sanity/lib/queries.ts` — `RECIPES_QUERY`, `RECIPE_QUERY`, `RECIPE_SLUGS_QUERY`
@@ -30,14 +33,15 @@ Created:
 - `src/components/recipe-card.tsx` + `.test.tsx` — editorial polaroid card
 - `src/components/recipe-cover.tsx` — cover image OR typographic placeholder
 - `src/components/recipe-grid.tsx` — responsive grid
-Modified:
+  Modified:
 - `src/app/(site)/page.tsx` — collection header + grid (replaces splash)
-Created (route):
+  Created (route):
 - `src/app/(site)/recipe/[slug]/page.tsx` — recipe detail
 
 ---
 
 ## Task 1: Install @sanity/image-url
+
 - [ ] **Step 1:** `npm install @sanity/image-url`
 - [ ] **Step 2:** Confirm: `node -e "console.log(require('./package.json').dependencies['@sanity/image-url'])"` prints a version.
 - [ ] **Step 3:** Commit: `git add package.json package-lock.json && git commit -m "chore: add @sanity/image-url"`
@@ -47,6 +51,7 @@ Created (route):
 ## Task 2: Sanity read client, image builder, queries, types
 
 - [ ] **Step 1: `src/sanity/lib/client.ts`**
+
 ```ts
 import { createClient } from "next-sanity";
 import { apiVersion, dataset, projectId } from "@/sanity/env";
@@ -60,6 +65,7 @@ export const client = createClient({
 ```
 
 - [ ] **Step 2: `src/sanity/lib/image.ts`**
+
 ```ts
 import imageUrlBuilder from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
@@ -73,6 +79,7 @@ export function urlForImage(source: SanityImageSource) {
 ```
 
 - [ ] **Step 3: `src/sanity/types.ts`**
+
 ```ts
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 
@@ -125,6 +132,7 @@ export type RecipeDetailData = {
 ```
 
 - [ ] **Step 4: `src/sanity/lib/queries.ts`**
+
 ```ts
 import { defineQuery } from "next-sanity";
 
@@ -173,13 +181,14 @@ export const RECIPE_SLUGS_QUERY = defineQuery(`
 ```
 
 - [ ] **Step 5: Verify** `npx tsc --noEmit` clean. Commit:
-`git add src/sanity && git commit -m "feat: add Sanity read client, image builder, queries, and result types"`
+      `git add src/sanity && git commit -m "feat: add Sanity read client, image builder, queries, and result types"`
 
 ---
 
 ## Task 3: averageRating (TDD)
 
 - [ ] **Step 1: Test `src/lib/rating.test.ts`**
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { averageRating } from "@/lib/rating";
@@ -216,8 +225,10 @@ describe("averageRating", () => {
   });
 });
 ```
+
 - [ ] **Step 2:** Run — expect FAIL (unresolved import).
 - [ ] **Step 3: `src/lib/rating.ts`**
+
 ```ts
 import type { RatingView } from "@/sanity/types";
 
@@ -233,6 +244,7 @@ export function averageRating(
   return Math.round(avg * 2) / 2;
 }
 ```
+
 - [ ] **Step 4:** Run — expect PASS (4 tests). Commit: `git add src/lib/rating.ts src/lib/rating.test.ts && git commit -m "feat: add averageRating helper"`
 
 ---
@@ -240,6 +252,7 @@ export function averageRating(
 ## Task 4: time formatting (TDD)
 
 - [ ] **Step 1: Test `src/lib/format.test.ts`**
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { formatMinutes, totalTime } from "@/lib/format";
@@ -264,8 +277,10 @@ describe("totalTime", () => {
   });
 });
 ```
+
 - [ ] **Step 2:** Run — expect FAIL.
 - [ ] **Step 3: `src/lib/format.ts`**
+
 ```ts
 export function formatMinutes(min: number | null | undefined): string | null {
   if (min == null || min <= 0) return null;
@@ -283,6 +298,7 @@ export function totalTime(
   return formatMinutes((prep ?? 0) + (cook ?? 0));
 }
 ```
+
 - [ ] **Step 4:** Run — expect PASS (5 tests). Commit: `git add src/lib/format.ts src/lib/format.test.ts && git commit -m "feat: add time formatting helpers"`
 
 ---
@@ -292,6 +308,7 @@ export function totalTime(
 **Files:** Create `src/components/star-rating.tsx`, test `src/components/star-rating.test.tsx`
 
 - [ ] **Step 1: `src/components/star-rating.tsx`**
+
 ```tsx
 /**
  * Read-only star rating, 0–5 in half steps. Ochre per design.md.
@@ -350,9 +367,11 @@ export function StarRating({
   );
 }
 ```
+
 > Note: the `Math.random()` id is for SVG gradient uniqueness within a render; it does not affect SSR correctness (ids only need to be unique in the document, and half-stars are rare). If a deterministic id is preferred, derive from index — acceptable either way.
 
 - [ ] **Step 2: Test `src/components/star-rating.test.tsx`**
+
 ```tsx
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -361,7 +380,9 @@ import { StarRating } from "@/components/star-rating";
 describe("StarRating", () => {
   it("exposes an accessible label with the value", () => {
     render(<StarRating value={4.5} />);
-    expect(screen.getByRole("img", { name: "4.5 out of 5 stars" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "4.5 out of 5 stars" }),
+    ).toBeInTheDocument();
   });
   it("always renders five star glyphs", () => {
     const { container } = render(<StarRating value={3} />);
@@ -369,6 +390,7 @@ describe("StarRating", () => {
   });
 });
 ```
+
 - [ ] **Step 3:** Run both tests — expect PASS. Commit: `git add src/components/star-rating.tsx src/components/star-rating.test.tsx && git commit -m "feat: add read-only StarRating component"`
 
 ---
@@ -378,6 +400,7 @@ describe("StarRating", () => {
 **Design intent (follow design.md):** polaroid/scrapbook card — warm paper, thin ink keyline (no drop shadow), a subtle tilt, captioned. Cover image fills the top; when absent, a typographic placeholder (paper-sunk background, recipe title in Fraunces, a small `PawMark` in clay). Below: title (Fraunces), 1–2 line description (Newsreader), a meta row (total time · servings) as a spaced small-caps kicker, tags, and the average StarRating (ochre) when rated. Whole card links to `/recipe/[slug]`.
 
 - [ ] **Step 1: `src/components/recipe-cover.tsx`**
+
 ```tsx
 import Image from "next/image";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
@@ -405,7 +428,12 @@ export function RecipeCover({
   }
   return (
     <Image
-      src={urlForImage(image).width(800).height(600).fit("crop").auto("format").url()}
+      src={urlForImage(image)
+        .width(800)
+        .height(600)
+        .fit("crop")
+        .auto("format")
+        .url()}
       alt={title}
       width={800}
       height={600}
@@ -416,6 +444,7 @@ export function RecipeCover({
 ```
 
 - [ ] **Step 2: `src/components/recipe-card.tsx`**
+
 ```tsx
 import Link from "next/link";
 import type { RecipeCardData } from "@/sanity/types";
@@ -436,7 +465,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
       href={`/recipe/${recipe.slug}`}
       className="group block border border-ink/15 bg-paper transition-transform hover:-translate-y-0.5"
     >
-      <div className="aspect-[4/3] overflow-hidden border-b border-ink/10">
+      <div className="aspect-4/3 overflow-hidden border-b border-ink/10">
         <RecipeCover image={recipe.coverImage} title={recipe.title} />
       </div>
       <div className="p-4">
@@ -445,7 +474,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           {recipe.title}
         </h3>
         {recipe.description ? (
-          <p className="mt-1 line-clamp-2 text-ink-soft">{recipe.description}</p>
+          <p className="mt-1 line-clamp-2 text-ink-soft">
+            {recipe.description}
+          </p>
         ) : null}
         <div className="mt-3 flex items-center justify-between">
           {avg != null ? (
@@ -464,9 +495,11 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
   );
 }
 ```
+
 > `line-clamp-2` is a built-in Tailwind utility (no plugin needed in v4).
 
 - [ ] **Step 3: `src/components/recipe-grid.tsx`**
+
 ```tsx
 import type { RecipeCardData } from "@/sanity/types";
 import { RecipeCard } from "@/components/recipe-card";
@@ -483,6 +516,7 @@ export function RecipeGrid({ recipes }: { recipes: RecipeCardData[] }) {
 ```
 
 - [ ] **Step 4: Test `src/components/recipe-card.test.tsx`**
+
 ```tsx
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -491,7 +525,9 @@ import type { RecipeCardData } from "@/sanity/types";
 
 vi.mock("@/sanity/lib/image", () => ({
   urlForImage: () => ({
-    width: () => ({ height: () => ({ fit: () => ({ auto: () => ({ url: () => "" }) }) }) }),
+    width: () => ({
+      height: () => ({ fit: () => ({ auto: () => ({ url: () => "" }) }) }),
+    }),
   }),
 }));
 
@@ -516,13 +552,17 @@ describe("RecipeCard", () => {
     const link = screen.getByRole("link", { name: /Weeknight Beef Ragù/ });
     expect(link).toHaveAttribute("href", "/recipe/weeknight-beef-ragu");
     expect(screen.getByText("45 min · serves 4")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "4.5 out of 5 stars" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "4.5 out of 5 stars" }),
+    ).toBeInTheDocument();
   });
 
   it("shows a typographic placeholder title when there is no cover image", () => {
     render(<RecipeCard recipe={base} />);
     // title appears in both the placeholder cover and the heading
-    expect(screen.getAllByText("Weeknight Beef Ragù").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Weeknight Beef Ragù").length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("shows 'To try' for an unrated wishlist recipe", () => {
@@ -531,6 +571,7 @@ describe("RecipeCard", () => {
   });
 });
 ```
+
 - [ ] **Step 5:** Run — expect PASS. Commit: `git add src/components/recipe-cover.tsx src/components/recipe-card.tsx src/components/recipe-grid.tsx src/components/recipe-card.test.tsx && git commit -m "feat: add recipe cover, card, and grid components"`
 
 ---
@@ -538,6 +579,7 @@ describe("RecipeCard", () => {
 ## Task 7: Home collection page
 
 - [ ] **Step 1: Replace `src/app/(site)/page.tsx`**
+
 ```tsx
 import { client } from "@/sanity/lib/client";
 import { RECIPES_QUERY } from "@/sanity/lib/queries";
@@ -581,7 +623,7 @@ export default async function HomePage() {
 ```
 
 - [ ] **Step 2: Verify** `npm run build` compiles and `/` is dynamic/ISR. Commit:
-`git add "src/app/(site)/page.tsx" && git commit -m "feat: home page renders the recipe collection from Sanity"`
+      `git add "src/app/(site)/page.tsx" && git commit -m "feat: home page renders the recipe collection from Sanity"`
 
 ---
 
@@ -590,14 +632,12 @@ export default async function HomePage() {
 **Design intent:** editorial recipe page. Kicker meta (total time · serves) → Fraunces title → hairline rule → hero cover (or placeholder) → drop-capped description → optional story as Fraunces-italic heather aside → two-column-on-desktop body: ingredients (each line `quantity unit name`, note in italic) with tabular figures, and numbered steps with prominent Fraunces numerals → ratings (per-editor: name in small-caps + StarRating) → tags as small-caps chips. Use `.set` stagger. `notFound()` when the slug doesn't resolve.
 
 - [ ] **Step 1: Create `src/app/(site)/recipe/[slug]/page.tsx`**
+
 ```tsx
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { client } from "@/sanity/lib/client";
-import {
-  RECIPE_QUERY,
-  RECIPE_SLUGS_QUERY,
-} from "@/sanity/lib/queries";
+import { RECIPE_QUERY, RECIPE_SLUGS_QUERY } from "@/sanity/lib/queries";
 import type { RecipeDetailData } from "@/sanity/types";
 import { totalTime, formatMinutes } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
@@ -654,7 +694,7 @@ export default async function RecipePage({
         <div className="rule-draw mt-5 h-px w-full bg-heather/40" />
       </header>
 
-      <div className="set set-2 mt-6 aspect-[3/2] overflow-hidden border border-ink/15">
+      <div className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15">
         <RecipeCover image={recipe.images?.[0]} title={recipe.title} />
       </div>
 
@@ -677,7 +717,10 @@ export default async function RecipePage({
           </h2>
           <ul className="mt-3 space-y-2 [font-variant-numeric:tabular-nums]">
             {recipe.ingredients?.map((line) => (
-              <li key={line._key} className="flex gap-2 border-b border-ink/10 pb-2">
+              <li
+                key={line._key}
+                className="flex gap-2 border-b border-ink/10 pb-2"
+              >
                 <span className="text-ink-soft">
                   {[line.quantity, line.unit].filter(Boolean).join(" ")}
                 </span>
@@ -741,17 +784,19 @@ export default async function RecipePage({
 ```
 
 - [ ] **Step 2: Verify** `npm run build` (route `/recipe/[slug]` present, static params generated for the 2 seeded recipes). Manually confirm a known slug (`weeknight-beef-ragu`) builds. Commit:
-`git add "src/app/(site)/recipe" && git commit -m "feat: recipe detail page"`
+      `git add "src/app/(site)/recipe" && git commit -m "feat: recipe detail page"`
 
 ---
 
 ## Task 9: Phase gate
+
 - [ ] **Step 1:** `npm test` (expect prior 13 + rating 4 + format 5 + star 2 + recipe-card 3 = 27), `npm run build`, `npm run lint`, `npm audit`, `npx tsc --noEmit` — all clean.
 - [ ] **Step 2:** Report results.
 
 ---
 
 ## Self-Review
+
 **Spec coverage (Phase 3 roadmap: home grid, recipe detail, Sanity CDN reads, responsive cards):** home grid (Task 7) ✓, detail page (Task 8) ✓, CDN reads via `useCdn:true` + ISR (Task 2/7/8) ✓, responsive polaroid cards w/ missing-image fallback (Task 6) ✓.
 **Design.md:** heather/clay/ochre, Fraunces+Newsreader, kickers, hairline rules, `.set` motion, drop cap, no emoji, ochre stars — all specified. Anti-slop respected (no shadows-on-cards beyond a hover lift; keylines not shadows).
 **Placeholders:** none — all code complete. Seeds lack images, so the typographic placeholder path is the common case and is implemented + tested.
