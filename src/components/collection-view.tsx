@@ -64,7 +64,7 @@ export function CollectionView({
       />
 
       <div className="flex items-center justify-between border-t border-heather/25 pt-4">
-        <span className="kicker text-ink-soft">
+        <span className="kicker text-ink-soft" aria-live="polite">
           {filtered.length} {filtered.length === 1 ? "recipe" : "recipes"}
         </span>
         <button
@@ -82,7 +82,8 @@ export function CollectionView({
           <PawMark className="h-8 w-8 text-clay/70" />
           <p className="editorial-display text-2xl text-ink">Nothing here</p>
           <p className="text-ink-soft">
-            Try fewer ingredients, or switch the match to &ldquo;any.&rdquo;
+            Try a different search, fewer filters, or switch the pantry match to
+            &ldquo;any.&rdquo;
           </p>
         </div>
       ) : (

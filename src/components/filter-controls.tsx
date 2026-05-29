@@ -33,7 +33,7 @@ export function FilterControls({
             value={filters.query}
             onChange={(e) => onChange({ ...filters, query: e.target.value })}
             placeholder="Search recipes…"
-            className="mt-1 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink outline-none placeholder:text-ink-soft/60 focus:border-heather"
+            className="mt-1 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-heather"
           />
         </label>
         <label className="flex items-center gap-2">
@@ -41,7 +41,7 @@ export function FilterControls({
           <select
             value={filters.sort}
             onChange={(e) => onChange({ ...filters, sort: e.target.value as SortKey })}
-            className="border-b border-ink/25 bg-transparent pb-1 text-ink outline-none focus:border-heather"
+            className="border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-heather"
           >
             {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
               <option key={k} value={k}>
@@ -53,8 +53,14 @@ export function FilterControls({
       </div>
 
       {tags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="kicker text-ink-soft">Tags</span>
+        <div
+          className="flex flex-wrap items-center gap-2"
+          role="group"
+          aria-labelledby="tag-filter-label"
+        >
+          <span id="tag-filter-label" className="kicker text-ink-soft">
+            Tags
+          </span>
           {tags.map((t) => {
             const active = filters.tags.includes(t.name);
             return (
@@ -75,7 +81,9 @@ export function FilterControls({
       {ingredients.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="kicker text-ink-soft">What&rsquo;s in your kitchen?</span>
+            <span id="pantry-filter-label" className="kicker text-ink-soft">
+              What&rsquo;s in your kitchen?
+            </span>
             <div className="flex items-center gap-1" role="group" aria-label="Match mode">
               {(["any", "all"] as FilterMode[]).map((m) => (
                 <button
@@ -90,7 +98,11 @@ export function FilterControls({
               ))}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-labelledby="pantry-filter-label"
+          >
             {ingredients.map((ing) => {
               const active = filters.ingredientIds.includes(ing._id);
               return (

@@ -53,6 +53,12 @@ describe("matchesIngredients", () => {
     expect(matchesIngredients(r, ["beef", "onion"], "all")).toBe(true);
     expect(matchesIngredients(r, ["beef", "tofu"], "all")).toBe(false);
   });
+  it("treats null ingredientIds as empty (no match when filtering)", () => {
+    const noIds = recipe({ ingredientIds: null });
+    expect(matchesIngredients(noIds, [], "any")).toBe(true);
+    expect(matchesIngredients(noIds, ["beef"], "any")).toBe(false);
+    expect(matchesIngredients(noIds, ["beef"], "all")).toBe(false);
+  });
 });
 
 describe("matchesTags", () => {
