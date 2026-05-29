@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Newsreader } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -33,9 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fraunces.variable} ${newsreader.variable}`}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
-        <SiteHeader />
-        <main className="mx-auto max-w-5xl px-5 py-10 md:py-14">{children}</main>
-        <SiteFooter />
+        {children}
       </body>
     </html>
   );
