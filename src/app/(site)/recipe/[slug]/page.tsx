@@ -6,7 +6,7 @@ import {
   RECIPE_SLUGS_QUERY,
 } from "@/sanity/lib/queries";
 import type { RecipeDetailData } from "@/sanity/types";
-import { totalTime, formatMinutes } from "@/lib/format";
+import { totalTime } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 
@@ -61,7 +61,7 @@ export default async function RecipePage({
         <div className="rule-draw mt-5 h-px w-full bg-heather/40" />
       </header>
 
-      <div className="set set-2 mt-6 aspect-[3/2] overflow-hidden border border-ink/15">
+      <div className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15">
         <RecipeCover image={recipe.images?.[0]} title={recipe.title} />
       </div>
 

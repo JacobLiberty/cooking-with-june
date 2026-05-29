@@ -2,8 +2,14 @@
  * Read-only star rating, 0–5 in half steps. Ochre per design.md.
  * Renders 5 star glyphs (full / half / empty) and an accessible label.
  */
-function Star({ fill }: { fill: "full" | "half" | "empty" }) {
-  const id = `half-${Math.random().toString(36).slice(2)}`;
+function Star({
+  fill,
+  index,
+}: {
+  fill: "full" | "half" | "empty";
+  index: number;
+}) {
+  const id = `half-star-${index}`;
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
       {fill === "half" ? (
@@ -49,7 +55,7 @@ export function StarRating({
       aria-label={`${value} out of 5 stars`}
     >
       {stars.map((fill, i) => (
-        <Star key={i} fill={fill} />
+        <Star key={i} fill={fill} index={i} />
       ))}
     </span>
   );
