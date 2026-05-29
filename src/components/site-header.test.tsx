@@ -7,6 +7,13 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
 }));
 
+// AuthControls uses useSession — stub it so tests don't need a SessionProvider.
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+}));
+
 describe("SiteHeader", () => {
   it("renders the brand and primary nav links", () => {
     render(<SiteHeader />);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { navItems } from "@/lib/nav";
 import { NavLink } from "@/components/nav-link";
 import { PawMark } from "@/components/paw-mark";
+import { AuthControls } from "@/components/auth-controls";
 
 export function SiteHeader() {
   return (
@@ -13,10 +14,11 @@ export function SiteHeader() {
             Cooking with June
           </span>
         </Link>
-        <nav aria-label="Primary" className="flex gap-7">
+        <nav aria-label="Primary" className="flex items-center gap-7">
           {navItems.map((item) => (
             <NavLink key={item.href} item={item} />
           ))}
+          <AuthControls />
         </nav>
       </div>
     </header>
