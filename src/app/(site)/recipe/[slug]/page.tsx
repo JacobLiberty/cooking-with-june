@@ -74,6 +74,16 @@ export default async function RecipePage({
             </Link>
           </div>
         ) : null}
+        {recipe.steps?.length ? (
+          <div className="mt-3">
+            <Link
+              href={`/recipe/${recipe.slug}/cook`}
+              className="kicker border border-heather px-3 py-1 text-heather hover:bg-heather-wash"
+            >
+              Cook mode
+            </Link>
+          </div>
+        ) : null}
       </header>
 
       <div className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15">
