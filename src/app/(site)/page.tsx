@@ -1,13 +1,25 @@
+import { Suspense } from "react";
 import { client } from "@/sanity/lib/client";
-import { RECIPES_QUERY } from "@/sanity/lib/queries";
-import type { RecipeCardData } from "@/sanity/types";
-import { RecipeGrid } from "@/components/recipe-grid";
-import { PawMark } from "@/components/paw-mark";
+import {
+  RECIPES_QUERY,
+  INGREDIENTS_QUERY,
+  TAGS_QUERY,
+} from "@/sanity/lib/queries";
+import type {
+  RecipeCardData,
+  IngredientOption,
+  TagOption,
+} from "@/sanity/types";
+import { CollectionView } from "@/components/collection-view";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const recipes = await client.fetch<RecipeCardData[]>(RECIPES_QUERY);
+  const [recipes, ingredients, tags] = await Promise.all([
+    client.fetch<RecipeCardData[]>(RECIPES_QUERY),
+    client.fetch<IngredientOption[]>(INGREDIENTS_QUERY),
+    client.fetch<TagOption[]>(TAGS_QUERY),
+  ]);
 
   return (
     <section>
@@ -20,19 +32,9 @@ export default async function HomePage() {
       </header>
 
       <div className="set set-2 mt-8">
-        {recipes.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <PawMark className="h-8 w-8 text-clay/70" />
-            <p className="editorial-display text-2xl text-ink">
-              No recipes yet
-            </p>
-            <p className="text-ink-soft">
-              June is still deciding what to cook first.
-            </p>
-          </div>
-        ) : (
-          <RecipeGrid recipes={recipes} />
-        )}
+        <Suspense fallback={null}>
+          <CollectionView recipes={recipes} ingredients={ingredients} tags={tags} />
+        </Suspense>
       </div>
     </section>
   );

@@ -13,7 +13,9 @@ export const RECIPES_QUERY = defineQuery(`
     wishlist,
     madeCount,
     "tags": tags[]->name,
-    "ratings": ratings[]{ "editor": editor->name, value }
+    "ratings": ratings[]{ "editor": editor->name, value },
+    "ingredientIds": ingredients[].ingredient._ref,
+    "createdAt": _createdAt
   }
 `);
 
@@ -37,6 +39,14 @@ export const RECIPE_QUERY = defineQuery(`
     lastMadeAt,
     "notes": notes[]{ _key, author, text }
   }
+`);
+
+export const INGREDIENTS_QUERY = defineQuery(`
+  *[_type == "ingredient"] | order(name asc){ _id, name, category }
+`);
+
+export const TAGS_QUERY = defineQuery(`
+  *[_type == "tag"] | order(name asc){ _id, name }
 `);
 
 export const RECIPE_SLUGS_QUERY = defineQuery(`

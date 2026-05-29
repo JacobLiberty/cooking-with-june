@@ -22,6 +22,8 @@ const base: RecipeCardData = {
   madeCount: 3,
   tags: ["Dinner"],
   ratings: [{ editor: "Jacob", value: 4.5 }],
+  ingredientIds: ["beef", "onion"],
+  createdAt: "2026-01-01T00:00:00Z",
 };
 
 describe("RecipeCard", () => {
