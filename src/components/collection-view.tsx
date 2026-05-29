@@ -14,7 +14,7 @@ import {
 import { parseFilters, serializeFilters } from "@/lib/recipe-query-state";
 import { FilterControls } from "@/components/filter-controls";
 import { RecipeGrid } from "@/components/recipe-grid";
-import { PawMark } from "@/components/paw-mark";
+import { JuneCurled } from "@/components/june";
 
 export function CollectionView({
   recipes,
@@ -79,7 +79,7 @@ export function CollectionView({
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <PawMark className="h-8 w-8 text-clay/70" />
+          <JuneCurled className="h-20 w-28 text-clay/70" />
           <p className="editorial-display text-2xl text-ink">Nothing here</p>
           <p className="text-ink-soft">
             Try a different search, fewer filters, or switch the pantry match to
