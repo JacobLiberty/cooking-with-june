@@ -1,16 +1,128 @@
 @import "tailwindcss";
 
 @theme {
-  /* Warm Kitchen — pastel palette */
-  --color-cream: #fff8f0;
-  --color-terracotta: #f3c6a8;
-  --color-sage: #bfd8b8;
-  --color-butter: #f7d9a0;
-  --color-apricot: #e8a87c;
-  --color-clay: #c8753d;
-  --color-cocoa: #6b5d4f;
+  /* ── Warm vintage-editorial palette (see design.md) ──────────────── */
+  /* Ground & ink */
+  --color-paper: #faf4ea; /* warm ecru newsprint — the canvas */
+  --color-paper-sunk: #f1e8d8; /* recessed panels, table stripes */
+  --color-ink: #2b2230; /* deep aubergine-plum — text, never pure black */
+  --color-ink-soft: #6b5d6a; /* secondary text, captions */
 
-  /* Type: serif body, handwritten accent (vars set by next/font in layout) */
-  --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --font-hand: var(--font-caveat), "Comic Sans MS", cursive;
+  /* Dominant — heather (pastel purple, flat editorial ink) */
+  --color-heather: #6f5a93;
+  --color-heather-deep: #4e3d6b;
+  --color-heather-wash: #e7e0f1;
+
+  /* Sharp accent — terracotta (the spark; used sparingly) */
+  --color-clay: #c8743c;
+  --color-clay-wash: #f3dcc8;
+
+  /* Tertiary (rare, supporting) */
+  --color-ochre: #d99a32;
+  --color-sage: #9fb892;
+
+  /* Type — Fraunces display, Newsreader body (vars set by next/font) */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-newsreader), Georgia, "Times New Roman", serif;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────── */
+body {
+  /* old-style figures + ligatures for an editorial feel */
+  font-feature-settings: "onum" 1, "liga" 1;
+}
+
+/* Heather focus ring on the warm paper — keyboard nav, on-brand */
+:focus-visible {
+  outline: 2px solid var(--color-heather);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ── Editorial type utilities ───────────────────────────────────────── */
+/* Large display headings only — line-height 0.95 is tuned for big type;
+   don't apply to small or multi-line text without overriding leading. */
+.editorial-display {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 40, "WONK" 1;
+  letter-spacing: -0.012em;
+  line-height: 0.95;
+}
+
+/* June's voice / pull-quotes — Fraunces italic (pair with text-heather) */
+.editorial-aside {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.kicker {
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+/* Drop cap for editorial ledes */
+.dropcap::first-letter {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+  float: left;
+  font-size: 3.3em;
+  line-height: 0.72;
+  margin: 0.05em 0.08em 0 0;
+  color: var(--color-heather);
+}
+
+/* ── Signature motion: the "page sets" load ─────────────────────────── */
+@keyframes set-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rule-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.set {
+  opacity: 0;
+  animation: set-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.set-1 {
+  animation-delay: 0.05s;
+}
+.set-2 {
+  animation-delay: 0.14s;
+}
+.set-3 {
+  animation-delay: 0.23s;
+}
+.set-4 {
+  animation-delay: 0.32s;
+}
+
+.rule-draw {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: rule-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.18s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .set,
+  .rule-draw {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
