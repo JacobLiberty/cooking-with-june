@@ -52,3 +52,20 @@ export const TAGS_QUERY = defineQuery(`
 export const RECIPE_SLUGS_QUERY = defineQuery(`
   *[_type == "recipe" && defined(slug.current)]{ "slug": slug.current }
 `);
+
+export const RECIPE_EDIT_QUERY = defineQuery(`
+  *[_type == "recipe" && slug.current == $slug][0]{
+    _id,
+    title,
+    "slug": slug.current,
+    description,
+    story,
+    prepTime,
+    cookTime,
+    servings,
+    "ingredients": ingredients[]{ _key, quantity, unit, note, "ingredientId": ingredient._ref, "name": ingredient->name },
+    steps,
+    "tagIds": tags[]._ref,
+    "hasImage": defined(images[0])
+  }
+`);

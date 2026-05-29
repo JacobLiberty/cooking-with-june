@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { client } from "@/sanity/lib/client";
 import {
   RECIPES_QUERY,
@@ -11,14 +12,16 @@ import type {
   TagOption,
 } from "@/sanity/types";
 import { CollectionView } from "@/components/collection-view";
+import { getViewer } from "@/lib/viewer";
 
-export const revalidate = 60;
+// revalidate removed — getViewer() (auth()) makes this page dynamic
 
 export default async function HomePage() {
-  const [recipes, ingredients, tags] = await Promise.all([
+  const [recipes, ingredients, tags, viewer] = await Promise.all([
     client.fetch<RecipeCardData[]>(RECIPES_QUERY),
     client.fetch<IngredientOption[]>(INGREDIENTS_QUERY),
     client.fetch<TagOption[]>(TAGS_QUERY),
+    getViewer(),
   ]);
 
   return (
@@ -29,6 +32,13 @@ export default async function HomePage() {
           Cooking with June
         </h1>
         <div className="rule-draw mt-5 h-px w-full bg-heather/40" />
+        {viewer.isEditor ? (
+          <div className="mt-3">
+            <Link href="/recipe/new" className="kicker text-heather hover:text-heather-deep">
+              New recipe
+            </Link>
+          </div>
+        ) : null}
       </header>
 
       <div className="set set-2 mt-8">

@@ -32,6 +32,23 @@ export type IngredientLineView = {
 
 export type RecipeNoteView = { _key: string; author?: string; text: string };
 
+export type RecipeEditData = {
+  _id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  story?: string;
+  prepTime?: number;
+  cookTime?: number;
+  servings?: number;
+  ingredients:
+    | { _key: string; quantity?: string; unit?: string; note?: string; ingredientId: string; name: string | null }[]
+    | null;
+  steps: string[] | null;
+  tagIds: string[] | null;
+  hasImage: boolean;
+};
+
 export type RecipeDetailData = {
   _id: string;
   title: string;
