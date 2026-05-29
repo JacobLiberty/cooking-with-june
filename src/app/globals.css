@@ -126,3 +126,30 @@ body {
     transform: none;
   }
 }
+
+/* ── Paw-trail loading + 5★ paw confetti ───────────────────────────── */
+@keyframes paw-step {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+.paw-step {
+  animation: paw-step 1s ease-in-out infinite;
+}
+.paw-step-1 { animation-delay: 0s; }
+.paw-step-2 { animation-delay: 0.15s; }
+.paw-step-3 { animation-delay: 0.3s; }
+.paw-step-4 { animation-delay: 0.45s; }
+
+@keyframes paw-pop {
+  0% { opacity: 0; transform: translateY(0) scale(0.5) rotate(var(--r, 0deg)); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-40px) scale(1) rotate(var(--r, 0deg)); }
+}
+.paw-pop {
+  animation: paw-pop 0.9s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paw-step { animation: none; opacity: 0.6; }
+  .paw-pop { animation: none; opacity: 0; }
+}
