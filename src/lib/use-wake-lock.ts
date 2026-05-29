@@ -30,7 +30,12 @@ export function useWakeLock(active: boolean = true) {
     }
 
     function onVisibility() {
-      if (document.visibilityState === "visible" && !lockRef.current) {
+      // The browser auto-releases the lock when the tab hides (and sets
+      // `released`), so re-acquire if we have no lock or it was released.
+      if (
+        document.visibilityState === "visible" &&
+        (!lockRef.current || lockRef.current.released)
+      ) {
         void acquire();
       }
     }

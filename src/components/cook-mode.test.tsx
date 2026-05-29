@@ -27,6 +27,20 @@ describe("CookMode", () => {
     expect(screen.getByRole("link", { name: "Done" })).toHaveAttribute("href", "/recipe/ragu");
   });
 
+  it("disables Back on the first step", () => {
+    render(<CookMode title="Ragù" slug="ragu" steps={steps} ingredients={[]} />);
+    expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
+  });
+
+  it("renders gracefully with no steps", () => {
+    render(<CookMode title="Ragù" slug="ragu" steps={[]} ingredients={[]} />);
+    expect(screen.getByText("No steps yet.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Done" })).toHaveAttribute(
+      "href",
+      "/recipe/ragu",
+    );
+  });
+
   it("toggles the ingredient peek", async () => {
     const user = userEvent.setup();
     render(

@@ -67,7 +67,7 @@ export function CookMode({
         <p className="kicker text-heather">
           Step {p.total === 0 ? 0 : p.current + 1} of {p.total}
         </p>
-        <p className="editorial-display mt-3 text-3xl leading-snug text-ink md:text-5xl">
+        <p className="mt-3 text-3xl leading-snug text-ink md:text-5xl">
           {steps[p.current] ?? "No steps yet."}
         </p>
       </div>
@@ -77,6 +77,7 @@ export function CookMode({
           type="button"
           onClick={() => setIndex((i) => Math.max(i - 1, 0))}
           disabled={p.current === 0}
+          aria-label="Back"
           className="kicker text-ink-soft hover:text-heather disabled:opacity-30"
         >
           ← Back
@@ -92,6 +93,7 @@ export function CookMode({
           <button
             type="button"
             onClick={() => setIndex((i) => Math.min(i + 1, steps.length - 1))}
+            aria-label="Next"
             className="kicker border border-heather px-4 py-2 text-heather hover:bg-heather-wash"
           >
             Next →
