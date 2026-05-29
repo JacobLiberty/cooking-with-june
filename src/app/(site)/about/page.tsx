@@ -27,7 +27,7 @@ export default function AboutPage() {
         story, the ingredients we actually used, and our honest ratings, so the
         good ones are easy to find again.
       </p>
-      <p className="editorial-aside mt-6 text-xl text-heather">
+      <p className="editorial-aside set set-4 mt-6 text-xl text-heather">
         Made with care, and supervised with suspicion. — J &amp; L (and June)
       </p>
     </section>

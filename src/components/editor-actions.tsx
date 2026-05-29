@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { rateRecipe, toggleWishlist, markMade } from "@/app/actions/recipe-actions";
 import { shouldCelebrate } from "@/lib/celebrate";
 import { PawMark } from "@/components/paw-mark";
@@ -18,13 +18,22 @@ export function EditorActions({
   const [myRating, setMyRating] = useState(initialMyRating ?? 0);
   const [wishlist, setWishlist] = useState(initialWishlist);
   const [celebrate, setCelebrate] = useState(false);
+  const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
+    },
+    [],
+  );
 
   const rate = (v: number) => {
     setMyRating(v);
     start(() => rateRecipe(recipeId, v));
     if (shouldCelebrate(v)) {
       setCelebrate(true);
-      setTimeout(() => setCelebrate(false), 900);
+      if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
+      celebrateTimer.current = setTimeout(() => setCelebrate(false), 900);
     }
   };
 
