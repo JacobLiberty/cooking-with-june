@@ -1,0 +1,48 @@
+import type { SanityImageSource } from "@sanity/image-url";
+
+export type RatingView = { editor: string | null; value: number };
+
+export type RecipeCardData = {
+  _id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  coverImage?: SanityImageSource | null;
+  prepTime?: number;
+  cookTime?: number;
+  servings?: number;
+  wishlist?: boolean;
+  madeCount?: number;
+  tags: string[] | null;
+  ratings: RatingView[] | null;
+};
+
+export type IngredientLineView = {
+  _key: string;
+  quantity?: string;
+  unit?: string;
+  note?: string;
+  name: string | null;
+};
+
+export type RecipeNoteView = { _key: string; author?: string; text: string };
+
+export type RecipeDetailData = {
+  _id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  story?: string;
+  images?: SanityImageSource[];
+  ingredients: IngredientLineView[] | null;
+  steps: string[] | null;
+  prepTime?: number;
+  cookTime?: number;
+  servings?: number;
+  tags: string[] | null;
+  ratings: (RatingView & { _key: string })[] | null;
+  wishlist?: boolean;
+  madeCount?: number;
+  lastMadeAt?: string;
+  notes: RecipeNoteView[] | null;
+};
