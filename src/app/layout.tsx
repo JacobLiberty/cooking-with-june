@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Libre_Caslon_Display, Newsreader } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -17,10 +17,16 @@ const newsreader = Newsreader({
   style: ["normal", "italic"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#55622f",
+};
+
 export const metadata: Metadata = {
   title: "Cooking with June",
   description:
     "A warm, editorial home cookbook by Jacob & Lily — with June supervising.",
+  appleWebApp: { capable: true, title: "Cooking with June", statusBarStyle: "default" },
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
 
 export default function RootLayout({
