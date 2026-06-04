@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { IngredientOption, TagOption } from "@/sanity/types";
 import type { RecipeFilters, SortKey, FilterMode } from "@/lib/recipe-filter";
 
@@ -8,6 +9,9 @@ const SORT_LABELS: Record<SortKey, string> = {
   rating: "Rating",
   newest: "Newest",
 };
+
+const TAG_LIMIT = 8;
+const ING_LIMIT = 12;
 
 export function FilterControls({
   filters,
@@ -20,20 +24,34 @@ export function FilterControls({
   tags: TagOption[];
   onChange: (next: RecipeFilters) => void;
 }) {
+  const [showAllTags, setShowAllTags] = useState(false);
+  const [showAllIngredients, setShowAllIngredients] = useState(false);
+
   const toggle = (arr: string[], v: string) =>
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 
+  // Collapsed view always keeps any *selected* chips visible so they stay
+  // de-selectable, even past the limit.
+  const visibleTags = showAllTags
+    ? tags
+    : tags.filter((t, i) => i < TAG_LIMIT || filters.tags.includes(t.name));
+  const visibleIngredients = showAllIngredients
+    ? ingredients
+    : ingredients.filter(
+        (ing, i) => i < ING_LIMIT || filters.ingredientIds.includes(ing._id),
+      );
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <label className="flex-1">
-          <span className="kicker text-ink-soft">Search</span>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <label className="min-w-0 flex-1">
+          <span className="kicker block text-ink-soft">Search</span>
           <input
             type="search"
             value={filters.query}
             onChange={(e) => onChange({ ...filters, query: e.target.value })}
             placeholder="Search recipes…"
-            className="mt-1 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-olive"
+            className="mt-2.5 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-olive"
           />
         </label>
         <label className="flex items-center gap-2">
@@ -61,7 +79,7 @@ export function FilterControls({
           <span id="tag-filter-label" className="kicker text-ink-soft">
             Tags
           </span>
-          {tags.map((t) => {
+          {visibleTags.map((t) => {
             const active = filters.tags.includes(t.name);
             return (
               <button
@@ -75,6 +93,16 @@ export function FilterControls({
               </button>
             );
           })}
+          {tags.length > TAG_LIMIT && (
+            <button
+              type="button"
+              onClick={() => setShowAllTags((v) => !v)}
+              aria-expanded={showAllTags}
+              className="kicker px-2 py-1 text-olive hover:text-olive-deep"
+            >
+              {showAllTags ? "Show fewer" : `+${tags.length - TAG_LIMIT} more`}
+            </button>
+          )}
         </div>
       )}
 
@@ -99,11 +127,11 @@ export function FilterControls({
             </div>
           </div>
           <div
-            className="flex flex-wrap gap-2"
+            className="flex flex-wrap items-center gap-2"
             role="group"
             aria-labelledby="pantry-filter-label"
           >
-            {ingredients.map((ing) => {
+            {visibleIngredients.map((ing) => {
               const active = filters.ingredientIds.includes(ing._id);
               return (
                 <button
@@ -119,6 +147,18 @@ export function FilterControls({
                 </button>
               );
             })}
+            {ingredients.length > ING_LIMIT && (
+              <button
+                type="button"
+                onClick={() => setShowAllIngredients((v) => !v)}
+                aria-expanded={showAllIngredients}
+                className="kicker px-2 py-1 text-clay hover:text-clay/80"
+              >
+                {showAllIngredients
+                  ? "Show fewer"
+                  : `+${ingredients.length - ING_LIMIT} more`}
+              </button>
+            )}
           </div>
         </div>
       )}
