@@ -10,6 +10,7 @@ import type { RecipeDetailData } from "@/sanity/types";
 import { totalTime } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
+import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
 
@@ -141,9 +142,13 @@ export default async function RecipePage({
         </section>
       </div>
 
+      <div className="mt-10 flex justify-center">
+        <JuneArt pose="divider" className="h-14 w-auto opacity-90" />
+      </div>
+
       {recipe.ratings?.length ? (
         <section
-          className="mt-10 border-t border-olive/25 pt-6"
+          className="mt-6 border-t border-olive/25 pt-6"
           aria-labelledby="ratings-heading"
         >
           <h2 id="ratings-heading" className="kicker text-olive">

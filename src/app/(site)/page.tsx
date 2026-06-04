@@ -12,6 +12,7 @@ import type {
   TagOption,
 } from "@/sanity/types";
 import { CollectionView } from "@/components/collection-view";
+import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
@@ -31,7 +32,14 @@ export default async function HomePage() {
         <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
           Cooking with June
         </h1>
-        <div className="rule-draw mt-5 h-px w-full bg-olive/40" />
+        <div className="relative mt-5">
+          <JuneArt
+            pose="peek"
+            className="pointer-events-none absolute bottom-0 right-2 h-16 w-auto sm:right-8 sm:h-20"
+            priority
+          />
+          <div className="rule-draw h-px w-full bg-olive/40" />
+        </div>
         {viewer.isEditor ? (
           <div className="mt-3">
             <Link href="/recipe/new" className="kicker text-olive hover:text-olive-deep">
