@@ -1,18 +1,11 @@
 import Image from "next/image";
 
-export type JunePose =
-  | "head"
-  | "peek"
-  | "loaf"
-  | "sleeping"
-  | "divider"
-  | "bat";
+export type JunePose = "peek" | "loaf" | "sleeping" | "divider" | "bat";
 
 const POSES: Record<
   JunePose,
   { src: string; w: number; h: number; alt: string }
 > = {
-  head: { src: "/june/june-head.png", w: 320, h: 320, alt: "June, our brown tabby" },
   peek: {
     src: "/june/june-peek.png",
     w: 560,
