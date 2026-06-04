@@ -87,7 +87,7 @@ export function EditorActions({
             setWishlist((w) => !w);
             start(() => toggleWishlist(recipeId));
           }}
-          className={`kicker border px-3 py-1 ${wishlist ? "border-heather bg-heather-wash text-heather" : "border-ink/25 text-ink-soft hover:border-heather"}`}
+          className={`kicker border px-3 py-1 ${wishlist ? "border-olive bg-olive-wash text-olive" : "border-ink/25 text-ink-soft hover:border-olive"}`}
         >
           {wishlist ? "On the to-try list" : "Add to to-try"}
         </button>

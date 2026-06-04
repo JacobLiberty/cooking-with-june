@@ -27,14 +27,14 @@ export default async function HomePage() {
   return (
     <section>
       <header className="set set-1">
-        <p className="kicker text-heather">The collection</p>
+        <p className="kicker text-olive">The collection</p>
         <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
           Cooking with June
         </h1>
-        <div className="rule-draw mt-5 h-px w-full bg-heather/40" />
+        <div className="rule-draw mt-5 h-px w-full bg-olive/40" />
         {viewer.isEditor ? (
           <div className="mt-3">
-            <Link href="/recipe/new" className="kicker text-heather hover:text-heather-deep">
+            <Link href="/recipe/new" className="kicker text-olive hover:text-olive-deep">
               New recipe
             </Link>
           </div>

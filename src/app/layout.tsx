@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { Fraunces, Newsreader } from "next/font/google";
+import { Libre_Caslon_Display, Newsreader } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
-const fraunces = Fraunces({
+const libreCaslon = Libre_Caslon_Display({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  weight: "400",
+  variable: "--font-caslon",
   display: "swap",
-  style: ["normal", "italic"],
-  axes: ["opsz", "SOFT", "WONK"],
 });
 
 const newsreader = Newsreader({
@@ -30,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${newsreader.variable}`}>
+    <html lang="en" className={`${libreCaslon.variable} ${newsreader.variable}`}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
         <Providers>{children}</Providers>
       </body>

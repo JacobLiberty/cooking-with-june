@@ -8,10 +8,10 @@
   --color-ink: #2b2230; /* deep aubergine-plum — text, never pure black */
   --color-ink-soft: #6b5d6a; /* secondary text, captions */
 
-  /* Dominant — heather (pastel purple, flat editorial ink) */
-  --color-heather: #6f5a93;
-  --color-heather-deep: #4e3d6b;
-  --color-heather-wash: #e7e0f1;
+  /* Dominant — olive (muted forest green, flat editorial ink) */
+  --color-olive: #55622f;
+  --color-olive-deep: #3e481f;
+  --color-olive-wash: #e8ead9;
 
   /* Sharp accent — terracotta (the spark; used sparingly) */
   --color-clay: #c8743c;
@@ -21,8 +21,8 @@
   --color-ochre: #d99a32;
   --color-sage: #9fb892;
 
-  /* Type — Fraunces display, Newsreader body (vars set by next/font) */
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  /* Type — Libre Caslon Display headings, Newsreader body (vars set by next/font) */
+  --font-display: var(--font-caslon), Georgia, "Times New Roman", serif;
   --font-body: var(--font-newsreader), Georgia, "Times New Roman", serif;
 }
 
@@ -32,26 +32,25 @@ body {
   font-feature-settings: "onum" 1, "liga" 1;
 }
 
-/* Heather focus ring on the warm paper — keyboard nav, on-brand */
+/* Olive focus ring on the warm paper — keyboard nav, on-brand */
 :focus-visible {
-  outline: 2px solid var(--color-heather);
+  outline: 2px solid var(--color-olive);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
 /* ── Editorial type utilities ───────────────────────────────────────── */
-/* Large display headings only — line-height 0.95 is tuned for big type;
+/* Large display headings only — line-height 1.0 is tuned for big type;
    don't apply to small or multi-line text without overriding leading. */
 .editorial-display {
   font-family: var(--font-display);
-  font-variation-settings: "opsz" 144, "SOFT" 40, "WONK" 1;
-  letter-spacing: -0.012em;
-  line-height: 0.95;
+  letter-spacing: -0.005em;
+  line-height: 1;
 }
 
-/* June's voice / pull-quotes — Fraunces italic (pair with text-heather) */
+/* June's voice / pull-quotes — body italic (pair with text-olive) */
 .editorial-aside {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-style: italic;
 }
 
@@ -66,12 +65,11 @@ body {
 /* Drop cap for editorial ledes */
 .dropcap::first-letter {
   font-family: var(--font-display);
-  font-variation-settings: "opsz" 144, "SOFT" 30;
   float: left;
   font-size: 3.3em;
   line-height: 0.72;
   margin: 0.05em 0.08em 0 0;
-  color: var(--color-heather);
+  color: var(--color-olive);
 }
 
 /* ── Signature motion: the "page sets" load ─────────────────────────── */

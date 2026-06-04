@@ -26,14 +26,14 @@ export function CookMode({
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-2xl flex-col">
       <div className="flex items-center justify-between">
-        <Link href={`/recipe/${slug}`} className="kicker text-ink-soft hover:text-heather">
+        <Link href={`/recipe/${slug}`} className="kicker text-ink-soft hover:text-olive">
           Exit
         </Link>
         <span className="kicker text-ink-soft">{title}</span>
         <button
           type="button"
           onClick={() => setShowIngredients((s) => !s)}
-          className="kicker text-ink-soft hover:text-heather"
+          className="kicker text-ink-soft hover:text-olive"
           aria-expanded={showIngredients}
         >
           Ingredients
@@ -64,7 +64,7 @@ export function CookMode({
       </div>
 
       <div className="mt-6 flex flex-1 flex-col justify-center">
-        <p className="kicker text-heather">
+        <p className="kicker text-olive">
           Step {p.total === 0 ? 0 : p.current + 1} of {p.total}
         </p>
         <p className="mt-3 text-3xl leading-snug text-ink md:text-5xl">
@@ -72,13 +72,13 @@ export function CookMode({
         </p>
       </div>
 
-      <div className="mt-8 flex items-center justify-between border-t border-heather/25 pt-4">
+      <div className="mt-8 flex items-center justify-between border-t border-olive/25 pt-4">
         <button
           type="button"
           onClick={() => setIndex((i) => Math.max(i - 1, 0))}
           disabled={p.current === 0}
           aria-label="Back"
-          className="kicker text-ink-soft hover:text-heather disabled:opacity-30"
+          className="kicker text-ink-soft hover:text-olive disabled:opacity-30"
         >
           ← Back
         </button>
@@ -94,7 +94,7 @@ export function CookMode({
             type="button"
             onClick={() => setIndex((i) => Math.min(i + 1, steps.length - 1))}
             aria-label="Next"
-            className="kicker border border-heather px-4 py-2 text-heather hover:bg-heather-wash"
+            className="kicker border border-olive px-4 py-2 text-olive hover:bg-olive-wash"
           >
             Next →
           </button>

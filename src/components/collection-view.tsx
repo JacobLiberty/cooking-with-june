@@ -63,7 +63,7 @@ export function CollectionView({
         onChange={setFilters}
       />
 
-      <div className="flex items-center justify-between border-t border-heather/25 pt-4">
+      <div className="flex items-center justify-between border-t border-olive/25 pt-4">
         <span className="kicker text-ink-soft" aria-live="polite">
           {filtered.length} {filtered.length === 1 ? "recipe" : "recipes"}
         </span>
@@ -71,7 +71,7 @@ export function CollectionView({
           type="button"
           onClick={surprise}
           disabled={filtered.length === 0}
-          className="kicker text-heather hover:text-heather-deep disabled:opacity-40"
+          className="kicker text-olive hover:text-olive-deep disabled:opacity-40"
         >
           Surprise me
         </button>

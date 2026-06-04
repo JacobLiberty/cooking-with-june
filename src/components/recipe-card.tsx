@@ -22,7 +22,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
       </div>
       <div className="p-4">
         {meta ? <p className="kicker text-ink-soft">{meta}</p> : null}
-        <h3 className="editorial-display mt-1 text-2xl text-ink group-hover:text-heather">
+        <h3 className="editorial-display mt-1 text-2xl text-ink group-hover:text-olive">
           {recipe.title}
         </h3>
         {recipe.description ? (
@@ -32,7 +32,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           {avg != null ? (
             <StarRating value={avg} />
           ) : recipe.wishlist ? (
-            <span className="kicker text-heather">To try</span>
+            <span className="kicker text-olive">To try</span>
           ) : (
             <span />
           )}

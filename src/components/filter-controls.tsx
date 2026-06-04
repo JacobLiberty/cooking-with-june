@@ -33,7 +33,7 @@ export function FilterControls({
             value={filters.query}
             onChange={(e) => onChange({ ...filters, query: e.target.value })}
             placeholder="Search recipes…"
-            className="mt-1 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-heather"
+            className="mt-1 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-olive"
           />
         </label>
         <label className="flex items-center gap-2">
@@ -41,7 +41,7 @@ export function FilterControls({
           <select
             value={filters.sort}
             onChange={(e) => onChange({ ...filters, sort: e.target.value as SortKey })}
-            className="border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-heather"
+            className="border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-olive"
           >
             {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
               <option key={k} value={k}>
@@ -69,7 +69,7 @@ export function FilterControls({
                 type="button"
                 aria-pressed={active}
                 onClick={() => onChange({ ...filters, tags: toggle(filters.tags, t.name) })}
-                className={`kicker border px-2 py-1 ${active ? "border-heather bg-heather-wash text-heather" : "border-ink/20 text-ink-soft hover:border-heather"}`}
+                className={`kicker border px-2 py-1 ${active ? "border-olive bg-olive-wash text-olive" : "border-ink/20 text-ink-soft hover:border-olive"}`}
               >
                 {t.name}
               </button>
@@ -91,7 +91,7 @@ export function FilterControls({
                   type="button"
                   aria-pressed={filters.mode === m}
                   onClick={() => onChange({ ...filters, mode: m })}
-                  className={`kicker px-2 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-heather"}`}
+                  className={`kicker px-2 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-olive"}`}
                 >
                   {m}
                 </button>
