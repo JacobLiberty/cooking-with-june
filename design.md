@@ -113,14 +113,28 @@ Compose like a magazine, optimized for the phone first.
 June is the soul, applied with editorial restraint — **tasteful nods, never a
 mascot parade.** The thing a friend remembers and describes.
 
-- **Custom line-art June**, generated in a **New-Yorker spot-illustration style**
-  (fine ink linework, minimal, characterful; a hint of olive/terracotta wash).
-  June is a **he**.
-- Use sparingly at high-impact spots: peeking over the masthead rule, curled
-  asleep in empty states, a small spot beside the About lede. **One per view, max.**
+- **Who June is:** a friendly **male brown tabby** — sandy-beige coat with soft
+  cocoa-brown mackerel stripes, a ringed tail, the classic tabby **"M"** on the
+  forehead, gentle amber eyes. He should read instantly as a *cat*, not as abstract
+  markings.
+- **Art style:** **AI-generated New-Yorker editorial spot illustrations** — simple,
+  refined ink linework with light flat color (the "Kopit" look). Limited warm
+  palette: **cocoa-brown** line + stripes, **sandy-beige** coat fills, small
+  **light-terracotta** accents, on warm ecru. No gradients, no photorealism, no
+  heavy shading. (These are generated raster assets, not hand-drawn SVGs.)
+- **Signature devices:** **chef-hat June peeking** over images/the masthead, and
+  **June lying down as a horizontal page divider.**
+- **Pose set, mapped to moments (one per view, max):** chef-hat peek → masthead ·
+  supervising **loaf** → the "Your kitchen" editor panel · **sleeping/curled** →
+  empty states · **lying-down** → section divider/footer · **mid-bat** → 404 ·
+  optional windowsill spot → About lede.
+- **Logo / favicon:** a simple **June head** (front-facing, "M" visible, legible at
+  32px).
 - **Pawprint** as a quiet recurring device: list bullet, the "made it" stamp (in
-  terracotta), section ornament. Small, monochrome, never loud.
-- June's written asides use Newsreader italic in olive (see Typography).
+  terracotta), loading, 5★ confetti. Small, never loud.
+- **Voice:** June appears in microcopy **lightly and undertoned** — small fun bits
+  here and there (empty states, loading), never heavy. Written asides use Newsreader
+  italic in olive (see Typography).
 
 ## Icons & assets
 

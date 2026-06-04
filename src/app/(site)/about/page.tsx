@@ -17,7 +17,7 @@ export default function AboutPage() {
         <JunePeek className="h-12 w-28 text-clay" />
       </div>
       <p className="dropcap set set-3 mt-6 text-lg leading-relaxed text-ink">
-        June is our orange cat and self-appointed head of the kitchen. He
+        June is our brown tabby cat and self-appointed head of the kitchen. He
         supervises from the windowsill, inspects every grocery haul, and has
         strong opinions about anything involving butter.
       </p>
