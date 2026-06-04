@@ -12,7 +12,7 @@ const POSES: Record<
   JunePose,
   { src: string; w: number; h: number; alt: string }
 > = {
-  head: { src: "/june/june-head.png", w: 320, h: 303, alt: "June, our brown tabby" },
+  head: { src: "/june/june-head.png", w: 320, h: 320, alt: "June, our brown tabby" },
   peek: {
     src: "/june/june-peek.png",
     w: 560,
