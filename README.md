@@ -1,7 +1,7 @@
 # Cooking with June 🐱🍳
 
-A pastel, homemade-but-painstakingly-crafted digital cookbook for Jacob &
-Lily — and June, the orange cat who supervises. Built with Next.js and Sanity,
+A warm, editorial, homemade-but-painstakingly-crafted digital cookbook for Jacob &
+Lily — and June, the brown tabby cat who supervises. Built with Next.js and Sanity,
 deployed on Vercel.
 
 ## Getting started
