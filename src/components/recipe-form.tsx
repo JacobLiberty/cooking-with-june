@@ -41,7 +41,7 @@ export function RecipeForm({
 
   const labelCls = "kicker text-ink-soft";
   const inputCls =
-    "mt-1 w-full border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-olive";
+    "mt-1 w-full border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta";
 
   return (
     <form action={onSubmit} className="space-y-8">
@@ -84,23 +84,23 @@ export function RecipeForm({
         <div className="mt-2 space-y-2">
           {rows.map((row, i) => (
             <div key={i} className="flex gap-2">
-              <input name="ingQty" defaultValue={row.quantity} placeholder="1" className="w-16 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-olive" />
-              <input name="ingUnit" defaultValue={row.unit} placeholder="cup" className="w-20 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-olive" />
-              <input name="ingName" defaultValue={row.name} list="ingredient-options" placeholder="ingredient" className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-olive" />
+              <input name="ingQty" defaultValue={row.quantity} placeholder="1" className="w-16 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta" />
+              <input name="ingUnit" defaultValue={row.unit} placeholder="cup" className="w-20 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta" />
+              <input name="ingName" defaultValue={row.name} list="ingredient-options" placeholder="ingredient" className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta" />
             </div>
           ))}
         </div>
-        <button type="button" onClick={() => setRows((r) => [...r, { name: "", quantity: "", unit: "" }])} className="kicker mt-2 text-olive">+ add ingredient</button>
+        <button type="button" onClick={() => setRows((r) => [...r, { name: "", quantity: "", unit: "" }])} className="kicker mt-2 text-terracotta">+ add ingredient</button>
       </fieldset>
 
       <fieldset>
         <legend className={labelCls}>Steps</legend>
         <div className="mt-2 space-y-2">
           {steps.map((s, i) => (
-            <textarea key={i} name="step" defaultValue={s} rows={2} placeholder={`Step ${i + 1}`} className="w-full border border-ink/15 bg-paper p-2 text-ink focus:border-olive" />
+            <textarea key={i} name="step" defaultValue={s} rows={2} placeholder={`Step ${i + 1}`} className="w-full border border-ink/15 bg-paper p-2 text-ink focus:border-terracotta" />
           ))}
         </div>
-        <button type="button" onClick={() => setSteps((s) => [...s, ""])} className="kicker mt-2 text-olive">+ add step</button>
+        <button type="button" onClick={() => setSteps((s) => [...s, ""])} className="kicker mt-2 text-terracotta">+ add step</button>
       </fieldset>
 
       {tags.length > 0 && (
@@ -117,7 +117,7 @@ export function RecipeForm({
         </fieldset>
       )}
 
-      <button type="submit" disabled={pending} className="kicker border border-olive bg-olive-wash px-4 py-2 text-olive hover:bg-olive hover:text-paper disabled:opacity-50">
+      <button type="submit" disabled={pending} className="kicker border border-terracotta bg-terracotta-wash px-4 py-2 text-terracotta hover:bg-terracotta hover:text-paper disabled:opacity-50">
         {pending ? "Saving…" : recipeId ? "Save changes" : "Create recipe"}
       </button>
     </form>

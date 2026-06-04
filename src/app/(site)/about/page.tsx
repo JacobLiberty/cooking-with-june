@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <section className="mx-auto max-w-2xl py-8 md:py-16">
-      <p className="kicker set set-1 text-olive">About</p>
+      <p className="kicker set set-1 text-terracotta">About</p>
       <h1 className="editorial-display set set-2 mt-3 text-5xl text-ink md:text-6xl">
         About June
       </h1>
-      <div className="rule-draw mt-5 h-px w-full bg-olive/40" />
+      <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
       <div className="set set-3 mt-8 flex justify-center">
         <JuneArt pose="loaf" className="h-32 w-auto" />
       </div>
@@ -27,7 +27,7 @@ export default function AboutPage() {
         story, the ingredients we actually used, and our honest ratings, so the
         good ones are easy to find again.
       </p>
-      <p className="editorial-aside set set-4 mt-6 text-xl text-olive">
+      <p className="editorial-aside set set-4 mt-6 text-xl text-terracotta">
         Made with care, and supervised with suspicion. — J &amp; L (and June)
       </p>
     </section>

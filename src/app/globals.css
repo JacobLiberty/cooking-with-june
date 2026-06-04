@@ -8,18 +8,17 @@
   --color-ink: #2b2230; /* deep aubergine-plum — text, never pure black */
   --color-ink-soft: #6b5d6a; /* secondary text, captions */
 
-  /* Dominant — olive (muted forest green, flat editorial ink) */
-  --color-olive: #55622f;
-  --color-olive-deep: #3e481f;
-  --color-olive-wash: #e8ead9;
+  /* Dominant — terracotta (deep, warm; flat editorial ink, AA on ecru) */
+  --color-terracotta: #a04a28;
+  --color-terracotta-deep: #79361d;
+  --color-terracotta-wash: #f1ddca;
 
-  /* Sharp accent — terracotta (the spark; used sparingly) */
+  /* Sharp accent — clay (the brighter spark; used sparingly) */
   --color-clay: #c8743c;
   --color-clay-wash: #f3dcc8;
 
   /* Tertiary (rare, supporting) */
   --color-ochre: #d99a32;
-  --color-sage: #9fb892;
 
   /* Type — Libre Caslon Display headings, Newsreader body (vars set by next/font) */
   --font-display: var(--font-caslon), Georgia, "Times New Roman", serif;
@@ -32,9 +31,9 @@ body {
   font-feature-settings: "onum" 1, "liga" 1;
 }
 
-/* Olive focus ring on the warm paper — keyboard nav, on-brand */
+/* Terracotta focus ring on the warm paper — keyboard nav, on-brand */
 :focus-visible {
-  outline: 2px solid var(--color-olive);
+  outline: 2px solid var(--color-terracotta);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -48,7 +47,7 @@ body {
   line-height: 1;
 }
 
-/* June's voice / pull-quotes — body italic (pair with text-olive) */
+/* June's voice / pull-quotes — body italic (pair with text-terracotta) */
 .editorial-aside {
   font-family: var(--font-body);
   font-style: italic;
@@ -69,7 +68,7 @@ body {
   font-size: 3.3em;
   line-height: 0.72;
   margin: 0.05em 0.08em 0 0;
-  color: var(--color-olive);
+  color: var(--color-terracotta);
 }
 
 /* ── Signature motion: the "page sets" load ─────────────────────────── */

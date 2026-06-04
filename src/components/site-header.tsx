@@ -6,7 +6,7 @@ import { JuneArt } from "@/components/june";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-10 border-b border-olive/25 bg-paper/95">
+    <header className="sticky top-0 z-10 border-b border-terracotta/25 bg-paper/95">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center gap-2">
           <JuneArt pose="loaf" className="h-9 w-auto" priority />

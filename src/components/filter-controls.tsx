@@ -51,7 +51,7 @@ export function FilterControls({
             value={filters.query}
             onChange={(e) => onChange({ ...filters, query: e.target.value })}
             placeholder="Search recipes…"
-            className="mt-2.5 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-olive"
+            className="mt-2.5 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-terracotta"
           />
         </label>
         <label className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export function FilterControls({
           <select
             value={filters.sort}
             onChange={(e) => onChange({ ...filters, sort: e.target.value as SortKey })}
-            className="border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-olive"
+            className="border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta"
           >
             {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
               <option key={k} value={k}>
@@ -87,7 +87,7 @@ export function FilterControls({
                 type="button"
                 aria-pressed={active}
                 onClick={() => onChange({ ...filters, tags: toggle(filters.tags, t.name) })}
-                className={`kicker border px-2 py-1 ${active ? "border-olive bg-olive-wash text-olive" : "border-ink/20 text-ink-soft hover:border-olive"}`}
+                className={`kicker border px-2 py-1 ${active ? "border-terracotta bg-terracotta-wash text-terracotta" : "border-ink/20 text-ink-soft hover:border-terracotta"}`}
               >
                 {t.name}
               </button>
@@ -98,7 +98,7 @@ export function FilterControls({
               type="button"
               onClick={() => setShowAllTags((v) => !v)}
               aria-expanded={showAllTags}
-              className="kicker px-2 py-1 text-olive hover:text-olive-deep"
+              className="kicker px-2 py-1 text-terracotta hover:text-terracotta-deep"
             >
               {showAllTags ? "Show fewer" : `+${tags.length - TAG_LIMIT} more`}
             </button>
@@ -119,7 +119,7 @@ export function FilterControls({
                   type="button"
                   aria-pressed={filters.mode === m}
                   onClick={() => onChange({ ...filters, mode: m })}
-                  className={`kicker px-2 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-olive"}`}
+                  className={`kicker px-2 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
                 >
                   {m}
                 </button>
