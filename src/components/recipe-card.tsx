@@ -4,6 +4,8 @@ import { averageRating } from "@/lib/rating";
 import { totalTime } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
+import { isJuneApproved } from "@/lib/june-approved";
+import { JuneApprovedBadge } from "@/components/june-approved-badge";
 
 export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
   const avg = averageRating(recipe.ratings);
@@ -11,6 +13,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
   const meta = [time, recipe.servings ? `serves ${recipe.servings}` : null]
     .filter(Boolean)
     .join(" · ");
+  const approved = isJuneApproved(recipe.ratings);
 
   return (
     <Link
@@ -21,6 +24,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
         <RecipeCover image={recipe.coverImage} title={recipe.title} />
       </div>
       <div className="p-4">
+        {approved ? <JuneApprovedBadge className="mb-1" /> : null}
         {meta ? <p className="kicker text-ink-soft">{meta}</p> : null}
         <h3 className="editorial-display mt-1 text-2xl text-ink group-hover:text-terracotta">
           {recipe.title}

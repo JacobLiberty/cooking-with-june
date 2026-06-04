@@ -13,6 +13,8 @@ import { RecipeCover } from "@/components/recipe-cover";
 import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
+import { isJuneApproved } from "@/lib/june-approved";
+import { JuneApprovedBadge } from "@/components/june-approved-badge";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
 
@@ -67,6 +69,7 @@ export default async function RecipePage({
         <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
           {recipe.title}
         </h1>
+        {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge className="mt-1" /> : null}
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
         {viewer.isEditor ? (
           <div className="mt-2">
