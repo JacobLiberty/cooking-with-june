@@ -14,8 +14,8 @@ export function NavLink({ item }: { item: NavItem }) {
       aria-current={active ? "page" : undefined}
       className={
         active
-          ? "kicker border-b border-olive pb-1 text-olive"
-          : "kicker pb-1 text-ink-soft transition-colors hover:text-olive"
+          ? "kicker border-b border-terracotta pb-1 text-terracotta"
+          : "kicker pb-1 text-ink-soft transition-colors hover:text-terracotta"
       }
     >
       {item.label}

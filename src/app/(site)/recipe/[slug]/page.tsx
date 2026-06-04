@@ -63,14 +63,14 @@ export default async function RecipePage({
   return (
     <article className="mx-auto max-w-3xl">
       <header className="set set-1">
-        {meta ? <p className="kicker text-olive">{meta}</p> : null}
+        {meta ? <p className="kicker text-terracotta">{meta}</p> : null}
         <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
           {recipe.title}
         </h1>
-        <div className="rule-draw mt-5 h-px w-full bg-olive/40" />
+        <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
         {viewer.isEditor ? (
           <div className="mt-2">
-            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-olive hover:text-olive-deep">
+            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
               Edit recipe
             </Link>
           </div>
@@ -79,7 +79,7 @@ export default async function RecipePage({
           <div className="mt-3">
             <Link
               href={`/recipe/${recipe.slug}/cook`}
-              className="kicker border border-olive px-3 py-1 text-olive hover:bg-olive-wash"
+              className="kicker border border-terracotta px-3 py-1 text-terracotta hover:bg-terracotta-wash"
             >
               Cook mode
             </Link>
@@ -98,14 +98,14 @@ export default async function RecipePage({
       ) : null}
 
       {recipe.story ? (
-        <p className="editorial-aside mt-5 text-xl text-olive">
+        <p className="editorial-aside mt-5 text-xl text-terracotta">
           {recipe.story}
         </p>
       ) : null}
 
       <div className="mt-10 grid gap-10 md:grid-cols-[1fr_1.6fr]">
         <section aria-labelledby="ingredients-heading">
-          <h2 id="ingredients-heading" className="kicker text-olive">
+          <h2 id="ingredients-heading" className="kicker text-terracotta">
             Ingredients
           </h2>
           <ul className="mt-3 space-y-2 [font-variant-numeric:tabular-nums]">
@@ -126,7 +126,7 @@ export default async function RecipePage({
         </section>
 
         <section aria-labelledby="steps-heading">
-          <h2 id="steps-heading" className="kicker text-olive">
+          <h2 id="steps-heading" className="kicker text-terracotta">
             Method
           </h2>
           <ol className="mt-3 space-y-5">
@@ -148,10 +148,10 @@ export default async function RecipePage({
 
       {recipe.ratings?.length ? (
         <section
-          className="mt-6 border-t border-olive/25 pt-6"
+          className="mt-6 border-t border-terracotta/25 pt-6"
           aria-labelledby="ratings-heading"
         >
-          <h2 id="ratings-heading" className="kicker text-olive">
+          <h2 id="ratings-heading" className="kicker text-terracotta">
             Ratings
           </h2>
           <ul className="mt-3 flex flex-wrap gap-6">
@@ -170,7 +170,7 @@ export default async function RecipePage({
           {recipe.tags.map((t) => (
             <span
               key={t}
-              className="kicker border border-olive/40 px-2 py-1 text-olive"
+              className="kicker border border-terracotta/40 px-2 py-1 text-terracotta"
             >
               {t}
             </span>

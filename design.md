@@ -36,7 +36,7 @@ Serif-on-serif, the editorial way. Specific families (all via `next/font/google`
 - **Eyebrows / kickers / bylines — `Newsreader`, letter-spaced small-caps**
   (`uppercase tracking-[0.18em] text-[0.7rem]`). Tags, "Serves 4", "Jacob's note".
   This spaced-smallcaps kicker is a recurring signature.
-- **Emphasis & June's voice — `Newsreader` *italic***, set small and in `--olive`.
+- **Emphasis & June's voice — `Newsreader` *italic***, set small and in `--terracotta`.
   Pull-quotes, "from our kitchen" notes, June's margin asides. **No casual script
   font** — italic carries the personality. (`Caveat` is removed.)
 
@@ -46,36 +46,35 @@ recipe intros are encouraged. Numerals are oldstyle in prose.
 ## Color philosophy
 
 **One dominant, warm paper, sharp warm accent.** Not an evenly-weighted rainbow.
-Muted **olive green** leads (earthy, herbal, kitchen-y — reads "cooking" without
-cliché); **terracotta** is the spark that keeps it warm; everything sits on warm
+A deep **terracotta** leads (warm, earthy — reads "cooking," and ties to June's
+reddish coat); a brighter **clay** terracotta is the spark; everything sits on warm
 ecru paper with deep aubergine ink. Declare as CSS variables (mapped into Tailwind
 v4 `@theme`):
 
 ```css
 /* Ground & ink */
---paper:        #faf4ea; /* warm ecru newsprint — the canvas */
---paper-sunk:   #f1e8d8; /* recessed panels, table stripes */
---ink:          #2b2230; /* deep aubergine-plum — text, never pure black */
---ink-soft:     #6b5d6a; /* secondary text, captions */
+--paper:           #faf4ea; /* warm ecru newsprint — the canvas */
+--paper-sunk:      #f1e8d8; /* recessed panels, table stripes */
+--ink:             #2b2230; /* deep aubergine-plum — text, never pure black */
+--ink-soft:        #6b5d6a; /* secondary text, captions */
 
-/* Dominant — olive (the brand color, used confidently and often) */
---olive:        #55622f; /* headers, rules, links, active state */
---olive-deep:   #3e481f; /* hover/pressed, strong emphasis */
---olive-wash:   #e8ead9; /* tints, quiet backgrounds, chips */
+/* Dominant — terracotta (the brand color; deep enough for AA text on ecru) */
+--terracotta:      #a04a28; /* headers, rules, links, active state */
+--terracotta-deep: #79361d; /* hover/pressed, strong emphasis */
+--terracotta-wash: #f1ddca; /* tints, quiet backgrounds, chips */
 
-/* Sharp accent — terracotta (the spark; used sparingly, with intent) */
---clay:         #c8743c; /* CTAs, the "made it" mark, key highlights */
---clay-wash:    #f3dcc8;
+/* Sharp accent — clay (the brighter spark; used sparingly, with intent) */
+--clay:            #c8743c; /* CTAs, the "made it" mark, ingredient chips */
+--clay-wash:       #f3dcc8;
 
 /* Tertiary (rare, supporting) */
---ochre:        #d99a32; /* tiny highlights, star ratings */
---sage:         #9fb892; /* occasional cool relief, success */
+--ochre:           #d99a32; /* tiny highlights, star ratings */
 ```
 
-Usage discipline: **olive dominates, terracotta punctuates.** A screen is mostly
-paper + ink + olive, with terracotta appearing once or twice as the eye's target.
-Ochre/sage are seasoning. Pure white and pure black are banned — warm ecru and
-aubergine ink instead.
+Usage discipline: **terracotta dominates, clay punctuates.** A screen is mostly
+paper + ink + terracotta, with clay appearing once or twice as the eye's target.
+Ochre is seasoning. No green anywhere. Pure white and pure black are banned — warm
+ecru and aubergine ink instead.
 
 ## Motion philosophy
 
@@ -97,7 +96,7 @@ Compose like a magazine, optimized for the phone first.
 
 - **Strong hierarchy & generous margins.** Let titles be large; let paper breathe.
   Asymmetry over dead-centered everything.
-- **Hairline rules (`--olive`, ~1px)** separate sections — a core editorial
+- **Hairline rules (`--terracotta`, ~1px)** separate sections — a core editorial
   device. Use them instead of boxes/shadows wherever possible.
 - **Mobile-first, single column.** Big readable Newsreader, comfortable measure
   (~38–42rem max on desktop). On a recipe: a clear lede image, drop-capped intro,
@@ -113,28 +112,26 @@ Compose like a magazine, optimized for the phone first.
 June is the soul, applied with editorial restraint — **tasteful nods, never a
 mascot parade.** The thing a friend remembers and describes.
 
-- **Who June is:** a friendly **male brown tabby** — sandy-beige coat with soft
-  cocoa-brown mackerel stripes, a ringed tail, the classic tabby **"M"** on the
-  forehead, gentle amber eyes. He should read instantly as a *cat*, not as abstract
-  markings.
-- **Art style:** **AI-generated New-Yorker editorial spot illustrations** — simple,
-  refined ink linework with light flat color (the "Kopit" look). Limited warm
-  palette: **cocoa-brown** line + stripes, **sandy-beige** coat fills, small
-  **light-terracotta** accents, on warm ecru. No gradients, no photorealism, no
-  heavy shading. (These are generated raster assets, not hand-drawn SVGs.)
-- **Signature devices:** **chef-hat June peeking** over images/the masthead, and
-  **June lying down as a horizontal page divider.**
-- **Pose set, mapped to moments (one per view, max):** chef-hat peek → masthead ·
-  supervising **loaf** → the "Your kitchen" editor panel · **sleeping/curled** →
-  empty states · **lying-down** → section divider/footer · **mid-bat** → 404 ·
-  optional windowsill spot → About lede.
-- **Logo / favicon:** a simple **June head** (front-facing, "M" visible, legible at
-  32px).
+- **Who June is:** a cute **male brown tabby** rendered kawaii/chibi (Sanrio-ish) —
+  a warm **reddish chestnut** coat with darker stripes and a ringed tail, lighter
+  **tan** face/belly, whiskers, happy closed "^^" eyes and a content smile. Reads
+  instantly as a cat; simple and adorable, not detailed.
+- **Art style:** **AI-generated** flat kawaii mascot illustrations — simple, very
+  rounded, clean outlines, completely flat color (no gradients/shading/detail).
+  Generated on the `#faf4ea` paper background and **cropped** (no cutout): on the
+  app they sit on matching paper, so no rectangle shows. (Raster PNGs in
+  `public/june/`, not hand-drawn SVGs.)
+- **Signature devices:** **chef-hat June peeking** over the home rule, and **June
+  lying down as a horizontal page divider.**
+- **Pose set → placement (one per view):** chef-hat **peek** → home header ·
+  **loaf** → masthead logo + About hero · **sleeping** → empty states ·
+  **lying-down divider** → recipe detail · **mid-bat** → 404.
+- **Logo / favicon:** the **loaf** pose, centered on a rounded paper tile.
 - **Pawprint** as a quiet recurring device: list bullet, the "made it" stamp (in
   terracotta), loading, 5★ confetti. Small, never loud.
 - **Voice:** June appears in microcopy **lightly and undertoned** — small fun bits
   here and there (empty states, loading), never heavy. Written asides use Newsreader
-  italic in olive (see Typography).
+  italic in terracotta (see Typography).
 
 ## Icons & assets
 
@@ -152,7 +149,7 @@ mascot parade.** The thing a friend remembers and describes.
 
 - **Fast & light, mobile-first.** Subset fonts; lazy/responsive images via
   `next/image` + Sanity transforms; per-icon imports; CSS-only motion by default.
-- Accessible: AA contrast (aubergine ink on ecru passes; verify olive/terracotta
+- Accessible: AA contrast (aubergine ink on ecru passes; verify terracotta and clay
   on paper for text use), focus-visible states, `prefers-reduced-motion` honored,
   semantic landmarks.
 - Light theme is the canonical home; no dark mode for v1 (the warm paper *is* the
@@ -162,7 +159,7 @@ mascot parade.** The thing a friend remembers and describes.
 ## NEVER do this (anti-slop)
 
 - **No decorative *gradients*** — flat, confident editorial color only. No
-  gradient meshes, no purple-gradient-on-white clichés. (Olive is a flat ink.)
+  gradient meshes, no purple-gradient-on-white clichés. (Terracotta is a flat ink.)
 - **No `Inter`, `Roboto`, `Arial`, `Helvetica`, or system-default fonts.** No
   defaulting to `Space Grotesk`/`Poppins` either. Display is Libre Caslon Display,
   body is Newsreader.
@@ -170,7 +167,7 @@ mascot parade.** The thing a friend remembers and describes.
 - **No generic glassmorphism**, frosted blur panels, or neumorphism.
 - **No bento-grid sameness** / identical rounded drop-shadow cards in a uniform
   matrix. Use rules, hierarchy, and asymmetry instead of card soup.
-- **No timid, evenly-distributed palette.** Olive dominates; terracotta
+- **No timid, evenly-distributed palette.** Terracotta dominates; terracotta
   punctuates. No "5 tints at equal weight."
 - **No pure white `#fff` or pure black `#000`.** Warm ecru + aubergine ink.
 - **No centered-everything**, no dead-symmetrical hero with a subhead and two

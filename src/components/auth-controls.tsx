@@ -18,7 +18,7 @@ export function AuthControls() {
         <button
           type="button"
           onClick={() => signOut()}
-          className="kicker text-ink-soft transition-colors hover:text-olive"
+          className="kicker text-ink-soft transition-colors hover:text-terracotta"
         >
           Sign out
         </button>
@@ -30,7 +30,7 @@ export function AuthControls() {
     <button
       type="button"
       onClick={() => signIn("google")}
-      className="kicker text-ink-soft transition-colors hover:text-olive"
+      className="kicker text-ink-soft transition-colors hover:text-terracotta"
     >
       Sign in
     </button>
