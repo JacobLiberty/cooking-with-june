@@ -6,7 +6,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-04-enhancements-and-the-plan.md` (sections A–D).
 
-**Conventions:** App code uses `@/`. Don't touch `src/sanity/env.ts`, `sanity.config.ts`, `sanity.cli.ts`, `.env*`. Design per `design.md` (olive/clay, Caslon/Newsreader, kicker, no emoji — `PawMark` is fine). Builds need `NEXT_PUBLIC_SANITY_PROJECT_ID=zwjctldy NEXT_PUBLIC_SANITY_DATASET=production npm run build`. PWA icons already exist at `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable.png`.
+**Conventions:** App code uses `@/`. Don't touch `src/sanity/env.ts`, `sanity.config.ts`, `sanity.cli.ts`, `.env*`. Design per `design.md` (terracotta/clay, Caslon/Newsreader, kicker, no emoji — `PawMark` is fine). Builds need `NEXT_PUBLIC_SANITY_PROJECT_ID=zwjctldy NEXT_PUBLIC_SANITY_DATASET=production npm run build`. PWA icons already exist at `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable.png`.
 
 ---
 
@@ -66,7 +66,7 @@ export function JuneApprovedBadge({ className }: { className?: string }) {
       title="June approved — you both rated this 4.5★ or higher"
     >
       <PawMark className="h-3.5 w-3.5 text-clay" />
-      <span className="kicker text-olive">June approved</span>
+      <span className="kicker text-terracotta">June approved</span>
     </span>
   );
 }
@@ -107,7 +107,7 @@ export function ShareButton({ className }: { className?: string }) {
     <button
       type="button"
       onClick={copy}
-      className={`kicker text-olive transition-colors hover:text-olive-deep ${className ?? ""}`}
+      className={`kicker text-terracotta transition-colors hover:text-terracotta-deep ${className ?? ""}`}
     >
       {copied ? "Link copied!" : "Share"}
     </button>
@@ -185,12 +185,12 @@ export function AddNoteForm({ recipeId }: { recipeId: string }) {
         onChange={(e) => setText(e.target.value)}
         maxLength={500}
         placeholder="Add a note…"
-        className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft/60 focus:border-olive"
+        className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft/60 focus:border-terracotta"
       />
       <button
         type="submit"
         disabled={pending}
-        className="kicker text-olive hover:text-olive-deep disabled:opacity-50"
+        className="kicker text-terracotta hover:text-terracotta-deep disabled:opacity-50"
       >
         {pending ? "Adding…" : "Add"}
       </button>
@@ -202,8 +202,8 @@ export function AddNoteForm({ recipeId }: { recipeId: string }) {
 - [ ] **Step 3: Recipe detail** — render a "From our kitchen" notes section (notes already projected by `RECIPE_QUERY` into `recipe.notes`). Add after the ratings/tags area (and before the editor divider/EditorActions). Show the section when there are notes OR the viewer is an editor:
 ```tsx
 {recipe.notes?.length || viewer.isEditor ? (
-  <section className="mt-10 border-t border-olive/25 pt-6">
-    <h2 className="kicker text-olive">From our kitchen</h2>
+  <section className="mt-10 border-t border-terracotta/25 pt-6">
+    <h2 className="kicker text-terracotta">From our kitchen</h2>
     {recipe.notes?.length ? (
       <ul className="mt-3 space-y-2">
         {recipe.notes.map((n) => (
@@ -280,4 +280,4 @@ and extend the existing `metadata` with:
 ---
 
 ## Self-Review
-**Spec coverage:** seal (A) ✓ pure + badge + card/detail; share (B) ✓; notes (C) ✓ display + editor add via gated action; PWA (D) ✓ manifest + meta + icons, no offline. **Security:** `addNote` gated by `requireEditor()` + `assertRecipe()`, text validated/capped, write token server-only. **Design:** olive/clay, kicker, PawMark, no emoji. **Types:** `isJuneApproved(RatingView[])` matches `recipe.ratings`; `addNote` returns `{ok,error}`. **Risk:** `crypto.randomUUID()` is available in the Node/server-action runtime (Next 16). `navigator.clipboard` needs HTTPS/localhost — degrades silently otherwise.
+**Spec coverage:** seal (A) ✓ pure + badge + card/detail; share (B) ✓; notes (C) ✓ display + editor add via gated action; PWA (D) ✓ manifest + meta + icons, no offline. **Security:** `addNote` gated by `requireEditor()` + `assertRecipe()`, text validated/capped, write token server-only. **Design:** terracotta/clay, kicker, PawMark, no emoji. **Types:** `isJuneApproved(RatingView[])` matches `recipe.ratings`; `addNote` returns `{ok,error}`. **Risk:** `crypto.randomUUID()` is available in the Node/server-action runtime (Next 16). `navigator.clipboard` needs HTTPS/localhost — degrades silently otherwise.
