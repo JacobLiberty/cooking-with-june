@@ -15,6 +15,7 @@ import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
 import { isJuneApproved } from "@/lib/june-approved";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
+import { ShareButton } from "@/components/share-button";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
 
@@ -71,23 +72,22 @@ export default async function RecipePage({
         </h1>
         {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge className="mt-1" /> : null}
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
-        {viewer.isEditor ? (
-          <div className="mt-2">
-            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
-              Edit recipe
-            </Link>
-          </div>
-        ) : null}
-        {recipe.steps?.length ? (
-          <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          {recipe.steps?.length ? (
             <Link
               href={`/recipe/${recipe.slug}/cook`}
               className="kicker border border-terracotta px-3 py-1 text-terracotta hover:bg-terracotta-wash"
             >
               Cook mode
             </Link>
-          </div>
-        ) : null}
+          ) : null}
+          {viewer.isEditor ? (
+            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
+              Edit recipe
+            </Link>
+          ) : null}
+          <ShareButton />
+        </div>
       </header>
 
       <div className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15">
