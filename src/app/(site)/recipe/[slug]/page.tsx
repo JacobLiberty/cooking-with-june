@@ -6,6 +6,7 @@ import {
   RECIPE_QUERY,
   RECIPE_SLUGS_QUERY,
 } from "@/sanity/lib/queries";
+import { PLAN_RECIPE_IDS_QUERY } from "@/sanity/lib/plan-queries";
 import type { RecipeDetailData } from "@/sanity/types";
 import { totalTime } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
@@ -17,6 +18,7 @@ import { isJuneApproved } from "@/lib/june-approved";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
 import { ShareButton } from "@/components/share-button";
 import { AddNoteForm } from "@/components/add-note-form";
+import { AddToPlanButton } from "@/components/add-to-plan-button";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
 
@@ -55,6 +57,10 @@ export default async function RecipePage({
   ]);
   if (!recipe) notFound();
 
+  const plannedIds = viewer.isEditor
+    ? await client.withConfig({ useCdn: false }).fetch<string[] | null>(PLAN_RECIPE_IDS_QUERY)
+    : null;
+
   const myRating = viewer.editorId
     ? (recipe.ratings?.find((r) => r._key === `rating-${viewer.editorId}`)?.value ?? null)
     : null;
@@ -86,6 +92,12 @@ export default async function RecipePage({
             <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
               Edit recipe
             </Link>
+          ) : null}
+          {viewer.isEditor ? (
+            <AddToPlanButton
+              recipeId={recipe._id}
+              inPlan={Boolean(plannedIds?.includes(recipe._id))}
+            />
           ) : null}
           <ShareButton />
         </div>
