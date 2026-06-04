@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JunePeek } from "@/components/june";
+import { JuneArt } from "@/components/june";
 
 export const metadata: Metadata = {
   title: "About · Cooking with June",
@@ -14,7 +14,7 @@ export default function AboutPage() {
       </h1>
       <div className="rule-draw mt-5 h-px w-full bg-olive/40" />
       <div className="set set-3 mt-8 flex justify-center">
-        <JunePeek className="h-12 w-28 text-clay" />
+        <JuneArt pose="loaf" className="h-32 w-auto" />
       </div>
       <p className="dropcap set set-3 mt-6 text-lg leading-relaxed text-ink">
         June is our brown tabby cat and self-appointed head of the kitchen. He

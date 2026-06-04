@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { JuneCurled } from "@/components/june";
+import { JuneArt } from "@/components/june";
 
 export default function NotFound() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-5 text-center">
-      <JuneCurled className="h-24 w-36 text-clay" />
+      <JuneArt pose="bat" className="h-44 w-auto" />
       <p className="kicker mt-6 text-olive">404</p>
       <h1 className="editorial-display mt-2 text-4xl text-ink md:text-5xl">
         June knocked this page off the counter
