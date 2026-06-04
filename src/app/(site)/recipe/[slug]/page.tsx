@@ -183,8 +183,13 @@ export default async function RecipePage({
       ) : null}
 
       {recipe.notes?.length || viewer.isEditor ? (
-        <section className="mt-10 border-t border-terracotta/25 pt-6">
-          <h2 className="kicker text-terracotta">From our kitchen</h2>
+        <section
+          className="mt-10 border-t border-terracotta/25 pt-6"
+          aria-labelledby="notes-heading"
+        >
+          <h2 id="notes-heading" className="kicker text-terracotta">
+            From our kitchen
+          </h2>
           {recipe.notes?.length ? (
             <ul className="mt-3 space-y-2">
               {recipe.notes.map((n) => (

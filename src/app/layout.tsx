@@ -18,7 +18,7 @@ const newsreader = Newsreader({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#55622f",
+  themeColor: "#a04a28",
 };
 
 export const metadata: Metadata = {

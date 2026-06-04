@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { requireEditor } from "@/lib/viewer";
-import { rateRecipe, markMade, saveRecipe } from "@/app/actions/recipe-actions";
+import {
+  rateRecipe,
+  markMade,
+  saveRecipe,
+  addNote,
+} from "@/app/actions/recipe-actions";
 
 vi.mock("@/lib/viewer", () => ({ requireEditor: vi.fn() }));
 vi.mock("@/sanity/lib/write-client", () => ({ getWriteClient: vi.fn(() => ({})) }));
@@ -39,5 +44,19 @@ describe("recipe action guards", () => {
     mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
     await expect(rateRecipe("r1", 4)).rejects.toThrow("Not authorized");
     await expect(saveRecipe(null, new FormData())).rejects.toThrow("Not authorized");
+  });
+
+  it("addNote rejects empty and over-long notes", async () => {
+    expect(await addNote("r1", "   ")).toEqual({ ok: false, error: "Note is empty" });
+    const longNote = "x".repeat(501);
+    expect(await addNote("r1", longNote)).toEqual({
+      ok: false,
+      error: "Note too long (max 500)",
+    });
+  });
+
+  it("addNote propagates the authorization error for non-editors", async () => {
+    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
+    await expect(addNote("r1", "looks good")).rejects.toThrow("Not authorized");
   });
 });
