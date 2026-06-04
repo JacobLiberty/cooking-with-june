@@ -1,0 +1,49 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { requireEditor } from "@/lib/viewer";
+import {
+  addToPlan,
+  toggleIngredientGot,
+  addManualItem,
+} from "@/app/actions/plan-actions";
+
+const chain: Record<string, unknown> = {};
+["setIfMissing", "append", "set", "unset", "patch"].forEach((m) => {
+  chain[m] = vi.fn(() => chain);
+});
+(chain as { commit: unknown }).commit = vi.fn().mockResolvedValue({});
+
+vi.mock("@/lib/viewer", () => ({ requireEditor: vi.fn() }));
+vi.mock("@/sanity/lib/write-client", () => ({
+  getWriteClient: vi.fn(() => ({
+    createIfNotExists: vi.fn().mockResolvedValue({}),
+    patch: vi.fn(() => chain),
+  })),
+}));
+vi.mock("@/sanity/lib/client", () => ({
+  client: { withConfig: () => ({ fetch: vi.fn().mockResolvedValue(null) }) },
+}));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
+const mockRequireEditor = vi.mocked(requireEditor);
+
+beforeEach(() => {
+  mockRequireEditor.mockReset();
+  mockRequireEditor.mockResolvedValue({ editorId: "e1", isEditor: true, name: "Jacob" });
+});
+
+describe("plan action guards", () => {
+  it("rejects empty / over-long manual items", async () => {
+    expect(await addManualItem("   ")).toEqual({ ok: false, error: "Item is empty" });
+    expect(await addManualItem("x".repeat(121))).toEqual({
+      ok: false,
+      error: "Too long (max 120)",
+    });
+  });
+
+  it("propagates the authorization error for non-editors", async () => {
+    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
+    await expect(addToPlan("r1")).rejects.toThrow("Not authorized");
+    await expect(toggleIngredientGot("i1")).rejects.toThrow("Not authorized");
+    await expect(addManualItem("milk")).rejects.toThrow("Not authorized");
+  });
+});
