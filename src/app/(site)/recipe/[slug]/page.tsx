@@ -16,6 +16,7 @@ import { EditorActions } from "@/components/editor-actions";
 import { isJuneApproved } from "@/lib/june-approved";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
 import { ShareButton } from "@/components/share-button";
+import { AddNoteForm } from "@/components/add-note-form";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
 
@@ -179,6 +180,25 @@ export default async function RecipePage({
             </span>
           ))}
         </div>
+      ) : null}
+
+      {recipe.notes?.length || viewer.isEditor ? (
+        <section className="mt-10 border-t border-terracotta/25 pt-6">
+          <h2 className="kicker text-terracotta">From our kitchen</h2>
+          {recipe.notes?.length ? (
+            <ul className="mt-3 space-y-2">
+              {recipe.notes.map((n) => (
+                <li key={n._key} className="text-ink">
+                  {n.author ? (
+                    <span className="kicker mr-2 text-ink-soft">{n.author}</span>
+                  ) : null}
+                  <span className="italic">{n.text}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {viewer.isEditor ? <AddNoteForm recipeId={recipe._id} /> : null}
+        </section>
       ) : null}
 
       {viewer.isEditor ? (
