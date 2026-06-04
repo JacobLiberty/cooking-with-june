@@ -13,6 +13,10 @@ import { RecipeCover } from "@/components/recipe-cover";
 import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
+import { isJuneApproved } from "@/lib/june-approved";
+import { JuneApprovedBadge } from "@/components/june-approved-badge";
+import { ShareButton } from "@/components/share-button";
+import { AddNoteForm } from "@/components/add-note-form";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
 
@@ -67,24 +71,24 @@ export default async function RecipePage({
         <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
           {recipe.title}
         </h1>
+        {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge className="mt-1" /> : null}
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
-        {viewer.isEditor ? (
-          <div className="mt-2">
-            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
-              Edit recipe
-            </Link>
-          </div>
-        ) : null}
-        {recipe.steps?.length ? (
-          <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          {recipe.steps?.length ? (
             <Link
               href={`/recipe/${recipe.slug}/cook`}
               className="kicker border border-terracotta px-3 py-1 text-terracotta hover:bg-terracotta-wash"
             >
               Cook mode
             </Link>
-          </div>
-        ) : null}
+          ) : null}
+          {viewer.isEditor ? (
+            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
+              Edit recipe
+            </Link>
+          ) : null}
+          <ShareButton />
+        </div>
       </header>
 
       <div className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15">
@@ -176,6 +180,30 @@ export default async function RecipePage({
             </span>
           ))}
         </div>
+      ) : null}
+
+      {recipe.notes?.length || viewer.isEditor ? (
+        <section
+          className="mt-10 border-t border-terracotta/25 pt-6"
+          aria-labelledby="notes-heading"
+        >
+          <h2 id="notes-heading" className="kicker text-terracotta">
+            From our kitchen
+          </h2>
+          {recipe.notes?.length ? (
+            <ul className="mt-3 space-y-2">
+              {recipe.notes.map((n) => (
+                <li key={n._key} className="text-ink">
+                  {n.author ? (
+                    <span className="kicker mr-2 text-ink-soft">{n.author}</span>
+                  ) : null}
+                  <span className="italic">{n.text}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {viewer.isEditor ? <AddNoteForm recipeId={recipe._id} /> : null}
+        </section>
       ) : null}
 
       {viewer.isEditor ? (

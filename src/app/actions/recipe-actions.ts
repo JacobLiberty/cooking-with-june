@@ -210,3 +210,29 @@ export async function saveRecipe(
   revalidatePath(`/recipe/${slug}`);
   return { ok: true, slug };
 }
+
+export async function addNote(
+  recipeId: string,
+  text: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { name } = await requireEditor();
+  const clean = text.trim();
+  if (!clean) return { ok: false, error: "Note is empty" };
+  if (clean.length > 500) return { ok: false, error: "Note too long (max 500)" };
+  await assertRecipe(recipeId);
+  const write = getWriteClient();
+  await write
+    .patch(recipeId)
+    .setIfMissing({ notes: [] })
+    .append("notes", [
+      {
+        _key: crypto.randomUUID(),
+        _type: "recipeNote",
+        author: name ?? undefined,
+        text: clean,
+      },
+    ])
+    .commit();
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

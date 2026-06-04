@@ -45,4 +45,28 @@ describe("RecipeCard", () => {
     render(<RecipeCard recipe={{ ...base, ratings: [], wishlist: true }} />);
     expect(screen.getByText("To try")).toBeInTheDocument();
   });
+
+  it("shows 'June approved' badge when both ratings are >= 4.5", () => {
+    render(
+      <RecipeCard
+        recipe={{
+          ...base,
+          ratings: [
+            { editor: "Jacob", value: 5 },
+            { editor: "Lily", value: 4.5 },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByText("June approved")).toBeInTheDocument();
+  });
+
+  it("does not show 'June approved' badge with only one rating", () => {
+    render(
+      <RecipeCard
+        recipe={{ ...base, ratings: [{ editor: "Jacob", value: 5 }] }}
+      />,
+    );
+    expect(screen.queryByText("June approved")).not.toBeInTheDocument();
+  });
 });
