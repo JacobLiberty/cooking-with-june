@@ -2,8 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { requireEditor } from "@/lib/viewer";
 import {
   addToPlan,
+  removeFromPlan,
   toggleIngredientGot,
   addManualItem,
+  toggleManualItem,
+  deleteManualItem,
 } from "@/app/actions/plan-actions";
 
 const chain: Record<string, unknown> = {};
@@ -45,5 +48,13 @@ describe("plan action guards", () => {
     await expect(addToPlan("r1")).rejects.toThrow("Not authorized");
     await expect(toggleIngredientGot("i1")).rejects.toThrow("Not authorized");
     await expect(addManualItem("milk")).rejects.toThrow("Not authorized");
+  });
+
+  it("rejects ids that could inject into a patch path", async () => {
+    const evil = 'x" || true || "';
+    await expect(removeFromPlan(evil)).rejects.toThrow("Invalid id");
+    await expect(toggleManualItem(evil)).rejects.toThrow("Invalid id");
+    await expect(deleteManualItem(evil)).rejects.toThrow("Invalid id");
+    await expect(toggleIngredientGot(evil)).rejects.toThrow("Invalid id");
   });
 });

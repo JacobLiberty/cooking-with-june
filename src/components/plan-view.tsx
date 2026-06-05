@@ -27,11 +27,21 @@ export function PlanView({
 }) {
   const [pending, start] = useTransition();
   const [newItem, setNewItem] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const run = (fn: () => Promise<unknown>) =>
     start(async () => {
-      await fn();
-      router.refresh();
+      setError(null);
+      try {
+        await fn();
+        router.refresh();
+      } catch (e) {
+        setError(
+          e instanceof Error && e.message
+            ? e.message
+            : "Something went wrong — please try again.",
+        );
+      }
     });
 
   const manualToGet = manual.filter((m) => !m.gotIt);
@@ -39,6 +49,11 @@ export function PlanView({
 
   return (
     <div className="space-y-10" aria-busy={pending}>
+      {error ? (
+        <p role="alert" className="text-sm text-clay">
+          {error}
+        </p>
+      ) : null}
       {/* planned recipes */}
       <section aria-labelledby="planned-heading">
         <h2 id="planned-heading" className="kicker text-terracotta">
@@ -129,8 +144,9 @@ export function PlanView({
             const t = newItem.trim();
             if (!t) return;
             run(async () => {
-              await addManualItem(t);
-              setNewItem("");
+              const res = await addManualItem(t);
+              if (res?.ok) setNewItem("");
+              else throw new Error(res?.error ?? "Couldn't add item");
             });
           }}
           className="mt-3 flex items-center gap-3"
