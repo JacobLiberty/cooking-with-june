@@ -12,6 +12,7 @@ import { totalTime } from "@/lib/format";
 import { averageRating } from "@/lib/rating";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
+import { RecipeIngredients } from "@/components/recipe-ingredients";
 import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
@@ -67,31 +68,43 @@ export default async function RecipePage({
     : null;
 
   const time = totalTime(recipe.prepTime, recipe.cookTime);
-  const meta = [time, recipe.servings ? `serves ${recipe.servings}` : null]
-    .filter(Boolean)
-    .join(" · ");
   const avg = averageRating(recipe.ratings);
   const ratingCount = recipe.ratings?.length ?? 0;
+  const ingredientCount = recipe.ingredients?.length ?? 0;
+  const madeCount = recipe.madeCount ?? 0;
 
   return (
     <article className="mx-auto max-w-3xl">
       <header className="set set-1">
-        {meta ? <p className="kicker text-terracotta">{meta}</p> : null}
         <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
           {recipe.title}
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {time ? <span className="kicker text-ink-soft">{time}</span> : null}
+          {recipe.servings ? (
+            <span className="kicker text-ink-soft">serves {recipe.servings}</span>
+          ) : null}
+          {ingredientCount ? (
+            <span className="kicker text-ink-soft">
+              {ingredientCount} ingredient{ingredientCount === 1 ? "" : "s"}
+            </span>
+          ) : null}
           {avg != null ? (
             <span className="flex items-center gap-2">
               <StarRating value={avg} />
               <span className="kicker text-ink-soft">
                 {avg.toFixed(1)}
-                {ratingCount > 1 ? ` · ${ratingCount} ratings` : ""}
+                {ratingCount > 1 ? ` · ${ratingCount}` : ""}
               </span>
             </span>
           ) : (
             <span className="kicker text-ink-soft/70">Not yet rated</span>
           )}
+          {madeCount > 0 ? (
+            <span className="kicker text-ink-soft">
+              made {madeCount}×
+            </span>
+          ) : null}
           {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge /> : null}
         </div>
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
@@ -140,21 +153,13 @@ export default async function RecipePage({
           <h2 id="ingredients-heading" className="kicker text-terracotta">
             Ingredients
           </h2>
-          <ul className="mt-3 space-y-2 [font-variant-numeric:tabular-nums]">
-            {recipe.ingredients?.map((line) => (
-              <li key={line._key} className="flex gap-2 border-b border-ink/10 pb-2">
-                <span className="text-ink-soft">
-                  {[line.quantity, line.unit].filter(Boolean).join(" ")}
-                </span>
-                <span className="text-ink">
-                  {line.name ?? "—"}
-                  {line.note ? (
-                    <span className="italic text-ink-soft"> ({line.note})</span>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-3">
+            <RecipeIngredients
+              recipeId={recipe._id}
+              baseServings={recipe.servings}
+              ingredients={recipe.ingredients ?? []}
+            />
+          </div>
         </section>
 
         <section aria-labelledby="steps-heading">
