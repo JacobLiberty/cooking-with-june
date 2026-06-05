@@ -11,6 +11,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Cover-photo uploads go through a Server Action; the default 1 MB body
+    // cap rejected them before our 20 MB image check could run. Align them.
+    serverActions: { bodySizeLimit: "20mb" },
+  },
   images: {
     remotePatterns: [
       {

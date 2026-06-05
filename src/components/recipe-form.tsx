@@ -33,9 +33,15 @@ export function RecipeForm({
   function onSubmit(formData: FormData) {
     setError(null);
     start(async () => {
-      const res = await saveRecipe(recipeId, formData);
-      if (res.ok) router.push(`/recipe/${res.slug}`);
-      else setError(res.error);
+      try {
+        const res = await saveRecipe(recipeId, formData);
+        if (res.ok) router.push(`/recipe/${res.slug}`);
+        else setError(res.error);
+      } catch {
+        setError(
+          "Couldn't save — the cover photo may be too large, or the server hit a problem. Please try again.",
+        );
+      }
     });
   }
 
@@ -64,7 +70,12 @@ export function RecipeForm({
 
       <label className="block">
         <span className={labelCls}>Cover photo {initial?.hasImage ? "(leave empty to keep current)" : ""}</span>
-        <input type="file" name="image" accept="image/*" className="mt-1 block text-ink-soft" />
+        <input
+          type="file"
+          name="image"
+          accept="image/*"
+          className="mt-2 block w-full text-sm text-ink-soft file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-terracotta-wash file:px-4 file:py-1.5 file:font-medium file:text-terracotta hover:file:bg-terracotta hover:file:text-paper"
+        />
       </label>
 
       <div className="grid grid-cols-3 gap-4">
@@ -106,11 +117,19 @@ export function RecipeForm({
       {tags.length > 0 && (
         <fieldset>
           <legend className={labelCls}>Tags</legend>
-          <div className="mt-2 flex flex-wrap gap-3">
+          <div className="mt-2 flex flex-wrap gap-2">
             {tags.map((t) => (
-              <label key={t._id} className="flex items-center gap-1 text-ink-soft">
-                <input type="checkbox" name="tag" value={t._id} defaultChecked={initial?.tagIds?.includes(t._id) ?? false} />
-                <span className="kicker">{t.name}</span>
+              <label key={t._id} className="cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="tag"
+                  value={t._id}
+                  defaultChecked={initial?.tagIds?.includes(t._id) ?? false}
+                  className="peer sr-only"
+                />
+                <span className="kicker inline-block rounded-full border border-ink/20 px-3 py-1.5 text-ink-soft transition-colors hover:border-terracotta peer-checked:border-terracotta peer-checked:bg-terracotta peer-checked:text-paper peer-focus-visible:outline-2 peer-focus-visible:outline-terracotta">
+                  {t.name}
+                </span>
               </label>
             ))}
           </div>

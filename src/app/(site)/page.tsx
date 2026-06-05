@@ -33,8 +33,8 @@ export default async function HomePage() {
           Cooking with June
         </h1>
         <p className="editorial-aside mt-3 max-w-xl text-xl text-ink-soft">
-          Recipes worth making twice — kept by Jacob &amp; Lily, supervised by
-          June.
+          Recipes worth making twice — maintained by Jacob &amp; Lily,
+          supervised by June.
         </p>
         <div className="relative mt-5">
           <JuneArt
@@ -45,9 +45,12 @@ export default async function HomePage() {
           <div className="rule-draw h-px w-full bg-terracotta/40" />
         </div>
         {viewer.isEditor ? (
-          <div className="mt-3">
-            <Link href="/recipe/new" className="kicker text-terracotta hover:text-terracotta-deep">
-              New recipe
+          <div className="mt-4">
+            <Link
+              href="/recipe/new"
+              className="kicker inline-flex items-center gap-1.5 rounded-full border border-terracotta px-4 py-2 text-terracotta transition-colors hover:bg-terracotta hover:text-paper"
+            >
+              <span aria-hidden>+</span> New recipe
             </Link>
           </div>
         ) : null}

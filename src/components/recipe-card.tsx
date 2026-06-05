@@ -28,11 +28,11 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           className="transition-transform duration-500 group-hover:scale-[1.04]"
         />
         {approved ? (
-          <span className="absolute left-3 top-3 rounded-full bg-paper/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
+          <span className="absolute left-3 top-3 inline-flex h-7 items-center rounded-full bg-paper/90 px-2.5 shadow-sm backdrop-blur-sm">
             <JuneApprovedBadge />
           </span>
         ) : recipe.wishlist && avg == null ? (
-          <span className="kicker absolute right-3 top-3 rounded-full bg-paper/90 px-2.5 py-1 text-terracotta shadow-sm backdrop-blur-sm">
+          <span className="kicker absolute right-3 top-3 inline-flex h-7 items-center rounded-full bg-paper/90 px-2.5 text-terracotta shadow-sm backdrop-blur-sm">
             To try
           </span>
         ) : null}
@@ -43,30 +43,30 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
         <h3 className="editorial-display mt-1.5 text-2xl leading-tight text-ink transition-colors group-hover:text-terracotta">
           {recipe.title}
         </h3>
+        <div className="mt-2 h-5">
+          {avg != null ? (
+            <StarRating value={avg} />
+          ) : recipe.wishlist ? null : (
+            <span className="kicker text-ink-soft/70">Unrated</span>
+          )}
+        </div>
         {recipe.description ? (
-          <p className="mt-2 line-clamp-2 leading-relaxed text-ink-soft">
+          <p className="mt-1 line-clamp-2 leading-relaxed text-ink-soft">
             {recipe.description}
           </p>
         ) : null}
-        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-          {avg != null ? (
-            <StarRating value={avg} />
-          ) : (
-            <span className="kicker text-ink-soft/70">Unrated</span>
-          )}
-          {tags.length ? (
-            <span className="flex flex-wrap justify-end gap-1.5">
-              {tags.map((t) => (
-                <span
-                  key={t}
-                  className="kicker rounded-full border border-terracotta/30 px-2 py-0.5 text-terracotta"
-                >
-                  {t}
-                </span>
-              ))}
-            </span>
-          ) : null}
-        </div>
+        {tags.length ? (
+          <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="kicker rounded-full border border-terracotta/30 px-2 py-0.5 text-terracotta"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </Link>
   );
