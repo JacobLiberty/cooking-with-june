@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { buildGroceryList, type PlanIngredient } from "@/lib/grocery";
+import {
+  buildGroceryList,
+  partitionGrocery,
+  type GroceryItem,
+  type PlanIngredient,
+} from "@/lib/grocery";
 
 function ing(
   ingredientId: string,
@@ -37,5 +42,46 @@ describe("buildGroceryList", () => {
       [ing("egg", "egg", "2", "")],
     ]);
     expect(list[0].amounts).toEqual(["2"]);
+  });
+});
+
+describe("partitionGrocery", () => {
+  const item = (id: string): GroceryItem => ({
+    ingredientId: id,
+    name: id,
+    amounts: [],
+  });
+  const items = [item("a"), item("b"), item("c"), item("d")];
+
+  it("places each item in exactly one section", () => {
+    const { toGet, got, skipped } = partitionGrocery(
+      items,
+      new Set(["b"]),
+      new Set(["c"]),
+    );
+    expect(got.map((i) => i.ingredientId)).toEqual(["b"]);
+    expect(skipped.map((i) => i.ingredientId)).toEqual(["c"]);
+    expect(toGet.map((i) => i.ingredientId)).toEqual(["a", "d"]);
+    // No item is lost or duplicated across sections.
+    expect(toGet.length + got.length + skipped.length).toBe(items.length);
+  });
+
+  it("never drops an item that is in both checked and skipped (checked wins)", () => {
+    const { toGet, got, skipped } = partitionGrocery(
+      items,
+      new Set(["a"]),
+      new Set(["a"]),
+    );
+    expect(got.map((i) => i.ingredientId)).toEqual(["a"]);
+    expect(skipped).toHaveLength(0);
+    expect(toGet.map((i) => i.ingredientId)).toEqual(["b", "c", "d"]);
+    expect(toGet.length + got.length + skipped.length).toBe(items.length);
+  });
+
+  it("puts everything in to-get when nothing is checked or skipped", () => {
+    const { toGet, got, skipped } = partitionGrocery(items, new Set(), new Set());
+    expect(toGet).toHaveLength(items.length);
+    expect(got).toHaveLength(0);
+    expect(skipped).toHaveLength(0);
   });
 });

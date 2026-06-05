@@ -27,6 +27,12 @@ export const mealPlan = defineType({
       type: "array",
       of: [defineArrayMember({ type: "string" })],
     }),
+    defineField({
+      name: "removedIngredients",
+      title: "Skipped ingredient ids (won't buy)",
+      type: "array",
+      of: [defineArrayMember({ type: "string" })],
+    }),
   ],
   preview: { prepare: () => ({ title: "Meal plan" }) },
 });

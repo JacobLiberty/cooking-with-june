@@ -15,4 +15,5 @@ export type PlanData = {
   recipes: PlanRecipe[] | null;
   manualItems: ManualItem[] | null;
   checkedIngredients: string[] | null;
+  removedIngredients: string[] | null;
 };

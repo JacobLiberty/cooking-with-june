@@ -4,6 +4,8 @@ import {
   addToPlan,
   removeFromPlan,
   toggleIngredientGot,
+  skipIngredient,
+  unskipIngredient,
   addManualItem,
   toggleManualItem,
   deleteManualItem,
@@ -36,8 +38,11 @@ beforeEach(() => {
 
 describe("plan action guards", () => {
   it("rejects empty / over-long manual items", async () => {
-    expect(await addManualItem("   ")).toEqual({ ok: false, error: "Item is empty" });
-    expect(await addManualItem("x".repeat(121))).toEqual({
+    expect(await addManualItem("   ", "k1")).toEqual({
+      ok: false,
+      error: "Item is empty",
+    });
+    expect(await addManualItem("x".repeat(121), "k2")).toEqual({
       ok: false,
       error: "Too long (max 120)",
     });
@@ -47,7 +52,8 @@ describe("plan action guards", () => {
     mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
     await expect(addToPlan("r1")).rejects.toThrow("Not authorized");
     await expect(toggleIngredientGot("i1")).rejects.toThrow("Not authorized");
-    await expect(addManualItem("milk")).rejects.toThrow("Not authorized");
+    await expect(skipIngredient("i1")).rejects.toThrow("Not authorized");
+    await expect(addManualItem("milk", "k1")).rejects.toThrow("Not authorized");
   });
 
   it("rejects ids that could inject into a patch path", async () => {
@@ -56,5 +62,8 @@ describe("plan action guards", () => {
     await expect(toggleManualItem(evil)).rejects.toThrow("Invalid id");
     await expect(deleteManualItem(evil)).rejects.toThrow("Invalid id");
     await expect(toggleIngredientGot(evil)).rejects.toThrow("Invalid id");
+    await expect(skipIngredient(evil)).rejects.toThrow("Invalid id");
+    await expect(unskipIngredient(evil)).rejects.toThrow("Invalid id");
+    await expect(addManualItem("milk", evil)).rejects.toThrow("Invalid id");
   });
 });
