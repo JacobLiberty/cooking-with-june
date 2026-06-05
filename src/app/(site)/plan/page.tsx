@@ -3,7 +3,6 @@ import { getViewer } from "@/lib/viewer";
 import { client } from "@/sanity/lib/client";
 import { PLAN_QUERY } from "@/sanity/lib/plan-queries";
 import type { PlanData } from "@/sanity/plan-types";
-import { buildGroceryList } from "@/lib/grocery";
 import { PlanView } from "@/components/plan-view";
 
 export default async function PlanPage() {
@@ -15,10 +14,6 @@ export default async function PlanPage() {
     .fetch<PlanData | null>(PLAN_QUERY);
 
   const recipes = plan?.recipes ?? [];
-  const checked = new Set(plan?.checkedIngredients ?? []);
-  const all = buildGroceryList(recipes.map((r) => r.ingredients ?? []));
-  const toGet = all.filter((g) => !checked.has(g.ingredientId));
-  const got = all.filter((g) => checked.has(g.ingredientId));
 
   return (
     <section className="mx-auto max-w-2xl">
@@ -32,8 +27,8 @@ export default async function PlanPage() {
       <div className="set set-2 mt-8">
         <PlanView
           recipes={recipes}
-          toGet={toGet}
-          got={got}
+          checkedIds={plan?.checkedIngredients ?? []}
+          removedIds={plan?.removedIngredients ?? []}
           manual={plan?.manualItems ?? []}
         />
       </div>

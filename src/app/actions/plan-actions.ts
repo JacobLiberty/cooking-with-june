@@ -79,8 +79,40 @@ export async function toggleIngredientGot(ingredientId: string) {
   revalidatePath("/plan");
 }
 
-export async function addManualItem(name: string) {
+async function setMembership(
+  field: "checkedIngredients" | "removedIngredients",
+  id: string,
+  present: boolean,
+) {
+  const write = getWriteClient();
+  await ensurePlan(write);
+  const current = await reader().fetch<string[] | null>(
+    `*[_id == $id][0][$field]`,
+    { id: PLAN_ID, field },
+  );
+  const set = new Set(current ?? []);
+  if (present) set.add(id);
+  else set.delete(id);
+  await write.patch(PLAN_ID).set({ [field]: [...set] }).commit();
+}
+
+/** Skip an auto ingredient ("not getting it") — hide from the to-get list. */
+export async function skipIngredient(ingredientId: string) {
   await requireEditor();
+  await setMembership("removedIngredients", safeId(ingredientId), true);
+  revalidatePath("/plan");
+}
+
+/** Restore a previously-skipped ingredient back to the to-get list. */
+export async function unskipIngredient(ingredientId: string) {
+  await requireEditor();
+  await setMembership("removedIngredients", safeId(ingredientId), false);
+  revalidatePath("/plan");
+}
+
+export async function addManualItem(name: string, key: string) {
+  await requireEditor();
+  const k = safeId(key);
   const clean = name.trim();
   if (!clean) return { ok: false, error: "Item is empty" };
   if (clean.length > 120) return { ok: false, error: "Too long (max 120)" };
@@ -90,7 +122,7 @@ export async function addManualItem(name: string) {
     .patch(PLAN_ID)
     .setIfMissing({ manualItems: [] })
     .append("manualItems", [
-      { _key: crypto.randomUUID(), _type: "manualGroceryItem", name: clean, gotIt: false },
+      { _key: k, _type: "manualGroceryItem", name: clean, gotIt: false },
     ])
     .commit();
   revalidatePath("/plan");

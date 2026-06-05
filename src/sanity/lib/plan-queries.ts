@@ -15,7 +15,8 @@ export const PLAN_QUERY = defineQuery(`
       }
     },
     manualItems[]{ _key, name, gotIt },
-    checkedIngredients
+    checkedIngredients,
+    removedIngredients
   }
 `);
 
