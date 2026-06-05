@@ -56,6 +56,17 @@ export function RecipeIngredients({
   const factor = servingFactor(baseServings, servings || (baseServings ?? 1));
   const canScale = Boolean(baseServings && baseServings > 0);
 
+  // Remember the chosen scale so "Add to plan" can add ingredients at the
+  // scaled amounts (read back by AddToPlanButton on the same recipe page).
+  useEffect(() => {
+    if (!canScale) return;
+    try {
+      window.localStorage.setItem(`cwj:recipe-scale:${recipeId}`, String(factor));
+    } catch {
+      // ignore
+    }
+  }, [factor, canScale, recipeId]);
+
   return (
     <div>
       {canScale ? (

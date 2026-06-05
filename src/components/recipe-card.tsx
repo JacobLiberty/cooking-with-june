@@ -5,6 +5,7 @@ import { totalTime } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 import { isJuneApproved } from "@/lib/june-approved";
+import { coverTransitionName } from "@/lib/view-transition";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
 
 export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
@@ -21,7 +22,10 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
       href={`/recipe/${recipe.slug}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-ink/10 bg-paper shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-terracotta/40 hover:shadow-md focus-visible:-translate-y-1"
     >
-      <div className="relative aspect-4/3 overflow-hidden">
+      <div
+        className="relative aspect-4/3 overflow-hidden"
+        style={{ viewTransitionName: coverTransitionName(recipe._id) }}
+      >
         <RecipeCover
           image={recipe.coverImage}
           title={recipe.title}

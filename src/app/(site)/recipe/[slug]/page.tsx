@@ -13,6 +13,7 @@ import { averageRating } from "@/lib/rating";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 import { RecipeIngredients } from "@/components/recipe-ingredients";
+import { coverTransitionName } from "@/lib/view-transition";
 import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
@@ -132,7 +133,10 @@ export default async function RecipePage({
         </div>
       </header>
 
-      <div className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15">
+      <div
+        className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15"
+        style={{ viewTransitionName: coverTransitionName(recipe._id) }}
+      >
         <RecipeCover image={recipe.images?.[0]} title={recipe.title} />
       </div>
 

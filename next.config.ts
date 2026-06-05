@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
     // Cover-photo uploads go through a Server Action; the default 1 MB body
     // cap rejected them before our 20 MB image check could run. Align them.
     serverActions: { bodySizeLimit: "20mb" },
+    // Native View Transitions: morph the recipe cover from card → detail.
+    viewTransition: true,
   },
   images: {
     remotePatterns: [

@@ -1,7 +1,9 @@
+import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PlanView } from "@/components/plan-view";
+import { MotionProvider } from "@/components/motion-provider";
 import type { PlanRecipe } from "@/sanity/plan-types";
 
 const actions = vi.hoisted(() => ({
@@ -15,6 +17,39 @@ const actions = vi.hoisted(() => ({
   removeManualItem: vi.fn(),
 }));
 vi.mock("@/app/actions/plan-actions", () => actions);
+
+// Render motion components as plain elements so list changes are synchronous
+// (we're unit-testing the grocery/pantry logic, not the animation).
+vi.mock("motion/react", () => {
+  const strip = new Set([
+    "layout",
+    "initial",
+    "animate",
+    "exit",
+    "transition",
+    "whileHover",
+    "whileTap",
+  ]);
+  const make = (tag: string) =>
+    function MotionEl({ children, ...props }: Record<string, unknown>) {
+      const clean: Record<string, unknown> = {};
+      for (const k in props) if (!strip.has(k)) clean[k] = props[k];
+      return React.createElement(tag, clean, children as React.ReactNode);
+    };
+  function AnimatePresence({ children }: { children: React.ReactNode }) {
+    return children;
+  }
+  function Passthrough({ children }: { children: React.ReactNode }) {
+    return children;
+  }
+  return {
+    AnimatePresence,
+    m: new Proxy({}, { get: (_t, tag: string) => make(tag) }),
+    LazyMotion: Passthrough,
+    MotionConfig: Passthrough,
+    domAnimation: {},
+  };
+});
 
 // PlanRecipeRow → RecipeCover imports the image builder, which pulls in the
 // Sanity client/env. Stub it so the test doesn't need env vars.
@@ -37,14 +72,17 @@ const ingredients = [{ _id: "onion", name: "Onion" }];
 
 function renderPlan(overrides: Partial<Parameters<typeof PlanView>[0]> = {}) {
   return render(
-    <PlanView
-      recipes={recipes}
-      manual={[]}
-      groceryIds={["onion"]}
-      pantryIds={[]}
-      ingredients={ingredients}
-      {...overrides}
-    />,
+    <MotionProvider>
+      <PlanView
+        recipes={recipes}
+        manual={[]}
+        groceryIds={["onion"]}
+        pantryIds={[]}
+        ingredients={ingredients}
+        recipeScales={[]}
+        {...overrides}
+      />
+    </MotionProvider>,
   );
 }
 
