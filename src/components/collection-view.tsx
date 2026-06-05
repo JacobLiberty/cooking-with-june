@@ -13,7 +13,7 @@ import {
   countByIngredientId,
   type RecipeFilters,
 } from "@/lib/recipe-filter";
-import { missingFromPantry } from "@/lib/pantry";
+import { filterCookable } from "@/lib/pantry";
 import { parseFilters, serializeFilters } from "@/lib/recipe-query-state";
 import { FilterControls } from "@/components/filter-controls";
 import { RecipeGrid } from "@/components/recipe-grid";
@@ -59,9 +59,9 @@ export function CollectionView({
   const filtered = useMemo(() => {
     const base = applyRecipeFilters(recipes, filters);
     if (!pantryOnly || !canCookFromPantry) return base;
-    return base.filter(
-      (r) => missingFromPantry(r.ingredientIds ?? [], pantrySet) === 0,
-    );
+    // "Cook from pantry" respects the any/all toggle: "all" = have everything,
+    // "any" = use at least one pantry item. Ranked by fewest missing.
+    return filterCookable(base, pantrySet, filters.mode);
   }, [recipes, filters, pantryOnly, canCookFromPantry, pantrySet]);
 
   const surprise = useCallback(() => {
@@ -83,18 +83,27 @@ export function CollectionView({
       />
 
       {canCookFromPantry ? (
-        <button
-          type="button"
-          aria-pressed={pantryOnly}
-          onClick={() => setPantryOnly((v) => !v)}
-          className={`kicker rounded-full border px-4 py-2 transition-colors ${
-            pantryOnly
-              ? "border-clay bg-clay text-paper"
-              : "border-clay/50 text-clay hover:bg-clay-wash"
-          }`}
-        >
-          {pantryOnly ? "Showing what you can cook now" : "Cook from pantry"}
-        </button>
+        <div className="space-y-2">
+          <button
+            type="button"
+            aria-pressed={pantryOnly}
+            onClick={() => setPantryOnly((v) => !v)}
+            className={`kicker rounded-full border px-4 py-2 transition-colors ${
+              pantryOnly
+                ? "border-clay bg-clay text-paper"
+                : "border-clay/50 text-clay hover:bg-clay-wash"
+            }`}
+          >
+            {pantryOnly ? "Cooking from pantry — on" : "Cook from pantry"}
+          </button>
+          {pantryOnly ? (
+            <p className="text-sm text-ink-soft">
+              {filters.mode === "all"
+                ? "Recipes you have every ingredient for. Set the ingredient match above to “any” to include ones you’re only missing a few of."
+                : "Recipes that use anything in your pantry — closest matches first."}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="flex items-center justify-between border-t border-terracotta/25 pt-4">

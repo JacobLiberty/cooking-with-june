@@ -15,6 +15,32 @@ export function missingFromPantry(
 }
 
 /**
+ * "Cook from pantry" results, ranked by how few ingredients you're missing.
+ * - mode "all": only recipes you have every ingredient for (missing 0).
+ * - mode "any": recipes you have at least one ingredient for ("use what I have").
+ * Recipes with no ingredient list are excluded either way.
+ */
+export function filterCookable<T extends { ingredientIds: string[] | null }>(
+  recipes: T[],
+  pantry: Set<string>,
+  mode: "any" | "all",
+): T[] {
+  return recipes
+    .filter((r) => {
+      const ids = r.ingredientIds ?? [];
+      if (ids.length === 0) return false;
+      return mode === "all"
+        ? missingFromPantry(ids, pantry) === 0
+        : ids.some((id) => pantry.has(id));
+    })
+    .sort(
+      (a, b) =>
+        missingFromPantry(a.ingredientIds ?? [], pantry) -
+        missingFromPantry(b.ingredientIds ?? [], pantry),
+    );
+}
+
+/**
  * Grocery ids after a recipe leaves the plan: drop the removed recipe's
  * ingredient ids, but keep any that another still-planned recipe also uses.
  * The pantry is intentionally untouched here.
