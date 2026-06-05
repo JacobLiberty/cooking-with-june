@@ -28,6 +28,7 @@ async function ensurePlan(write: ReturnType<typeof getWriteClient>) {
     manualItems: [],
     groceryIngredients: [],
     pantryIngredients: [],
+    recipeScales: [],
   });
 }
 
@@ -71,9 +72,10 @@ async function patchLists(
 
 // ── Recipes ───────────────────────────────────────────────────────────────
 
-export async function addToPlan(recipeId: string) {
+export async function addToPlan(recipeId: string, scale = 1) {
   await requireEditor();
   const id = safeId(recipeId);
+  const s = Number.isFinite(scale) && scale > 0 ? scale : 1;
   await assertRecipe(id);
   const ingredientIds = await recipeIngredientIds(id);
   const write = getWriteClient();
@@ -82,6 +84,13 @@ export async function addToPlan(recipeId: string) {
     .patch(PLAN_ID)
     .setIfMissing({ recipes: [] })
     .append("recipes", [{ _key: id, _type: "reference", _ref: id }])
+    .commit();
+  // record the serving scale chosen on the recipe page (replace any prior one)
+  await write
+    .patch(PLAN_ID)
+    .setIfMissing({ recipeScales: [] })
+    .unset([`recipeScales[_key=="${id}"]`])
+    .append("recipeScales", [{ _key: id, _type: "planScale", scale: s }])
     .commit();
   // Seed the grocery list with this recipe's ingredients (skip ones we already
   // have on the list or in the pantry).
@@ -101,7 +110,7 @@ export async function removeFromPlan(recipeId: string) {
   const write = getWriteClient();
   await write
     .patch(PLAN_ID)
-    .unset([`recipes[_ref=="${id}"]`])
+    .unset([`recipes[_ref=="${id}"]`, `recipeScales[_key=="${id}"]`])
     .commit();
   // Drop this recipe's grocery items, keeping any a still-planned recipe needs.
   // The pantry is untouched.

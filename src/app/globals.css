@@ -150,3 +150,12 @@ body {
   .paw-step { animation: none; opacity: 0.6; }
   .paw-pop { animation: none; opacity: 0; }
 }
+
+/* Honor reduced-motion for native View Transitions (card → recipe morph). */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

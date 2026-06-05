@@ -1,9 +1,16 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import type { PlanRecipe, ManualItem, ManualLocation } from "@/sanity/plan-types";
+import { AnimatePresence, m } from "motion/react";
+import type {
+  PlanRecipe,
+  ManualItem,
+  ManualLocation,
+  RecipeScale,
+} from "@/sanity/plan-types";
 import type { IngredientOption } from "@/sanity/types";
 import { missingFromPantry, groceryAfterRecipeRemoval } from "@/lib/pantry";
+import { scaleQuantity } from "@/lib/scale";
 import { CheckBox } from "@/components/check-box";
 import { PlanRecipeRow } from "@/components/plan-recipe-row";
 import {
@@ -32,12 +39,14 @@ export function PlanView({
   groceryIds: initialGrocery,
   pantryIds: initialPantry,
   ingredients,
+  recipeScales,
 }: {
   recipes: PlanRecipe[];
   manual: ManualItem[];
   groceryIds: string[];
   pantryIds: string[];
   ingredients: IngredientOption[];
+  recipeScales: RecipeScale[];
 }) {
   const [tab, setTab] = useState<Tab>("recipes");
   const [recipes, setRecipes] = useState(initialRecipes);
@@ -60,6 +69,32 @@ export function PlanView({
   }, [ingredients, recipes]);
 
   const nameOf = (id: string) => nameById.get(id) ?? id;
+
+  // Scaled grocery amounts: for each ingredient id, the distinct quantities its
+  // planned recipes contribute (quantity × that recipe's serving scale).
+  const amountById = useMemo(() => {
+    const scaleOf = new Map(
+      recipeScales.map((s) => [s.recipeId, s.scale ?? 1] as const),
+    );
+    const map = new Map<string, string[]>();
+    for (const r of recipes) {
+      const factor = scaleOf.get(r._id) ?? 1;
+      for (const line of r.ingredients ?? []) {
+        if (!line.ingredientId) continue;
+        const amount = [scaleQuantity(line.quantity, factor), line.unit]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        if (!amount) continue;
+        const list = map.get(line.ingredientId) ?? [];
+        if (!list.includes(amount)) list.push(amount);
+        map.set(line.ingredientId, list);
+      }
+    }
+    return map;
+  }, [recipes, recipeScales]);
+
+  const amountOf = (id: string) => amountById.get(id)?.join(" · ") ?? "";
 
   const act = (action: () => Promise<unknown>, revert: () => void) => {
     setError(null);
@@ -265,24 +300,39 @@ export function PlanView({
               ) : null}
             </div>
             <ul className="mt-3 space-y-2">
-              {groceryRows.map((row) => (
-                <li key={rowKey(row)} className="flex items-center gap-3">
-                  <CheckBox
-                    checked={false}
-                    onChange={() => onCheck(row)}
-                    label={`Got ${row.name}`}
-                  />
-                  <span className="flex-1 text-ink">{row.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => onSkip(row)}
-                    aria-label={`Skip ${row.name}`}
-                    className="kicker text-ink-soft hover:text-clay"
+              <AnimatePresence initial={false}>
+                {groceryRows.map((row) => (
+                  <m.li
+                    key={rowKey(row)}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex items-center gap-3"
                   >
-                    Skip
-                  </button>
-                </li>
-              ))}
+                    <CheckBox
+                      checked={false}
+                      onChange={() => onCheck(row)}
+                      label={`Got ${row.name}`}
+                    />
+                    <span className="flex-1 text-ink">
+                      {row.name}
+                      {row.kind === "auto" && amountOf(row.id) ? (
+                        <span className="text-ink-soft"> · {amountOf(row.id)}</span>
+                      ) : null}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onSkip(row)}
+                      aria-label={`Skip ${row.name}`}
+                      className="kicker text-ink-soft hover:text-clay"
+                    >
+                      Skip
+                    </button>
+                  </m.li>
+                ))}
+              </AnimatePresence>
               {groceryRows.length === 0 ? (
                 <li className="text-ink-soft">Your grocery list is empty.</li>
               ) : null}
@@ -317,27 +367,37 @@ export function PlanView({
               Pantry
             </h2>
             <ul className="mt-3 space-y-2">
-              {pantryRows.map((row) => (
-                <li key={rowKey(row)} className="flex items-center gap-3">
-                  <span className="flex-1 text-ink">{row.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => onRestock(row)}
-                    aria-label={`Add ${row.name} back to the grocery list`}
-                    className="kicker text-ink-soft hover:text-terracotta"
+              <AnimatePresence initial={false}>
+                {pantryRows.map((row) => (
+                  <m.li
+                    key={rowKey(row)}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex items-center gap-3"
                   >
-                    Out
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onUse(row)}
-                    aria-label={`Remove ${row.name} from the pantry`}
-                    className="kicker text-ink-soft hover:text-clay"
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
+                    <span className="flex-1 text-ink">{row.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => onRestock(row)}
+                      aria-label={`Add ${row.name} back to the grocery list`}
+                      className="kicker text-ink-soft hover:text-terracotta"
+                    >
+                      Out
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onUse(row)}
+                      aria-label={`Remove ${row.name} from the pantry`}
+                      className="kicker text-ink-soft hover:text-clay"
+                    >
+                      Remove
+                    </button>
+                  </m.li>
+                ))}
+              </AnimatePresence>
               {pantryRows.length === 0 ? (
                 <li className="text-ink-soft">
                   Check items off the grocery list and they&rsquo;ll land here.

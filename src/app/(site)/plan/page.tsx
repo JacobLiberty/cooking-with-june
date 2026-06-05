@@ -33,6 +33,7 @@ export default async function PlanPage() {
           groceryIds={plan?.groceryIngredients ?? []}
           pantryIds={plan?.pantryIngredients ?? []}
           ingredients={ingredients}
+          recipeScales={plan?.recipeScales ?? []}
         />
       </div>
     </section>

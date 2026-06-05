@@ -19,7 +19,8 @@ export const PLAN_QUERY = defineQuery(`
     },
     manualItems[]{ _key, name, location },
     groceryIngredients,
-    pantryIngredients
+    pantryIngredients,
+    "recipeScales": recipeScales[]{ "recipeId": _key, scale }
   }
 `);
 

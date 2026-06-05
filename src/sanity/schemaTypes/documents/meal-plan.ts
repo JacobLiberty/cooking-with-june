@@ -33,6 +33,18 @@ export const mealPlan = defineType({
       type: "array",
       of: [defineArrayMember({ type: "string" })],
     }),
+    defineField({
+      name: "recipeScales",
+      title: "Per-recipe serving scale (array key = recipe id)",
+      type: "array",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "planScale",
+          fields: [defineField({ name: "scale", type: "number" })],
+        }),
+      ],
+    }),
   ],
   preview: { prepare: () => ({ title: "Meal plan" }) },
 });

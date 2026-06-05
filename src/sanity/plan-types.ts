@@ -20,9 +20,12 @@ export type ManualItem = {
   location: ManualLocation | null;
 };
 
+export type RecipeScale = { recipeId: string; scale: number | null };
+
 export type PlanData = {
   recipes: PlanRecipe[] | null;
   manualItems: ManualItem[] | null;
   groceryIngredients: string[] | null;
   pantryIngredients: string[] | null;
+  recipeScales: RecipeScale[] | null;
 };
