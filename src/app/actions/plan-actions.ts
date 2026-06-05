@@ -38,15 +38,14 @@ async function assertRecipe(recipeId: string) {
 
 export async function addToPlan(recipeId: string) {
   await requireEditor();
-  await assertRecipe(recipeId);
+  const id = safeId(recipeId);
+  await assertRecipe(id);
   const write = getWriteClient();
   await ensurePlan(write);
   await write
     .patch(PLAN_ID)
     .setIfMissing({ recipes: [] })
-    .append("recipes", [
-      { _key: recipeId, _type: "reference", _ref: recipeId },
-    ])
+    .append("recipes", [{ _key: id, _type: "reference", _ref: id }])
     .commit();
   revalidatePath("/plan");
   revalidatePath(`/recipe`, "layout");
