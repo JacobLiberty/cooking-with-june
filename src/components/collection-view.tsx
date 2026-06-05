@@ -66,8 +66,7 @@ export function CollectionView({
 
   const surprise = useCallback(() => {
     if (filtered.length === 0) return;
-    // index varies by list identity; deterministic-enough for a fun pick
-    const pick = filtered[Math.floor((Date.now() / 1000) % filtered.length)];
+    const pick = filtered[Math.floor(Math.random() * filtered.length)];
     router.push(`/recipe/${pick.slug}`);
   }, [filtered, router]);
 

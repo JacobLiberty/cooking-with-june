@@ -5,6 +5,8 @@ import {
   markMade,
   saveRecipe,
   addNote,
+  deleteRecipe,
+  unmarkMade,
 } from "@/app/actions/recipe-actions";
 
 vi.mock("@/lib/viewer", () => ({ requireEditor: vi.fn() }));
@@ -58,5 +60,22 @@ describe("recipe action guards", () => {
   it("addNote propagates the authorization error for non-editors", async () => {
     mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
     await expect(addNote("r1", "looks good")).rejects.toThrow("Not authorized");
+  });
+
+  it("deleteRecipe propagates the authorization error for non-editors", async () => {
+    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
+    await expect(deleteRecipe("r1")).rejects.toThrow("Not authorized");
+  });
+
+  it("deleteRecipe refuses a target that is not a recipe", async () => {
+    // client.fetch resolves null in this suite, so assertRecipe sees no recipe.
+    await expect(deleteRecipe("not-a-recipe")).rejects.toThrow(
+      "Target document is not a recipe",
+    );
+  });
+
+  it("unmarkMade propagates the authorization error for non-editors", async () => {
+    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
+    await expect(unmarkMade("r1")).rejects.toThrow("Not authorized");
   });
 });

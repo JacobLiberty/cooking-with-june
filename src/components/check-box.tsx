@@ -17,7 +17,7 @@ export function CheckBox({
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border transition-colors ${
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border transition-colors ${
         checked
           ? "border-terracotta bg-terracotta text-paper"
           : "border-ink/30 bg-paper hover:border-terracotta"
@@ -26,7 +26,7 @@ export function CheckBox({
       {checked ? (
         <svg
           viewBox="0 0 16 16"
-          className="h-3.5 w-3.5"
+          className="h-4 w-4"
           fill="none"
           stroke="currentColor"
           strokeWidth="2.5"

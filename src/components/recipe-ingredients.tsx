@@ -78,7 +78,7 @@ export function RecipeIngredients({
               onClick={() => setServings((s) => Math.max(1, s - 1))}
               disabled={servings <= 1}
               aria-label="Fewer servings"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-ink/25 text-ink hover:border-terracotta hover:text-terracotta disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/25 text-ink hover:border-terracotta hover:text-terracotta disabled:opacity-30"
             >
               −
             </button>
@@ -92,7 +92,7 @@ export function RecipeIngredients({
               type="button"
               onClick={() => setServings((s) => s + 1)}
               aria-label="More servings"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-ink/25 text-ink hover:border-terracotta hover:text-terracotta"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/25 text-ink hover:border-terracotta hover:text-terracotta"
             >
               +
             </button>

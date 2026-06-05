@@ -13,7 +13,9 @@ import { missingFromPantry, groceryAfterRecipeRemoval } from "@/lib/pantry";
 import { scaleQuantity } from "@/lib/scale";
 import { CheckBox } from "@/components/check-box";
 import { PlanRecipeRow } from "@/components/plan-recipe-row";
+import { useToast } from "@/components/toast";
 import {
+  addToPlan,
   removeFromPlan,
   checkGroceryIngredient,
   skipGroceryIngredient,
@@ -56,6 +58,7 @@ export function PlanView({
   const [newItem, setNewItem] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const toast = useToast();
 
   // id → display name, from the ingredient list plus any names carried on the
   // planned recipes (covers pantry items whose recipe is no longer planned).
@@ -145,6 +148,18 @@ export function PlanView({
         setGrocery(prevGrocery);
       },
     );
+    toast({
+      message: `Removed ${recipe.title}`,
+      actionLabel: "Undo",
+      onAction: () => {
+        setRecipes(prevRecipes);
+        setGrocery(prevGrocery);
+        act(
+          () => addToPlan(recipe._id),
+          () => setRecipes((rs) => rs.filter((r) => r._id !== recipe._id)),
+        );
+      },
+    });
   };
 
   // ── grocery / pantry handlers (optimistic Set/array updates) ───────────────
@@ -254,7 +269,7 @@ export function PlanView({
       </div>
 
       {error ? (
-        <p role="alert" className="mt-4 text-sm text-clay">
+        <p role="alert" className="mt-4 text-sm text-terracotta-deep">
           {error}
         </p>
       ) : null}
@@ -326,7 +341,7 @@ export function PlanView({
                       type="button"
                       onClick={() => onSkip(row)}
                       aria-label={`Skip ${row.name}`}
-                      className="kicker text-ink-soft hover:text-clay"
+                      className="kicker text-ink-soft hover:text-terracotta"
                     >
                       Skip
                     </button>
@@ -351,7 +366,7 @@ export function PlanView({
                 maxLength={120}
                 aria-label="Add a grocery item"
                 placeholder="Add an item…"
-                className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft/60 focus:border-terracotta"
+                className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft focus:border-terracotta"
               />
               <button
                 type="submit"
@@ -385,15 +400,15 @@ export function PlanView({
                       aria-label={`Add ${row.name} back to the grocery list`}
                       className="kicker text-ink-soft hover:text-terracotta"
                     >
-                      Out
+                      Need again
                     </button>
                     <button
                       type="button"
                       onClick={() => onUse(row)}
                       aria-label={`Remove ${row.name} from the pantry`}
-                      className="kicker text-ink-soft hover:text-clay"
+                      className="kicker text-ink-soft hover:text-terracotta"
                     >
-                      Remove
+                      Used up
                     </button>
                   </m.li>
                 ))}

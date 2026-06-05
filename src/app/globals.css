@@ -20,6 +20,10 @@
   /* Tertiary (rare, supporting) */
   --color-ochre: #d99a32;
 
+  /* Star fill — a deep amber tuned for AA on paper (4.7:1); the bright ochre
+     above failed contrast (2.2:1) as the carrier of rating info. */
+  --color-star: #9c5f12;
+
   /* Type — Libre Caslon Display headings, Newsreader body (vars set by next/font) */
   --font-display: var(--font-caslon), Georgia, "Times New Roman", serif;
   --font-body: var(--font-newsreader), Georgia, "Times New Roman", serif;

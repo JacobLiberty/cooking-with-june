@@ -7,7 +7,7 @@ export function AuthControls() {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
-    return <span className="kicker text-ink-soft/50">···</span>;
+    return <span className="kicker text-ink-soft">···</span>;
   }
 
   if (session?.user) {
@@ -22,7 +22,9 @@ export function AuthControls() {
           </Link>
         ) : null}
         {session.user.name ? (
-          <span className="kicker text-ink-soft">{session.user.name}</span>
+          <span className="kicker hidden text-ink-soft sm:inline">
+            {session.user.name}
+          </span>
         ) : null}
         <button
           type="button"

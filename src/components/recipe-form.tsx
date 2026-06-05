@@ -57,7 +57,7 @@ export function RecipeForm({
 
   return (
     <form action={onSubmit} className="space-y-8">
-      {error ? <p className="text-clay">{error}</p> : null}
+      {error ? <p className="text-terracotta-deep">{error}</p> : null}
 
       <label className="block">
         <span className={labelCls}>Title</span>

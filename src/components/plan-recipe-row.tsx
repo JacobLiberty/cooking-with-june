@@ -33,7 +33,11 @@ export function PlanRecipeRow({
         href={`/recipe/${recipe.slug}`}
         className="h-36 shrink-0 overflow-hidden sm:h-auto sm:w-52"
       >
-        <RecipeCover image={recipe.coverImage} title={recipe.title} />
+        <RecipeCover
+          image={recipe.coverImage}
+          title={recipe.title}
+          sizes="(min-width: 640px) 13rem, 100vw"
+        />
       </Link>
 
       <div className="flex flex-1 flex-col justify-center gap-2 p-5">
