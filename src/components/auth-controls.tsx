@@ -22,7 +22,9 @@ export function AuthControls() {
           </Link>
         ) : null}
         {session.user.name ? (
-          <span className="kicker text-ink-soft">{session.user.name}</span>
+          <span className="kicker hidden text-ink-soft sm:inline">
+            {session.user.name}
+          </span>
         ) : null}
         <button
           type="button"

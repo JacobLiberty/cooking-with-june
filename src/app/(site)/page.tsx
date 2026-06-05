@@ -37,17 +37,17 @@ export default async function HomePage() {
     <section>
       <header className="set set-1">
         <p className="kicker text-terracotta">The collection</p>
-        <h1 className="editorial-display mt-2 text-5xl text-ink md:text-7xl">
+        <h1 className="editorial-display mt-2 text-4xl text-ink sm:text-5xl md:text-7xl">
           Cooking with June
         </h1>
-        <p className="editorial-aside mt-3 max-w-xl text-xl text-ink-soft">
+        <p className="editorial-aside mt-3 max-w-xl text-lg text-ink-soft sm:text-xl">
           Recipes worth making twice — maintained by Jacob &amp; Lily,
           supervised by June.
         </p>
         <div className="relative mt-5">
           <JuneArt
             pose="peek"
-            className="pointer-events-none absolute bottom-0 right-2 h-16 w-auto sm:right-8 sm:h-20"
+            className="pointer-events-none absolute bottom-0 right-2 h-12 w-auto sm:right-8 sm:h-20"
             priority
           />
           <div className="rule-draw h-px w-full bg-terracotta/40" />
