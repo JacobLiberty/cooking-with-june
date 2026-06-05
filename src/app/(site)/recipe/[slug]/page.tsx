@@ -14,6 +14,8 @@ import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 import { RecipeIngredients } from "@/components/recipe-ingredients";
 import { coverTransitionName } from "@/lib/view-transition";
+import { urlForImage } from "@/sanity/lib/image";
+import { SITE_URL } from "@/lib/site";
 import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
@@ -41,10 +43,21 @@ export async function generateMetadata({
   const recipe = await client.fetch<RecipeDetailData | null>(RECIPE_QUERY, {
     slug,
   });
-  if (!recipe) return { title: "Recipe not found · Cooking with June" };
+  if (!recipe) return { title: "Recipe not found" };
+  const cover = recipe.images?.[0]
+    ? urlForImage(recipe.images[0]).width(1200).height(630).fit("crop").url()
+    : undefined;
   return {
-    title: `${recipe.title} · Cooking with June`,
+    title: recipe.title,
     description: recipe.description,
+    openGraph: {
+      type: "article",
+      title: recipe.title,
+      description: recipe.description,
+      url: `${SITE_URL}/recipe/${slug}`,
+      ...(cover ? { images: [{ url: cover, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: cover ? { card: "summary_large_image", images: [cover] } : undefined,
   };
 }
 
