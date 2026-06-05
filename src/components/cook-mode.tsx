@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cookProgress } from "@/lib/cook-progress";
+import { parseStepTimers, ingredientsInStep } from "@/lib/cook-extras";
 import { useWakeLock } from "@/lib/use-wake-lock";
 import { PawMark } from "@/components/paw-mark";
+import { StepTimer } from "@/components/step-timer";
 import type { IngredientLineView } from "@/sanity/types";
 
 export function CookMode({
@@ -20,8 +22,22 @@ export function CookMode({
 }) {
   useWakeLock(true);
   const [index, setIndex] = useState(0);
+  const [done, setDone] = useState<Set<number>>(new Set());
   const [showIngredients, setShowIngredients] = useState(false);
   const p = cookProgress(index, steps.length);
+
+  const currentText = steps[p.current] ?? "";
+  const timers = parseStepTimers(currentText);
+  const stepIngredients = ingredientsInStep(
+    currentText,
+    ingredients.map((l) => l.name),
+  );
+
+  const markDone = () => setDone((d) => new Set(d).add(p.current));
+  const next = () => {
+    markDone();
+    setIndex((i) => Math.min(i + 1, steps.length - 1));
+  };
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-2xl flex-col">
@@ -53,13 +69,27 @@ export function CookMode({
         </ul>
       ) : null}
 
-      {/* pawprint progress */}
-      <div className="mt-8 flex items-center gap-2" aria-hidden>
+      {/* pawprint progress — tap to jump to a step */}
+      <div className="mt-8 flex flex-wrap items-center gap-2">
         {steps.map((_, i) => (
-          <PawMark
+          <button
             key={i}
-            className={`h-4 w-4 ${i <= p.current ? "text-clay" : "text-ink/20"}`}
-          />
+            type="button"
+            onClick={() => setIndex(i)}
+            aria-label={`Go to step ${i + 1}`}
+            aria-current={i === p.current ? "step" : undefined}
+            className="p-1"
+          >
+            <PawMark
+              className={`h-4 w-4 ${
+                done.has(i) || i < p.current
+                  ? "text-clay"
+                  : i === p.current
+                    ? "text-terracotta"
+                    : "text-ink/20"
+              }`}
+            />
+          </button>
         ))}
       </div>
 
@@ -70,33 +100,56 @@ export function CookMode({
         <p className="mt-3 text-3xl leading-snug text-ink md:text-5xl">
           {steps[p.current] ?? "No steps yet."}
         </p>
+
+        {stepIngredients.length > 0 ? (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {stepIngredients.map((name) => (
+              <span
+                key={name}
+                className="kicker rounded-full bg-paper-sunk px-2.5 py-1 text-ink-soft"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {timers.length > 0 ? (
+          <div className="mt-5 flex flex-wrap gap-3">
+            {timers.map((t) => (
+              <StepTimer key={t.seconds} timer={t} />
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-8 flex items-center justify-between border-t border-terracotta/25 pt-4">
+      <div className="mt-8 flex items-center justify-between gap-4 border-t border-terracotta/25 pt-4">
         <button
           type="button"
           onClick={() => setIndex((i) => Math.max(i - 1, 0))}
           disabled={p.current === 0}
           aria-label="Back"
-          className="kicker text-ink-soft hover:text-terracotta disabled:opacity-30"
+          className="kicker flex min-h-12 items-center px-4 text-ink-soft hover:text-terracotta disabled:opacity-30"
         >
-          ← Back
+          <span aria-hidden>←</span> Back
         </button>
         {p.isLast ? (
           <Link
             href={`/recipe/${slug}`}
-            className="kicker border border-clay px-4 py-2 text-clay hover:bg-clay-wash"
+            onClick={markDone}
+            aria-label="Done"
+            className="kicker flex min-h-12 items-center rounded-full border border-clay bg-clay-wash px-6 text-clay hover:bg-clay hover:text-paper"
           >
-            Done
+            Done <span aria-hidden>✓</span>
           </Link>
         ) : (
           <button
             type="button"
-            onClick={() => setIndex((i) => Math.min(i + 1, steps.length - 1))}
+            onClick={next}
             aria-label="Next"
-            className="kicker border border-terracotta px-4 py-2 text-terracotta hover:bg-terracotta-wash"
+            className="kicker flex min-h-12 items-center rounded-full border border-terracotta bg-terracotta-wash px-6 text-terracotta hover:bg-terracotta hover:text-paper"
           >
-            Next →
+            Next <span aria-hidden>→</span>
           </button>
         )}
       </div>
