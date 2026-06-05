@@ -2,13 +2,24 @@
 
 import { useState } from "react";
 import type { IngredientOption, TagOption } from "@/sanity/types";
-import type { RecipeFilters, SortKey, FilterMode } from "@/lib/recipe-filter";
+import type {
+  RecipeFilters,
+  SortKey,
+  FilterMode,
+  CollectionKey,
+} from "@/lib/recipe-filter";
 
 const SORT_LABELS: Record<SortKey, string> = {
   name: "Name",
   rating: "Rating",
   newest: "Newest",
 };
+
+const COLLECTIONS: { key: CollectionKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "totry", label: "To try" },
+  { key: "approved", label: "June approved" },
+];
 
 const TAG_LIMIT = 8;
 const ING_LIMIT = 12;
@@ -43,6 +54,31 @@ export function FilterControls({
 
   return (
     <div className="space-y-6">
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Collection"
+      >
+        {COLLECTIONS.map((c) => {
+          const active = filters.collection === c.key;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange({ ...filters, collection: c.key })}
+              className={`kicker rounded-full border px-3.5 py-1.5 transition-colors ${
+                active
+                  ? "border-terracotta bg-terracotta text-paper"
+                  : "border-ink/20 text-ink-soft hover:border-terracotta hover:text-terracotta"
+              }`}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-wrap items-end justify-between gap-6">
         <label className="min-w-0 flex-1">
           <span className="kicker block text-ink-soft">Search</span>

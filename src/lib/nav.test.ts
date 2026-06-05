@@ -4,11 +4,11 @@ import { isActivePath } from "@/lib/nav";
 describe("isActivePath", () => {
   it("marks root active only on the exact root path", () => {
     expect(isActivePath("/", "/")).toBe(true);
-    expect(isActivePath("/about", "/")).toBe(false);
+    expect(isActivePath("/plan", "/")).toBe(false);
   });
 
   it("marks a section active on an exact match", () => {
-    expect(isActivePath("/about", "/about")).toBe(true);
+    expect(isActivePath("/plan", "/plan")).toBe(true);
   });
 
   it("marks a section active on nested sub-paths", () => {
@@ -16,7 +16,7 @@ describe("isActivePath", () => {
   });
 
   it("does not match unrelated paths or partial prefixes", () => {
-    expect(isActivePath("/about-us", "/about")).toBe(false);
-    expect(isActivePath("/contact", "/about")).toBe(false);
+    expect(isActivePath("/planner", "/plan")).toBe(false);
+    expect(isActivePath("/recipe", "/plan")).toBe(false);
   });
 });

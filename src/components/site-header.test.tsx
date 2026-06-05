@@ -19,7 +19,6 @@ describe("SiteHeader", () => {
     render(<SiteHeader />);
     expect(screen.getByText("Cooking with June")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "About" })).toBeInTheDocument();
   });
 
   it("marks the current route's link as active", () => {
@@ -27,9 +26,6 @@ describe("SiteHeader", () => {
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
       "aria-current",
       "page",
-    );
-    expect(screen.getByRole("link", { name: "About" })).not.toHaveAttribute(
-      "aria-current",
     );
   });
 });

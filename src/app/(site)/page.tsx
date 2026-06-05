@@ -29,9 +29,13 @@ export default async function HomePage() {
     <section>
       <header className="set set-1">
         <p className="kicker text-terracotta">The collection</p>
-        <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
+        <h1 className="editorial-display mt-2 text-5xl text-ink md:text-7xl">
           Cooking with June
         </h1>
+        <p className="editorial-aside mt-3 max-w-xl text-xl text-ink-soft">
+          Recipes worth making twice — kept by Jacob &amp; Lily, supervised by
+          June.
+        </p>
         <div className="relative mt-5">
           <JuneArt
             pose="peek"

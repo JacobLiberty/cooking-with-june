@@ -5,7 +5,6 @@ export type NavItem = {
 
 export const navItems: NavItem[] = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
 ];
 
 export function isActivePath(pathname: string, href: string): boolean {

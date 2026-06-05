@@ -15,10 +15,12 @@ export function RecipeCover({
   if (!image) {
     return (
       <div
-        className={`flex h-full flex-col items-center justify-center gap-2 bg-paper-sunk px-4 text-center ${className ?? ""}`}
+        className={`flex h-full flex-col items-center justify-center gap-3 bg-linear-to-br from-terracotta-wash via-paper-sunk to-clay-wash px-5 text-center ${className ?? ""}`}
       >
-        <PawMark className="h-5 w-5 text-clay/70" />
-        <span className="editorial-display text-xl text-ink/70">{title}</span>
+        <PawMark className="h-6 w-6 text-clay/60" />
+        <span className="editorial-display text-2xl leading-tight text-terracotta/80">
+          {title}
+        </span>
       </div>
     );
   }
