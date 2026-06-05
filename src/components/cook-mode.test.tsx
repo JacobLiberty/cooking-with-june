@@ -5,7 +5,7 @@ import { CookMode } from "@/components/cook-mode";
 
 vi.mock("@/lib/use-wake-lock", () => ({ useWakeLock: () => {} }));
 
-const steps = ["Chop the onion.", "Brown the beef.", "Simmer and serve."];
+const steps = ["Chop the onion.", "Brown the beef.", "Simmer 20 minutes and serve."];
 
 describe("CookMode", () => {
   it("starts on step 1 and advances with Next", async () => {
@@ -48,11 +48,32 @@ describe("CookMode", () => {
         title="Ragù"
         slug="ragu"
         steps={steps}
+        // "salt" isn't named in any step, so it only appears via the peek
+        ingredients={[{ _key: "i1", name: "salt", quantity: "1", unit: "tsp" }]}
+      />,
+    );
+    expect(screen.queryByText("salt")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ingredients" }));
+    expect(screen.getByText("salt")).toBeInTheDocument();
+  });
+
+  it("surfaces a step's ingredients and a tappable timer", async () => {
+    const user = userEvent.setup();
+    render(
+      <CookMode
+        title="Ragù"
+        slug="ragu"
+        steps={steps}
         ingredients={[{ _key: "i1", name: "onion", quantity: "1", unit: "" }]}
       />,
     );
-    expect(screen.queryByText("onion")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Ingredients" }));
+    // step 1 mentions the onion → shown as a chip without opening the peek
     expect(screen.getByText("onion")).toBeInTheDocument();
+    // advance to the step with "20 minutes" → a timer button appears
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(
+      screen.getByRole("button", { name: /Start 20 min timer/ }),
+    ).toBeInTheDocument();
   });
 });
