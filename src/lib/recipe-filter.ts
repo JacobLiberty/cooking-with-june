@@ -1,16 +1,28 @@
 import type { RecipeCardData } from "@/sanity/types";
 import { averageRating } from "@/lib/rating";
+import { isJuneApproved } from "@/lib/june-approved";
 
 export type SortKey = "name" | "rating" | "newest";
 export type FilterMode = "any" | "all";
+export type CollectionKey = "all" | "totry" | "approved";
 
 export type RecipeFilters = {
   query: string;
   ingredientIds: string[];
   mode: FilterMode;
   tags: string[];
+  collection: CollectionKey;
   sort: SortKey;
 };
+
+export function matchesCollection(
+  recipe: RecipeCardData,
+  collection: CollectionKey,
+): boolean {
+  if (collection === "totry") return Boolean(recipe.wishlist);
+  if (collection === "approved") return isJuneApproved(recipe.ratings);
+  return true;
+}
 
 export function matchesQuery(recipe: RecipeCardData, query: string): boolean {
   const q = query.trim().toLowerCase();
@@ -57,7 +69,8 @@ export function applyRecipeFilters(
       (r) =>
         matchesQuery(r, filters.query) &&
         matchesIngredients(r, filters.ingredientIds, filters.mode) &&
-        matchesTags(r, filters.tags),
+        matchesTags(r, filters.tags) &&
+        matchesCollection(r, filters.collection),
     )
     .sort((a, b) => compare(a, b, filters.sort));
 }

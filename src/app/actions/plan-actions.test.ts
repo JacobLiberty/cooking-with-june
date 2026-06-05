@@ -3,12 +3,13 @@ import { requireEditor } from "@/lib/viewer";
 import {
   addToPlan,
   removeFromPlan,
-  toggleIngredientGot,
-  skipIngredient,
-  unskipIngredient,
+  checkGroceryIngredient,
+  skipGroceryIngredient,
+  removePantryIngredient,
+  movePantryIngredientToGrocery,
   addManualItem,
-  toggleManualItem,
-  deleteManualItem,
+  setManualLocation,
+  removeManualItem,
 } from "@/app/actions/plan-actions";
 
 const chain: Record<string, unknown> = {};
@@ -48,22 +49,30 @@ describe("plan action guards", () => {
     });
   });
 
+  it("rejects an invalid manual-item location", async () => {
+    await expect(
+      // @ts-expect-error — exercising the runtime guard with a bad value
+      setManualLocation("k1", "freezer"),
+    ).rejects.toThrow("Invalid location");
+  });
+
   it("propagates the authorization error for non-editors", async () => {
     mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
     await expect(addToPlan("r1")).rejects.toThrow("Not authorized");
-    await expect(toggleIngredientGot("i1")).rejects.toThrow("Not authorized");
-    await expect(skipIngredient("i1")).rejects.toThrow("Not authorized");
+    await expect(checkGroceryIngredient("i1")).rejects.toThrow("Not authorized");
+    await expect(skipGroceryIngredient("i1")).rejects.toThrow("Not authorized");
     await expect(addManualItem("milk", "k1")).rejects.toThrow("Not authorized");
   });
 
   it("rejects ids that could inject into a patch path", async () => {
     const evil = 'x" || true || "';
     await expect(removeFromPlan(evil)).rejects.toThrow("Invalid id");
-    await expect(toggleManualItem(evil)).rejects.toThrow("Invalid id");
-    await expect(deleteManualItem(evil)).rejects.toThrow("Invalid id");
-    await expect(toggleIngredientGot(evil)).rejects.toThrow("Invalid id");
-    await expect(skipIngredient(evil)).rejects.toThrow("Invalid id");
-    await expect(unskipIngredient(evil)).rejects.toThrow("Invalid id");
+    await expect(checkGroceryIngredient(evil)).rejects.toThrow("Invalid id");
+    await expect(skipGroceryIngredient(evil)).rejects.toThrow("Invalid id");
+    await expect(removePantryIngredient(evil)).rejects.toThrow("Invalid id");
+    await expect(movePantryIngredientToGrocery(evil)).rejects.toThrow("Invalid id");
+    await expect(setManualLocation(evil, "pantry")).rejects.toThrow("Invalid id");
+    await expect(removeManualItem(evil)).rejects.toThrow("Invalid id");
     await expect(addManualItem("milk", evil)).rejects.toThrow("Invalid id");
   });
 });

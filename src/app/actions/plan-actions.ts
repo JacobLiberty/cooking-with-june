@@ -4,13 +4,15 @@ import { revalidatePath } from "next/cache";
 import { getWriteClient } from "@/sanity/lib/write-client";
 import { client } from "@/sanity/lib/client";
 import { requireEditor } from "@/lib/viewer";
+import { groceryAfterRecipeRemoval, ingredientsToSeed } from "@/lib/pantry";
+import type { ManualLocation } from "@/sanity/plan-types";
 
 const PLAN_ID = "mealPlan";
 const reader = () => client.withConfig({ useCdn: false });
 
-// Sanity document ids and our `crypto.randomUUID()` keys only ever contain these
-// characters. Validate before interpolating into a patch-path string so a crafted
-// id/key can't inject GROQ into the path (e.g. break out of the `==` filter).
+// Sanity document ids and our `crypto.randomUUID()` keys only ever contain
+// these characters. Validate before interpolating into a patch-path string so a
+// crafted id/key can't inject GROQ into the path.
 function safeId(id: string): string {
   if (typeof id !== "string" || !/^[A-Za-z0-9._-]+$/.test(id)) {
     throw new Error("Invalid id");
@@ -24,7 +26,8 @@ async function ensurePlan(write: ReturnType<typeof getWriteClient>) {
     _type: "mealPlan",
     recipes: [],
     manualItems: [],
-    checkedIngredients: [],
+    groceryIngredients: [],
+    pantryIngredients: [],
   });
 }
 
@@ -36,10 +39,43 @@ async function assertRecipe(recipeId: string) {
   if (doc?._type !== "recipe") throw new Error("Target is not a recipe");
 }
 
+async function recipeIngredientIds(recipeId: string): Promise<string[]> {
+  const ids = await reader().fetch<string[] | null>(
+    `*[_id == $id][0].ingredients[].ingredient._ref`,
+    { id: recipeId },
+  );
+  return (ids ?? []).filter(Boolean);
+}
+
+/** Read the two id-lists, mutate them in-memory, write both back. */
+async function patchLists(
+  mutate: (grocery: Set<string>, pantry: Set<string>) => void,
+) {
+  const write = getWriteClient();
+  await ensurePlan(write);
+  const plan = await reader().fetch<{
+    grocery: string[] | null;
+    pantry: string[] | null;
+  } | null>(
+    `*[_id == $id][0]{ "grocery": groceryIngredients, "pantry": pantryIngredients }`,
+    { id: PLAN_ID },
+  );
+  const grocery = new Set(plan?.grocery ?? []);
+  const pantry = new Set(plan?.pantry ?? []);
+  mutate(grocery, pantry);
+  await write
+    .patch(PLAN_ID)
+    .set({ groceryIngredients: [...grocery], pantryIngredients: [...pantry] })
+    .commit();
+}
+
+// ── Recipes ───────────────────────────────────────────────────────────────
+
 export async function addToPlan(recipeId: string) {
   await requireEditor();
   const id = safeId(recipeId);
   await assertRecipe(id);
+  const ingredientIds = await recipeIngredientIds(id);
   const write = getWriteClient();
   await ensurePlan(write);
   await write
@@ -47,6 +83,13 @@ export async function addToPlan(recipeId: string) {
     .setIfMissing({ recipes: [] })
     .append("recipes", [{ _key: id, _type: "reference", _ref: id }])
     .commit();
+  // Seed the grocery list with this recipe's ingredients (skip ones we already
+  // have on the list or in the pantry).
+  await patchLists((grocery, pantry) => {
+    for (const ing of ingredientsToSeed(ingredientIds, grocery, pantry)) {
+      grocery.add(ing);
+    }
+  });
   revalidatePath("/plan");
   revalidatePath(`/recipe`, "layout");
 }
@@ -54,112 +97,93 @@ export async function addToPlan(recipeId: string) {
 export async function removeFromPlan(recipeId: string) {
   await requireEditor();
   const id = safeId(recipeId);
+  const removedIds = await recipeIngredientIds(id);
   const write = getWriteClient();
   await write
     .patch(PLAN_ID)
     .unset([`recipes[_ref=="${id}"]`])
     .commit();
-  // Prune any checked/skipped ids no longer produced by a remaining recipe so
-  // they don't reappear pre-checked if the same ingredient returns later.
-  const plan = await reader().fetch<{
-    live: string[] | null;
-    checked: string[] | null;
-    removed: string[] | null;
-  } | null>(
-    `*[_id == $id][0]{
-      "live": recipes[]->ingredients[].ingredient._ref,
-      "checked": checkedIngredients,
-      "removed": removedIngredients
-    }`,
+  // Drop this recipe's grocery items, keeping any a still-planned recipe needs.
+  // The pantry is untouched.
+  const remaining = await reader().fetch<string[] | null>(
+    `*[_id == $id][0].recipes[]->ingredients[].ingredient._ref`,
     { id: PLAN_ID },
   );
-  const live = new Set(plan?.live ?? []);
-  await write
-    .patch(PLAN_ID)
-    .set({
-      checkedIngredients: (plan?.checked ?? []).filter((x) => live.has(x)),
-      removedIngredients: (plan?.removed ?? []).filter((x) => live.has(x)),
-    })
-    .commit();
+  await patchLists((grocery) => {
+    const next = groceryAfterRecipeRemoval(
+      [...grocery],
+      removedIds,
+      remaining ?? [],
+    );
+    grocery.clear();
+    for (const x of next) grocery.add(x);
+  });
   revalidatePath("/plan");
   revalidatePath(`/recipe`, "layout");
 }
 
-export async function toggleIngredientGot(ingredientId: string) {
+/** Re-seed the grocery list from every planned recipe (manual refresh). */
+export async function syncGroceryFromRecipes() {
   await requireEditor();
-  const id = safeId(ingredientId);
-  const write = getWriteClient();
-  await ensurePlan(write);
-  const plan = await reader().fetch<{
-    checked: string[] | null;
-    removed: string[] | null;
-  } | null>(
-    `*[_id == $id][0]{ "checked": checkedIngredients, "removed": removedIngredients }`,
+  const ids = await reader().fetch<string[] | null>(
+    `*[_id == $id][0].recipes[]->ingredients[].ingredient._ref`,
     { id: PLAN_ID },
   );
-  const checked = new Set(plan?.checked ?? []);
-  const removed = new Set(plan?.removed ?? []);
-  if (checked.has(id)) {
-    checked.delete(id);
-  } else {
-    checked.add(id);
-    removed.delete(id); // got and not-getting are mutually exclusive
-  }
-  await write
-    .patch(PLAN_ID)
-    .set({ checkedIngredients: [...checked], removedIngredients: [...removed] })
-    .commit();
+  await patchLists((grocery, pantry) => {
+    for (const ing of ingredientsToSeed(ids ?? [], grocery, pantry)) {
+      grocery.add(ing);
+    }
+  });
   revalidatePath("/plan");
 }
 
-async function setMembership(
-  field: "checkedIngredients" | "removedIngredients",
-  id: string,
-  present: boolean,
-) {
-  const write = getWriteClient();
-  await ensurePlan(write);
-  const current = await reader().fetch<string[] | null>(
-    `*[_id == $id][0][$field]`,
-    { id: PLAN_ID, field },
-  );
-  const set = new Set(current ?? []);
-  if (present) set.add(id);
-  else set.delete(id);
-  await write.patch(PLAN_ID).set({ [field]: [...set] }).commit();
-}
+// ── Grocery list (auto ingredients) ─────────────────────────────────────────
 
-/** Skip an auto ingredient ("not getting it") — hide from the to-get list.
- *  Also clears any "got" flag so the two states stay mutually exclusive. */
-export async function skipIngredient(ingredientId: string) {
+/** Check off → move from the grocery list into the pantry. */
+export async function checkGroceryIngredient(ingredientId: string) {
   await requireEditor();
   const id = safeId(ingredientId);
-  const write = getWriteClient();
-  await ensurePlan(write);
-  const plan = await reader().fetch<{
-    checked: string[] | null;
-    removed: string[] | null;
-  } | null>(
-    `*[_id == $id][0]{ "checked": checkedIngredients, "removed": removedIngredients }`,
-    { id: PLAN_ID },
-  );
-  const checked = new Set(plan?.checked ?? []);
-  const removed = new Set(plan?.removed ?? []);
-  checked.delete(id);
-  removed.add(id);
-  await write
-    .patch(PLAN_ID)
-    .set({ checkedIngredients: [...checked], removedIngredients: [...removed] })
-    .commit();
+  await patchLists((grocery, pantry) => {
+    grocery.delete(id);
+    pantry.add(id);
+  });
   revalidatePath("/plan");
 }
 
-/** Restore a previously-skipped ingredient back to the to-get list. */
-export async function unskipIngredient(ingredientId: string) {
+/** Skip → remove from the grocery list (pantry untouched). */
+export async function skipGroceryIngredient(ingredientId: string) {
   await requireEditor();
-  await setMembership("removedIngredients", safeId(ingredientId), false);
+  const id = safeId(ingredientId);
+  await patchLists((grocery) => {
+    grocery.delete(id);
+  });
   revalidatePath("/plan");
 }
+
+// ── Pantry (auto ingredients) ───────────────────────────────────────────────
+
+/** Used it up — remove from the pantry entirely. */
+export async function removePantryIngredient(ingredientId: string) {
+  await requireEditor();
+  const id = safeId(ingredientId);
+  await patchLists((_grocery, pantry) => {
+    pantry.delete(id);
+  });
+  revalidatePath("/plan");
+}
+
+/** Out of it — move from the pantry back onto the grocery list. */
+export async function movePantryIngredientToGrocery(ingredientId: string) {
+  await requireEditor();
+  const id = safeId(ingredientId);
+  await patchLists((grocery, pantry) => {
+    pantry.delete(id);
+    grocery.add(id);
+  });
+  revalidatePath("/plan");
+}
+
+// ── Manual items ────────────────────────────────────────────────────────────
 
 export async function addManualItem(name: string, key: string) {
   await requireEditor();
@@ -173,64 +197,31 @@ export async function addManualItem(name: string, key: string) {
     .patch(PLAN_ID)
     .setIfMissing({ manualItems: [] })
     .append("manualItems", [
-      { _key: k, _type: "manualGroceryItem", name: clean, gotIt: false },
+      { _key: k, _type: "manualGroceryItem", name: clean, location: "grocery" },
     ])
     .commit();
   revalidatePath("/plan");
   return { ok: true };
 }
 
-export async function toggleManualItem(key: string) {
+export async function setManualLocation(key: string, location: ManualLocation) {
   await requireEditor();
   const k = safeId(key);
+  if (location !== "grocery" && location !== "pantry") {
+    throw new Error("Invalid location");
+  }
   const write = getWriteClient();
-  const got = await reader().fetch<boolean | null>(
-    `*[_id == $id][0].manualItems[_key == $key][0].gotIt`,
-    { id: PLAN_ID, key: k },
-  );
   await write
     .patch(PLAN_ID)
-    .set({ [`manualItems[_key=="${k}"].gotIt`]: !got })
+    .set({ [`manualItems[_key=="${k}"].location`]: location })
     .commit();
   revalidatePath("/plan");
 }
 
-export async function deleteManualItem(key: string) {
+export async function removeManualItem(key: string) {
   await requireEditor();
   const k = safeId(key);
   const write = getWriteClient();
   await write.patch(PLAN_ID).unset([`manualItems[_key=="${k}"]`]).commit();
-  revalidatePath("/plan");
-}
-
-export async function setAllGot(got: boolean) {
-  await requireEditor();
-  const write = getWriteClient();
-  await ensurePlan(write);
-  const plan = await reader().fetch<{
-    ingredientIds: string[] | null;
-    manualKeys: string[] | null;
-    removed: string[] | null;
-  } | null>(
-    `*[_id == $id][0]{
-      "ingredientIds": recipes[]->ingredients[].ingredient._ref,
-      "manualKeys": manualItems[]._key,
-      "removed": removedIngredients
-    }`,
-    { id: PLAN_ID },
-  );
-  // Mark everything got EXCEPT ingredients the user chose to skip — mirrors the
-  // UI's "to-get" set so server truth doesn't disagree with the optimistic view.
-  const removed = new Set(plan?.removed ?? []);
-  const patch = write.patch(PLAN_ID).set({
-    checkedIngredients: got
-      ? [...new Set(plan?.ingredientIds ?? [])].filter((id) => !removed.has(id))
-      : [],
-  });
-  for (const key of plan?.manualKeys ?? []) {
-    if (!/^[A-Za-z0-9._-]+$/.test(key)) continue; // defense-in-depth on stored keys
-    patch.set({ [`manualItems[_key=="${key}"].gotIt`]: got });
-  }
-  await patch.commit();
   revalidatePath("/plan");
 }

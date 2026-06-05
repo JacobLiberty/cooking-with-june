@@ -7,6 +7,9 @@ export const PLAN_QUERY = defineQuery(`
       title,
       "slug": slug.current,
       "coverImage": images[0],
+      prepTime,
+      cookTime,
+      servings,
       "ingredients": ingredients[]{
         "ingredientId": ingredient._ref,
         "name": ingredient->name,
@@ -14,9 +17,9 @@ export const PLAN_QUERY = defineQuery(`
         unit
       }
     },
-    manualItems[]{ _key, name, gotIt },
-    checkedIngredients,
-    removedIngredients
+    manualItems[]{ _key, name, location },
+    groceryIngredients,
+    pantryIngredients
   }
 `);
 

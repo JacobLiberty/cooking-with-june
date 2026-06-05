@@ -5,5 +5,8 @@ export const client = createClient({
   projectId,
   dataset,
   apiVersion,
-  useCdn: true, // public dataset — cached CDN reads
+  // Fresh reads (not the cached CDN edge) so edits, notes, and ratings show
+  // up immediately after a write. This is a low-traffic personal app, so the
+  // CDN's caching isn't worth the staleness it caused.
+  useCdn: false,
 });

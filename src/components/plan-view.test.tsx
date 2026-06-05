@@ -5,80 +5,117 @@ import { PlanView } from "@/components/plan-view";
 import type { PlanRecipe } from "@/sanity/plan-types";
 
 const actions = vi.hoisted(() => ({
-  toggleIngredientGot: vi.fn(),
-  skipIngredient: vi.fn(),
-  unskipIngredient: vi.fn(),
   removeFromPlan: vi.fn(),
+  checkGroceryIngredient: vi.fn(),
+  skipGroceryIngredient: vi.fn(),
+  removePantryIngredient: vi.fn(),
+  movePantryIngredientToGrocery: vi.fn(),
   addManualItem: vi.fn(),
-  toggleManualItem: vi.fn(),
-  deleteManualItem: vi.fn(),
-  setAllGot: vi.fn(),
+  setManualLocation: vi.fn(),
+  removeManualItem: vi.fn(),
 }));
 vi.mock("@/app/actions/plan-actions", () => actions);
+
+// PlanRecipeRow → RecipeCover imports the image builder, which pulls in the
+// Sanity client/env. Stub it so the test doesn't need env vars.
+vi.mock("@/sanity/lib/image", () => ({
+  urlForImage: () => ({
+    width: () => ({ height: () => ({ fit: () => ({ auto: () => ({ url: () => "" }) }) }) }),
+  }),
+}));
 
 const recipes: PlanRecipe[] = [
   {
     _id: "r1",
-    title: "Soup",
-    slug: "soup",
+    title: "Onion Soup",
+    slug: "onion-soup",
     coverImage: null,
     ingredients: [{ ingredientId: "onion", name: "Onion", quantity: "1", unit: "" }],
   },
 ];
+const ingredients = [{ _id: "onion", name: "Onion" }];
+
+function renderPlan(overrides: Partial<Parameters<typeof PlanView>[0]> = {}) {
+  return render(
+    <PlanView
+      recipes={recipes}
+      manual={[]}
+      groceryIds={["onion"]}
+      pantryIds={[]}
+      ingredients={ingredients}
+      {...overrides}
+    />,
+  );
+}
 
 beforeEach(() => {
   Object.values(actions).forEach((fn) => fn.mockReset());
 });
 
-describe("PlanView optimistic UI", () => {
-  it("optimistically moves an item to 'Got it' and persists in the background", async () => {
-    actions.toggleIngredientGot.mockResolvedValue(undefined);
+describe("PlanView — recipes tab", () => {
+  it("shows a missing-ingredients badge based on the pantry", () => {
+    renderPlan();
+    expect(screen.getByText("Missing 1 ingredient")).toBeInTheDocument();
+  });
+
+  it("shows 'Have everything' when the pantry covers the recipe", () => {
+    renderPlan({ groceryIds: [], pantryIds: ["onion"] });
+    expect(screen.getByText("Have everything")).toBeInTheDocument();
+  });
+});
+
+describe("PlanView — groceries tab", () => {
+  it("checks an item off the grocery list into the pantry", async () => {
+    actions.checkGroceryIngredient.mockResolvedValue(undefined);
     const user = userEvent.setup();
-    render(
-      <PlanView recipes={recipes} checkedIds={[]} removedIds={[]} manual={[]} />,
-    );
+    renderPlan();
+
+    await user.click(screen.getByRole("tab", { name: "Groceries" }));
+    expect(screen.getByText("Onion")).toBeInTheDocument();
 
     await user.click(screen.getByRole("checkbox", { name: "Got Onion" }));
+    expect(actions.checkGroceryIngredient).toHaveBeenCalledWith("onion");
 
-    expect(actions.toggleIngredientGot).toHaveBeenCalledWith("onion");
-    // Now shown under "Got it" with an un-check affordance, no longer to-get.
-    await screen.findByRole("checkbox", { name: "Un-check Onion" });
+    // Onion leaves the grocery list (no checkbox) and gains a pantry "Out" action.
+    expect(
+      await screen.findByRole("button", {
+        name: "Add Onion back to the grocery list",
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("checkbox", { name: "Got Onion" }),
     ).not.toBeInTheDocument();
   });
 
-  it("rolls back and surfaces an error when the save fails", async () => {
-    actions.toggleIngredientGot.mockRejectedValue(new Error("nope"));
+  it("rolls back when the check fails", async () => {
+    actions.checkGroceryIngredient.mockRejectedValue(new Error("nope"));
     const user = userEvent.setup();
-    render(
-      <PlanView recipes={recipes} checkedIds={[]} removedIds={[]} manual={[]} />,
-    );
+    renderPlan();
 
+    await user.click(screen.getByRole("tab", { name: "Groceries" }));
     await user.click(screen.getByRole("checkbox", { name: "Got Onion" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't save/i);
-    // Reverted: the item is back in the to-get list, not in "Got it".
     expect(screen.getByRole("checkbox", { name: "Got Onion" })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("checkbox", { name: "Un-check Onion" }),
-    ).not.toBeInTheDocument();
   });
 
-  it("skips an item to 'Not getting' and can add it back", async () => {
-    actions.skipIngredient.mockResolvedValue(undefined);
-    actions.unskipIngredient.mockResolvedValue(undefined);
+  it("skips an item off the grocery list without touching the pantry", async () => {
+    actions.skipGroceryIngredient.mockResolvedValue(undefined);
     const user = userEvent.setup();
-    render(
-      <PlanView recipes={recipes} checkedIds={[]} removedIds={[]} manual={[]} />,
-    );
+    renderPlan();
 
+    await user.click(screen.getByRole("tab", { name: "Groceries" }));
     await user.click(screen.getByRole("button", { name: "Skip Onion" }));
-    expect(actions.skipIngredient).toHaveBeenCalledWith("onion");
-    expect(await screen.findByText("Not getting")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Add back" }));
-    expect(actions.unskipIngredient).toHaveBeenCalledWith("onion");
-    await screen.findByRole("checkbox", { name: "Got Onion" });
+    expect(actions.skipGroceryIngredient).toHaveBeenCalledWith("onion");
+    expect(
+      screen.queryByRole("checkbox", { name: "Got Onion" }),
+    ).not.toBeInTheDocument();
+    // not added to the pantry
+    expect(
+      screen.queryByRole("button", {
+        name: "Add Onion back to the grocery list",
+      }),
+    ).not.toBeInTheDocument();
   });
 });

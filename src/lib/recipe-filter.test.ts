@@ -3,6 +3,7 @@ import {
   matchesQuery,
   matchesIngredients,
   matchesTags,
+  matchesCollection,
   applyRecipeFilters,
   type RecipeFilters,
 } from "@/lib/recipe-filter";
@@ -26,6 +27,7 @@ const EMPTY: RecipeFilters = {
   ingredientIds: [],
   mode: "any",
   tags: [],
+  collection: "all",
   sort: "name",
 };
 
@@ -67,6 +69,30 @@ describe("matchesTags", () => {
     expect(matchesTags(r, [])).toBe(true);
     expect(matchesTags(r, ["Quick"])).toBe(true);
     expect(matchesTags(r, ["Dessert"])).toBe(false);
+  });
+});
+
+describe("matchesCollection", () => {
+  const approved = recipe({
+    ratings: [
+      { editor: "Jacob", value: 5 },
+      { editor: "Lily", value: 4.5 },
+    ],
+  });
+  const toTry = recipe({ wishlist: true, ratings: [] });
+  const plain = recipe({ ratings: [{ editor: "Jacob", value: 3 }] });
+
+  it("passes everything for 'all'", () => {
+    expect(matchesCollection(plain, "all")).toBe(true);
+    expect(matchesCollection(toTry, "all")).toBe(true);
+  });
+  it("'totry' keeps only wishlisted recipes", () => {
+    expect(matchesCollection(toTry, "totry")).toBe(true);
+    expect(matchesCollection(plain, "totry")).toBe(false);
+  });
+  it("'approved' keeps only June-approved recipes", () => {
+    expect(matchesCollection(approved, "approved")).toBe(true);
+    expect(matchesCollection(plain, "approved")).toBe(false);
   });
 });
 

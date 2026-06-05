@@ -9,6 +9,7 @@ import {
 import { PLAN_RECIPE_IDS_QUERY } from "@/sanity/lib/plan-queries";
 import type { RecipeDetailData } from "@/sanity/types";
 import { totalTime } from "@/lib/format";
+import { averageRating } from "@/lib/rating";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 import { JuneArt } from "@/components/june";
@@ -69,6 +70,8 @@ export default async function RecipePage({
   const meta = [time, recipe.servings ? `serves ${recipe.servings}` : null]
     .filter(Boolean)
     .join(" · ");
+  const avg = averageRating(recipe.ratings);
+  const ratingCount = recipe.ratings?.length ?? 0;
 
   return (
     <article className="mx-auto max-w-3xl">
@@ -77,7 +80,20 @@ export default async function RecipePage({
         <h1 className="editorial-display mt-2 text-5xl text-ink md:text-6xl">
           {recipe.title}
         </h1>
-        {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge className="mt-1" /> : null}
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {avg != null ? (
+            <span className="flex items-center gap-2">
+              <StarRating value={avg} />
+              <span className="kicker text-ink-soft">
+                {avg.toFixed(1)}
+                {ratingCount > 1 ? ` · ${ratingCount} ratings` : ""}
+              </span>
+            </span>
+          ) : (
+            <span className="kicker text-ink-soft/70">Not yet rated</span>
+          )}
+          {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge /> : null}
+        </div>
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
         <div className="mt-3 flex flex-wrap items-center gap-4">
           {recipe.steps?.length ? (

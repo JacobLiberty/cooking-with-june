@@ -22,14 +22,14 @@ export const mealPlan = defineType({
       of: [defineArrayMember({ type: "manualGroceryItem" })],
     }),
     defineField({
-      name: "checkedIngredients",
-      title: "Checked-off ingredient ids",
+      name: "groceryIngredients",
+      title: "Grocery-list ingredient ids",
       type: "array",
       of: [defineArrayMember({ type: "string" })],
     }),
     defineField({
-      name: "removedIngredients",
-      title: "Skipped ingredient ids (won't buy)",
+      name: "pantryIngredients",
+      title: "Pantry ingredient ids (things we have)",
       type: "array",
       of: [defineArrayMember({ type: "string" })],
     }),

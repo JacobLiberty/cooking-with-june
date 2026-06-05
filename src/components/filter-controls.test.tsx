@@ -9,6 +9,7 @@ const EMPTY: RecipeFilters = {
   ingredientIds: [],
   mode: "any",
   tags: [],
+  collection: "all",
   sort: "name",
 };
 
@@ -58,5 +59,26 @@ describe("FilterControls collapsing", () => {
     );
     await user.click(screen.getByText("tag-1"));
     expect(onChange).toHaveBeenCalledWith({ ...EMPTY, tags: ["tag-1"] });
+  });
+});
+
+describe("FilterControls collection segments", () => {
+  it("switches the collection and marks the active segment", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <FilterControls
+        filters={{ ...EMPTY, collection: "totry" }}
+        ingredients={[]}
+        tags={[]}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "To try" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.click(screen.getByRole("button", { name: "June approved" }));
+    expect(onChange).toHaveBeenCalledWith({ ...EMPTY, collection: "approved" });
   });
 });
