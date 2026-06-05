@@ -59,23 +59,56 @@ export async function removeFromPlan(recipeId: string) {
     .patch(PLAN_ID)
     .unset([`recipes[_ref=="${id}"]`])
     .commit();
+  // Prune any checked/skipped ids no longer produced by a remaining recipe so
+  // they don't reappear pre-checked if the same ingredient returns later.
+  const plan = await reader().fetch<{
+    live: string[] | null;
+    checked: string[] | null;
+    removed: string[] | null;
+  } | null>(
+    `*[_id == $id][0]{
+      "live": recipes[]->ingredients[].ingredient._ref,
+      "checked": checkedIngredients,
+      "removed": removedIngredients
+    }`,
+    { id: PLAN_ID },
+  );
+  const live = new Set(plan?.live ?? []);
+  await write
+    .patch(PLAN_ID)
+    .set({
+      checkedIngredients: (plan?.checked ?? []).filter((x) => live.has(x)),
+      removedIngredients: (plan?.removed ?? []).filter((x) => live.has(x)),
+    })
+    .commit();
   revalidatePath("/plan");
   revalidatePath(`/recipe`, "layout");
 }
 
 export async function toggleIngredientGot(ingredientId: string) {
   await requireEditor();
-  safeId(ingredientId);
+  const id = safeId(ingredientId);
   const write = getWriteClient();
   await ensurePlan(write);
-  const checked = await reader().fetch<string[] | null>(
-    `*[_id == $id][0].checkedIngredients`,
+  const plan = await reader().fetch<{
+    checked: string[] | null;
+    removed: string[] | null;
+  } | null>(
+    `*[_id == $id][0]{ "checked": checkedIngredients, "removed": removedIngredients }`,
     { id: PLAN_ID },
   );
-  const set = new Set(checked ?? []);
-  if (set.has(ingredientId)) set.delete(ingredientId);
-  else set.add(ingredientId);
-  await write.patch(PLAN_ID).set({ checkedIngredients: [...set] }).commit();
+  const checked = new Set(plan?.checked ?? []);
+  const removed = new Set(plan?.removed ?? []);
+  if (checked.has(id)) {
+    checked.delete(id);
+  } else {
+    checked.add(id);
+    removed.delete(id); // got and not-getting are mutually exclusive
+  }
+  await write
+    .patch(PLAN_ID)
+    .set({ checkedIngredients: [...checked], removedIngredients: [...removed] })
+    .commit();
   revalidatePath("/plan");
 }
 
@@ -96,10 +129,28 @@ async function setMembership(
   await write.patch(PLAN_ID).set({ [field]: [...set] }).commit();
 }
 
-/** Skip an auto ingredient ("not getting it") — hide from the to-get list. */
+/** Skip an auto ingredient ("not getting it") — hide from the to-get list.
+ *  Also clears any "got" flag so the two states stay mutually exclusive. */
 export async function skipIngredient(ingredientId: string) {
   await requireEditor();
-  await setMembership("removedIngredients", safeId(ingredientId), true);
+  const id = safeId(ingredientId);
+  const write = getWriteClient();
+  await ensurePlan(write);
+  const plan = await reader().fetch<{
+    checked: string[] | null;
+    removed: string[] | null;
+  } | null>(
+    `*[_id == $id][0]{ "checked": checkedIngredients, "removed": removedIngredients }`,
+    { id: PLAN_ID },
+  );
+  const checked = new Set(plan?.checked ?? []);
+  const removed = new Set(plan?.removed ?? []);
+  checked.delete(id);
+  removed.add(id);
+  await write
+    .patch(PLAN_ID)
+    .set({ checkedIngredients: [...checked], removedIngredients: [...removed] })
+    .commit();
   revalidatePath("/plan");
 }
 
@@ -159,15 +210,22 @@ export async function setAllGot(got: boolean) {
   const plan = await reader().fetch<{
     ingredientIds: string[] | null;
     manualKeys: string[] | null;
+    removed: string[] | null;
   } | null>(
     `*[_id == $id][0]{
       "ingredientIds": recipes[]->ingredients[].ingredient._ref,
-      "manualKeys": manualItems[]._key
+      "manualKeys": manualItems[]._key,
+      "removed": removedIngredients
     }`,
     { id: PLAN_ID },
   );
+  // Mark everything got EXCEPT ingredients the user chose to skip — mirrors the
+  // UI's "to-get" set so server truth doesn't disagree with the optimistic view.
+  const removed = new Set(plan?.removed ?? []);
   const patch = write.patch(PLAN_ID).set({
-    checkedIngredients: got ? [...new Set(plan?.ingredientIds ?? [])] : [],
+    checkedIngredients: got
+      ? [...new Set(plan?.ingredientIds ?? [])].filter((id) => !removed.has(id))
+      : [],
   });
   for (const key of plan?.manualKeys ?? []) {
     if (!/^[A-Za-z0-9._-]+$/.test(key)) continue; // defense-in-depth on stored keys

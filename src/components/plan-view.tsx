@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { buildGroceryList } from "@/lib/grocery";
+import { buildGroceryList, partitionGrocery } from "@/lib/grocery";
 import type { PlanRecipe, ManualItem } from "@/sanity/plan-types";
 import { CheckBox } from "@/components/check-box";
 import {
@@ -54,13 +54,8 @@ export function PlanView({
     });
   };
 
-  const autoToGet = grocery.filter(
-    (g) => !checked.has(g.ingredientId) && !removed.has(g.ingredientId),
-  );
-  const autoGot = grocery.filter((g) => checked.has(g.ingredientId));
-  const autoSkipped = grocery.filter(
-    (g) => removed.has(g.ingredientId) && !checked.has(g.ingredientId),
-  );
+  const { toGet: autoToGet, got: autoGot, skipped: autoSkipped } =
+    partitionGrocery(grocery, checked, removed);
   const manualToGet = manual.filter((m) => !m.gotIt);
   const manualGot = manual.filter((m) => m.gotIt);
   const remainingCount = autoToGet.length + manualToGet.length;
