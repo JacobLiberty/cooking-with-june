@@ -6,12 +6,18 @@ export const manualGroceryItem = defineType({
   type: "object",
   fields: [
     defineField({ name: "name", type: "string", validation: (r) => r.required() }),
-    defineField({ name: "gotIt", type: "boolean", initialValue: false }),
+    defineField({
+      name: "location",
+      type: "string",
+      title: "Where it lives",
+      options: { list: ["grocery", "pantry"], layout: "radio" },
+      initialValue: "grocery",
+    }),
   ],
   preview: {
-    select: { title: "name", got: "gotIt" },
-    prepare({ title, got }) {
-      return { title, subtitle: got ? "got it" : undefined };
+    select: { title: "name", location: "location" },
+    prepare({ title, location }) {
+      return { title, subtitle: location === "pantry" ? "pantry" : "grocery" };
     },
   },
 });

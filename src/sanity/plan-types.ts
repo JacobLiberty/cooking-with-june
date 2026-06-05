@@ -6,14 +6,23 @@ export type PlanRecipe = {
   title: string;
   slug: string;
   coverImage?: SanityImageSource | null;
+  prepTime?: number | null;
+  cookTime?: number | null;
+  servings?: number | null;
   ingredients: PlanIngredient[] | null;
 };
 
-export type ManualItem = { _key: string; name: string; gotIt: boolean };
+export type ManualLocation = "grocery" | "pantry";
+
+export type ManualItem = {
+  _key: string;
+  name: string;
+  location: ManualLocation | null;
+};
 
 export type PlanData = {
   recipes: PlanRecipe[] | null;
   manualItems: ManualItem[] | null;
-  checkedIngredients: string[] | null;
-  removedIngredients: string[] | null;
+  groceryIngredients: string[] | null;
+  pantryIngredients: string[] | null;
 };

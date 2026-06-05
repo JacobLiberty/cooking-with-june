@@ -1,47 +1,66 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
-import { buildGroceryList, partitionGrocery } from "@/lib/grocery";
-import type { PlanRecipe, ManualItem } from "@/sanity/plan-types";
+import type { PlanRecipe, ManualItem, ManualLocation } from "@/sanity/plan-types";
+import type { IngredientOption } from "@/sanity/types";
+import { missingFromPantry, groceryAfterRecipeRemoval } from "@/lib/pantry";
 import { CheckBox } from "@/components/check-box";
+import { PlanRecipeRow } from "@/components/plan-recipe-row";
 import {
   removeFromPlan,
-  toggleIngredientGot,
-  skipIngredient,
-  unskipIngredient,
+  checkGroceryIngredient,
+  skipGroceryIngredient,
+  removePantryIngredient,
+  movePantryIngredientToGrocery,
   addManualItem,
-  toggleManualItem,
-  deleteManualItem,
-  setAllGot,
+  setManualLocation,
+  removeManualItem,
+  syncGroceryFromRecipes,
 } from "@/app/actions/plan-actions";
+
+type Tab = "recipes" | "groceries";
+type Row =
+  | { kind: "auto"; id: string; name: string }
+  | { kind: "manual"; key: string; name: string };
+
+const byName = (a: { name: string }, b: { name: string }) =>
+  a.name.localeCompare(b.name);
 
 export function PlanView({
   recipes: initialRecipes,
-  checkedIds,
-  removedIds,
   manual: initialManual,
+  groceryIds: initialGrocery,
+  pantryIds: initialPantry,
+  ingredients,
 }: {
   recipes: PlanRecipe[];
-  checkedIds: string[];
-  removedIds: string[];
   manual: ManualItem[];
+  groceryIds: string[];
+  pantryIds: string[];
+  ingredients: IngredientOption[];
 }) {
+  const [tab, setTab] = useState<Tab>("recipes");
   const [recipes, setRecipes] = useState(initialRecipes);
-  const [checked, setChecked] = useState<Set<string>>(() => new Set(checkedIds));
-  const [removed, setRemoved] = useState<Set<string>>(() => new Set(removedIds));
+  const [grocery, setGrocery] = useState<Set<string>>(() => new Set(initialGrocery));
+  const [pantry, setPantry] = useState<Set<string>>(() => new Set(initialPantry));
   const [manual, setManual] = useState<ManualItem[]>(initialManual);
   const [newItem, setNewItem] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  const grocery = useMemo(
-    () => buildGroceryList(recipes.map((r) => r.ingredients ?? [])),
-    [recipes],
-  );
+  // id → display name, from the ingredient list plus any names carried on the
+  // planned recipes (covers pantry items whose recipe is no longer planned).
+  const nameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const ing of ingredients) map.set(ing._id, ing.name);
+    for (const r of recipes)
+      for (const line of r.ingredients ?? [])
+        if (line.ingredientId) map.set(line.ingredientId, line.name ?? line.ingredientId);
+    return map;
+  }, [ingredients, recipes]);
 
-  // Optimistic: apply locally now, run the action in the background, roll back
-  // the one change if it fails. No await/refresh on the UI path → no freeze.
+  const nameOf = (id: string) => nameById.get(id) ?? id;
+
   const act = (action: () => Promise<unknown>, revert: () => void) => {
     setError(null);
     start(async () => {
@@ -54,79 +73,98 @@ export function PlanView({
     });
   };
 
-  const { toGet: autoToGet, got: autoGot, skipped: autoSkipped } =
-    partitionGrocery(grocery, checked, removed);
-  const manualToGet = manual.filter((m) => !m.gotIt);
-  const manualGot = manual.filter((m) => m.gotIt);
-  const remainingCount = autoToGet.length + manualToGet.length;
+  // ── rows ────────────────────────────────────────────────────────────────
+  const groceryRows: Row[] = [
+    ...[...grocery].map((id) => ({ kind: "auto" as const, id, name: nameOf(id) })),
+    ...manual
+      .filter((m) => m.location !== "pantry")
+      .map((m) => ({ kind: "manual" as const, key: m._key, name: m.name })),
+  ].sort(byName);
 
-  // ── handlers ──────────────────────────────────────────────────────────
-  const toggleAuto = (id: string) => {
-    const was = checked.has(id);
-    setChecked((s) => {
-      const n = new Set(s);
-      if (was) n.delete(id);
-      else n.add(id);
-      return n;
+  const pantryRows: Row[] = [
+    ...[...pantry].map((id) => ({ kind: "auto" as const, id, name: nameOf(id) })),
+    ...manual
+      .filter((m) => m.location === "pantry")
+      .map((m) => ({ kind: "manual" as const, key: m._key, name: m.name })),
+  ].sort(byName);
+
+  // ── recipe handlers ───────────────────────────────────────────────────────
+  const removeRecipe = (recipe: PlanRecipe) => {
+    const prevRecipes = recipes;
+    const prevGrocery = grocery;
+    const removedIds = (recipe.ingredients ?? [])
+      .map((l) => l.ingredientId)
+      .filter((x): x is string => Boolean(x));
+    const remaining = recipes
+      .filter((r) => r._id !== recipe._id)
+      .flatMap((r) => (r.ingredients ?? []).map((l) => l.ingredientId))
+      .filter((x): x is string => Boolean(x));
+    setRecipes((rs) => rs.filter((r) => r._id !== recipe._id));
+    setGrocery(
+      () => new Set(groceryAfterRecipeRemoval([...grocery], removedIds, remaining)),
+    );
+    act(
+      () => removeFromPlan(recipe._id),
+      () => {
+        setRecipes(prevRecipes);
+        setGrocery(prevGrocery);
+      },
+    );
+  };
+
+  // ── grocery / pantry handlers (optimistic Set/array updates) ───────────────
+  const moveAuto = (
+    id: string,
+    from: "grocery" | "pantry" | null,
+    to: "grocery" | "pantry" | null,
+    action: () => Promise<unknown>,
+  ) => {
+    const prevG = grocery;
+    const prevP = pantry;
+    const nextG = new Set(grocery);
+    const nextP = new Set(pantry);
+    if (from === "grocery") nextG.delete(id);
+    if (from === "pantry") nextP.delete(id);
+    if (to === "grocery") nextG.add(id);
+    if (to === "pantry") nextP.add(id);
+    setGrocery(nextG);
+    setPantry(nextP);
+    act(action, () => {
+      setGrocery(prevG);
+      setPantry(prevP);
     });
-    act(
-      () => toggleIngredientGot(id),
-      () =>
-        setChecked((s) => {
-          const n = new Set(s);
-          if (was) n.add(id);
-          else n.delete(id);
-          return n;
-        }),
-    );
   };
 
-  const skipAuto = (id: string) => {
-    setRemoved((s) => new Set(s).add(id));
-    act(
-      () => skipIngredient(id),
-      () =>
-        setRemoved((s) => {
-          const n = new Set(s);
-          n.delete(id);
-          return n;
-        }),
-    );
+  const setManualLoc = (key: string, location: ManualLocation) => {
+    const prev = manual;
+    setManual((m) => m.map((x) => (x._key === key ? { ...x, location } : x)));
+    act(() => setManualLocation(key, location), () => setManual(prev));
   };
 
-  const restoreAuto = (id: string) => {
-    setRemoved((s) => {
-      const n = new Set(s);
-      n.delete(id);
-      return n;
-    });
-    act(() => unskipIngredient(id), () => setRemoved((s) => new Set(s).add(id)));
-  };
-
-  const flipManual = (key: string) => {
-    setManual((m) =>
-      m.map((x) => (x._key === key ? { ...x, gotIt: !x.gotIt } : x)),
-    );
-    act(
-      () => toggleManualItem(key),
-      () =>
-        setManual((m) =>
-          m.map((x) => (x._key === key ? { ...x, gotIt: !x.gotIt } : x)),
-        ),
-    );
-  };
-
-  const removeManual = (key: string) => {
-    const snapshot = manual;
+  const dropManual = (key: string) => {
+    const prev = manual;
     setManual((m) => m.filter((x) => x._key !== key));
-    act(() => deleteManualItem(key), () => setManual(snapshot));
+    act(() => removeManualItem(key), () => setManual(prev));
+  };
+
+  // Seed the grocery list from every planned recipe (ingredients not already
+  // on the list or in the pantry). Doubles as a refresh after planning more.
+  const syncGrocery = () => {
+    const prev = grocery;
+    const next = new Set(grocery);
+    for (const r of recipes)
+      for (const line of r.ingredients ?? [])
+        if (line.ingredientId && !pantry.has(line.ingredientId))
+          next.add(line.ingredientId);
+    setGrocery(next);
+    act(() => syncGroceryFromRecipes(), () => setGrocery(prev));
   };
 
   const addItem = () => {
     const name = newItem.trim();
     if (!name) return;
     const key = crypto.randomUUID();
-    setManual((m) => [...m, { _key: key, name, gotIt: false }]);
+    setManual((m) => [...m, { _key: key, name, location: "grocery" }]);
     setNewItem("");
     act(
       async () => {
@@ -137,209 +175,178 @@ export function PlanView({
     );
   };
 
-  const removeRecipe = (id: string) => {
-    const snapshot = recipes;
-    setRecipes((r) => r.filter((x) => x._id !== id));
-    act(() => removeFromPlan(id), () => setRecipes(snapshot));
-  };
+  // check (grocery → pantry) / skip (remove from grocery)
+  const onCheck = (row: Row) =>
+    row.kind === "auto"
+      ? moveAuto(row.id, "grocery", "pantry", () => checkGroceryIngredient(row.id))
+      : setManualLoc(row.key, "pantry");
+  const onSkip = (row: Row) =>
+    row.kind === "auto"
+      ? moveAuto(row.id, "grocery", null, () => skipGroceryIngredient(row.id))
+      : dropManual(row.key);
+  // pantry: back to grocery / remove
+  const onRestock = (row: Row) =>
+    row.kind === "auto"
+      ? moveAuto(row.id, "pantry", "grocery", () => movePantryIngredientToGrocery(row.id))
+      : setManualLoc(row.key, "grocery");
+  const onUse = (row: Row) =>
+    row.kind === "auto"
+      ? moveAuto(row.id, "pantry", null, () => removePantryIngredient(row.id))
+      : dropManual(row.key);
 
-  const markAllGot = () => {
-    const prevChecked = checked;
-    const prevManual = manual;
-    const ids = autoToGet.map((g) => g.ingredientId);
-    setChecked((s) => new Set([...s, ...ids]));
-    setManual((m) => m.map((x) => ({ ...x, gotIt: true })));
-    act(
-      () => setAllGot(true),
-      () => {
-        setChecked(prevChecked);
-        setManual(prevManual);
-      },
-    );
-  };
+  const rowKey = (row: Row) => (row.kind === "auto" ? `a-${row.id}` : `m-${row.key}`);
 
-  // ── render ────────────────────────────────────────────────────────────
+  // ── render ────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-10" aria-busy={pending}>
+    <div aria-busy={pending}>
+      <div className="flex gap-2" role="tablist" aria-label="Plan sections">
+        {(["recipes", "groceries"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={`kicker rounded-full px-4 py-2 transition-colors ${
+              tab === t
+                ? "bg-terracotta text-paper"
+                : "text-ink-soft hover:text-terracotta"
+            }`}
+          >
+            {t === "recipes" ? "Recipes" : "Groceries"}
+          </button>
+        ))}
+      </div>
+
       {error ? (
-        <p role="alert" className="text-sm text-clay">
+        <p role="alert" className="mt-4 text-sm text-clay">
           {error}
         </p>
       ) : null}
 
-      <section aria-labelledby="planned-heading">
-        <h2 id="planned-heading" className="kicker text-terracotta">
-          Planned recipes
-        </h2>
-        {recipes.length === 0 ? (
-          <p className="mt-2 text-ink-soft">
-            Nothing planned yet — add recipes from their pages.
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-2">
-            {recipes.map((r) => (
-              <li key={r._id} className="flex items-center justify-between gap-3">
-                <Link
-                  href={`/recipe/${r.slug}`}
-                  className="text-ink hover:text-terracotta"
-                >
-                  {r.title}
-                </Link>
+      {tab === "recipes" ? (
+        <div className="mt-6 space-y-4">
+          {recipes.length === 0 ? (
+            <p className="text-ink-soft">
+              Nothing planned yet — add recipes from their pages.
+            </p>
+          ) : (
+            recipes.map((r, i) => (
+              <PlanRecipeRow
+                key={r._id}
+                recipe={r}
+                missing={missingFromPantry(
+                  (r.ingredients ?? [])
+                    .map((l) => l.ingredientId)
+                    .filter((x): x is string => Boolean(x)),
+                  pantry,
+                )}
+                flip={i % 2 === 1}
+                onRemove={() => removeRecipe(r)}
+              />
+            ))
+          )}
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-8 sm:grid-cols-2">
+          <section aria-labelledby="grocery-heading">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="grocery-heading" className="kicker text-terracotta">
+                Grocery list
+              </h2>
+              {recipes.length > 0 ? (
                 <button
                   type="button"
-                  onClick={() => removeRecipe(r._id)}
-                  className="kicker text-ink-soft hover:text-clay"
+                  onClick={syncGrocery}
+                  className="kicker text-ink-soft hover:text-terracotta"
                 >
-                  Remove
+                  Pull from recipes
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              ) : null}
+            </div>
+            <ul className="mt-3 space-y-2">
+              {groceryRows.map((row) => (
+                <li key={rowKey(row)} className="flex items-center gap-3">
+                  <CheckBox
+                    checked={false}
+                    onChange={() => onCheck(row)}
+                    label={`Got ${row.name}`}
+                  />
+                  <span className="flex-1 text-ink">{row.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => onSkip(row)}
+                    aria-label={`Skip ${row.name}`}
+                    className="kicker text-ink-soft hover:text-clay"
+                  >
+                    Skip
+                  </button>
+                </li>
+              ))}
+              {groceryRows.length === 0 ? (
+                <li className="text-ink-soft">Your grocery list is empty.</li>
+              ) : null}
+            </ul>
 
-      <section aria-labelledby="grocery-heading">
-        <div className="flex items-center justify-between">
-          <h2 id="grocery-heading" className="kicker text-terracotta">
-            Grocery list
-          </h2>
-          {remainingCount > 0 ? (
-            <button
-              type="button"
-              onClick={markAllGot}
-              className="kicker text-ink-soft hover:text-terracotta"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                addItem();
+              }}
+              className="mt-4 flex items-center gap-3"
             >
-              Mark all got
-            </button>
-          ) : null}
+              <input
+                value={newItem}
+                onChange={(e) => setNewItem(e.target.value)}
+                maxLength={120}
+                aria-label="Add a grocery item"
+                placeholder="Add an item…"
+                className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft/60 focus:border-terracotta"
+              />
+              <button
+                type="submit"
+                className="kicker text-terracotta hover:text-terracotta-deep"
+              >
+                Add
+              </button>
+            </form>
+          </section>
+
+          <section aria-labelledby="pantry-heading">
+            <h2 id="pantry-heading" className="kicker text-terracotta">
+              Pantry
+            </h2>
+            <ul className="mt-3 space-y-2">
+              {pantryRows.map((row) => (
+                <li key={rowKey(row)} className="flex items-center gap-3">
+                  <span className="flex-1 text-ink">{row.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRestock(row)}
+                    aria-label={`Add ${row.name} back to the grocery list`}
+                    className="kicker text-ink-soft hover:text-terracotta"
+                  >
+                    Out
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUse(row)}
+                    aria-label={`Remove ${row.name} from the pantry`}
+                    className="kicker text-ink-soft hover:text-clay"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+              {pantryRows.length === 0 ? (
+                <li className="text-ink-soft">
+                  Check items off the grocery list and they&rsquo;ll land here.
+                </li>
+              ) : null}
+            </ul>
+          </section>
         </div>
-
-        <ul className="mt-3 space-y-2">
-          {autoToGet.map((g) => (
-            <li key={g.ingredientId} className="flex items-center gap-3">
-              <CheckBox
-                checked={false}
-                onChange={() => toggleAuto(g.ingredientId)}
-                label={`Got ${g.name}`}
-              />
-              <span className="flex-1 text-ink">
-                {g.name}
-                {g.amounts.length ? (
-                  <span className="text-ink-soft"> ({g.amounts.join(" · ")})</span>
-                ) : null}
-              </span>
-              <button
-                type="button"
-                onClick={() => skipAuto(g.ingredientId)}
-                aria-label={`Skip ${g.name}`}
-                className="kicker text-ink-soft hover:text-clay"
-              >
-                Skip
-              </button>
-            </li>
-          ))}
-          {manualToGet.map((m) => (
-            <li key={m._key} className="flex items-center gap-3">
-              <CheckBox
-                checked={false}
-                onChange={() => flipManual(m._key)}
-                label={`Got ${m.name}`}
-              />
-              <span className="flex-1 text-ink">{m.name}</span>
-              <button
-                type="button"
-                onClick={() => removeManual(m._key)}
-                aria-label={`Delete ${m.name}`}
-                className="kicker text-ink-soft hover:text-clay"
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-          {remainingCount === 0 && grocery.length + manual.length > 0 ? (
-            <li className="text-ink-soft">All set &mdash; everything&rsquo;s checked off.</li>
-          ) : null}
-        </ul>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            addItem();
-          }}
-          className="mt-4 flex items-center gap-3"
-        >
-          <input
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-            maxLength={120}
-            aria-label="Add a grocery item"
-            placeholder="Add an item (e.g. milk for coffee)…"
-            className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft/60 focus:border-terracotta"
-          />
-          <button
-            type="submit"
-            className="kicker text-terracotta hover:text-terracotta-deep"
-          >
-            Add
-          </button>
-        </form>
-
-        {autoGot.length + manualGot.length > 0 ? (
-          <div className="mt-6">
-            <p className="kicker text-ink-soft">Got it</p>
-            <ul className="mt-2 space-y-2">
-              {autoGot.map((g) => (
-                <li key={g.ingredientId} className="flex items-center gap-3 text-ink-soft">
-                  <CheckBox
-                    checked
-                    onChange={() => toggleAuto(g.ingredientId)}
-                    label={`Un-check ${g.name}`}
-                  />
-                  <span className="line-through">{g.name}</span>
-                </li>
-              ))}
-              {manualGot.map((m) => (
-                <li key={m._key} className="flex items-center gap-3 text-ink-soft">
-                  <CheckBox
-                    checked
-                    onChange={() => flipManual(m._key)}
-                    label={`Un-check ${m.name}`}
-                  />
-                  <span className="flex-1 line-through">{m.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeManual(m._key)}
-                    aria-label={`Delete ${m.name}`}
-                    className="kicker hover:text-clay"
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        {autoSkipped.length > 0 ? (
-          <div className="mt-6">
-            <p className="kicker text-ink-soft">Not getting</p>
-            <ul className="mt-2 space-y-2">
-              {autoSkipped.map((g) => (
-                <li key={g.ingredientId} className="flex items-center gap-3 text-ink-soft">
-                  <span className="flex-1 line-through">{g.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => restoreAuto(g.ingredientId)}
-                    className="kicker hover:text-terracotta"
-                  >
-                    Add back
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </section>
+      )}
     </div>
   );
 }
