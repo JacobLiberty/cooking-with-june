@@ -1,17 +1,20 @@
 /**
- * Read-only star rating, 0–5 in half steps. Ochre per design.md.
+ * Read-only star rating, 0–5 in half steps. Uses the deep-amber `star` token
+ * (AA-contrast; the brighter ochre failed contrast as the carrier of rating info).
  * Renders 5 star glyphs (full / half / empty) and an accessible label.
  */
-function Star({
+export function Star({
   fill,
   index,
+  className = "h-4 w-4",
 }: {
   fill: "full" | "half" | "empty";
   index: number;
+  className?: string;
 }) {
   const id = `half-star-${index}`;
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
       {fill === "half" ? (
         <defs>
           <linearGradient id={id}>
@@ -50,7 +53,7 @@ export function StarRating({
   });
   return (
     <span
-      className={`inline-flex items-center gap-0.5 text-ochre ${className ?? ""}`}
+      className={`inline-flex items-center gap-0.5 text-star ${className ?? ""}`}
       role="img"
       aria-label={`${value} out of 5 stars`}
     >

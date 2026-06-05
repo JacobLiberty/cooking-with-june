@@ -32,11 +32,11 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           className="transition-transform duration-500 group-hover:scale-[1.04]"
         />
         {approved ? (
-          <span className="absolute left-3 top-3 inline-flex h-7 items-center rounded-full bg-paper/90 px-2.5 shadow-sm backdrop-blur-sm">
+          <span className="absolute left-3 top-3 inline-flex h-7 items-center rounded-full bg-paper px-2.5 shadow-sm">
             <JuneApprovedBadge />
           </span>
         ) : recipe.wishlist && avg == null ? (
-          <span className="kicker absolute right-3 top-3 inline-flex h-7 items-center rounded-full bg-paper/90 px-2.5 text-terracotta shadow-sm backdrop-blur-sm">
+          <span className="kicker absolute right-3 top-3 inline-flex h-7 items-center rounded-full bg-paper px-2.5 text-terracotta shadow-sm">
             To try
           </span>
         ) : null}
@@ -51,10 +51,10 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           {avg != null ? (
             <StarRating value={avg} />
           ) : recipe.wishlist ? null : (
-            <span className="kicker text-ink-soft/70">Unrated</span>
+            <span className="kicker text-ink-soft">Unrated</span>
           )}
           {recipe.madeCount ? (
-            <span className="kicker text-ink-soft/70">made {recipe.madeCount}×</span>
+            <span className="kicker text-ink-soft">made {recipe.madeCount}×</span>
           ) : null}
         </div>
         {recipe.description ? (
@@ -67,7 +67,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
             {tags.map((t) => (
               <span
                 key={t}
-                className="kicker rounded-full border border-terracotta/30 px-2 py-0.5 text-terracotta"
+                className="kicker border border-terracotta/40 px-2 py-0.5 text-terracotta"
               >
                 {t}
               </span>

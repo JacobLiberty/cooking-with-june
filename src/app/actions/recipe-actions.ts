@@ -89,6 +89,54 @@ export async function markMade(recipeId: string, isoNow: string) {
   revalidatePath("/", "layout");
 }
 
+const PLAN_ID = "mealPlan";
+
+// Recipe ids are Sanity ids; restrict the characters before interpolating one
+// into a patch-path string so a crafted id can't inject GROQ into the path.
+function safeRecipeId(id: string): string {
+  if (typeof id !== "string" || !/^[A-Za-z0-9._-]+$/.test(id)) {
+    throw new Error("Invalid recipe id");
+  }
+  return id;
+}
+
+export async function deleteRecipe(
+  recipeId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  await requireEditor();
+  await assertRecipe(recipeId);
+  const id = safeRecipeId(recipeId);
+  const write = getWriteClient();
+  // Detach from the meal plan first: Sanity refuses to delete a document that
+  // still has incoming references (the plan's recipes[] array would block it).
+  try {
+    await write
+      .patch(PLAN_ID)
+      .unset([`recipes[_ref=="${id}"]`, `recipeScales[_key=="${id}"]`])
+      .commit();
+  } catch {
+    // no plan yet, or this recipe was never planned — nothing to detach
+  }
+  await write.delete(id);
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// Undo for "Made it": decrement the counter (never below 0). Used by the
+// toast's Undo action so a stray tap on Made it is reversible.
+export async function unmarkMade(recipeId: string) {
+  await requireEditor();
+  await assertRecipe(recipeId);
+  const write = getWriteClient();
+  const current = await reader().fetch<number | null>(
+    `*[_id == $id][0].madeCount`,
+    { id: recipeId },
+  );
+  const next = Math.max(0, (current ?? 0) - 1);
+  await write.patch(recipeId).set({ madeCount: next }).commit();
+  revalidatePath("/", "layout");
+}
+
 export type SaveRecipeResult =
   | { ok: true; slug: string }
   | { ok: false; error: string };

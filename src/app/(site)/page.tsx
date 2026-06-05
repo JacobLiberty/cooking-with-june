@@ -14,6 +14,7 @@ import type {
 } from "@/sanity/types";
 import { CollectionView } from "@/components/collection-view";
 import { JuneArt } from "@/components/june";
+import { PawTrail } from "@/components/paw-trail";
 import { getViewer } from "@/lib/viewer";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
@@ -65,7 +66,7 @@ export default async function HomePage() {
       </header>
 
       <div className="set set-2 mt-8">
-        <Suspense fallback={null}>
+        <Suspense fallback={<PawTrail label="Plating the collection…" />}>
           <CollectionView
             recipes={recipes}
             ingredients={ingredients}

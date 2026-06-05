@@ -24,6 +24,7 @@ import { JuneApprovedBadge } from "@/components/june-approved-badge";
 import { ShareButton } from "@/components/share-button";
 import { AddNoteForm } from "@/components/add-note-form";
 import { AddToPlanButton } from "@/components/add-to-plan-button";
+import { DeleteRecipeButton } from "@/components/delete-recipe-button";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
 
@@ -112,7 +113,7 @@ export default async function RecipePage({
               </span>
             </span>
           ) : (
-            <span className="kicker text-ink-soft/70">Not yet rated</span>
+            <span className="kicker text-ink-soft">Not yet rated</span>
           )}
           {madeCount > 0 ? (
             <span className="kicker text-ink-soft">
@@ -122,27 +123,32 @@ export default async function RecipePage({
           {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge /> : null}
         </div>
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
-        <div className="mt-3 flex flex-wrap items-center gap-4">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
           {recipe.steps?.length ? (
             <Link
               href={`/recipe/${recipe.slug}/cook`}
-              className="kicker border border-terracotta px-3 py-1 text-terracotta hover:bg-terracotta-wash"
+              className="kicker flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full bg-terracotta px-6 text-paper transition-colors hover:bg-terracotta-deep sm:w-auto"
             >
-              Cook mode
+              Cook mode <span aria-hidden>→</span>
             </Link>
           ) : null}
-          {viewer.isEditor ? (
-            <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
-              Edit recipe
-            </Link>
-          ) : null}
-          {viewer.isEditor ? (
-            <AddToPlanButton
-              recipeId={recipe._id}
-              inPlan={Boolean(plannedIds?.includes(recipe._id))}
-            />
-          ) : null}
-          <ShareButton />
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {viewer.isEditor ? (
+              <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
+                Edit
+              </Link>
+            ) : null}
+            {viewer.isEditor ? (
+              <AddToPlanButton
+                recipeId={recipe._id}
+                inPlan={Boolean(plannedIds?.includes(recipe._id))}
+              />
+            ) : null}
+            <ShareButton />
+            {viewer.isEditor ? (
+              <DeleteRecipeButton recipeId={recipe._id} title={recipe.title} />
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -150,7 +156,11 @@ export default async function RecipePage({
         className="set set-2 mt-6 aspect-3/2 overflow-hidden border border-ink/15"
         style={{ viewTransitionName: coverTransitionName(recipe._id) }}
       >
-        <RecipeCover image={recipe.images?.[0]} title={recipe.title} />
+        <RecipeCover
+          image={recipe.images?.[0]}
+          title={recipe.title}
+          sizes="(min-width: 768px) 768px, 100vw"
+        />
       </div>
 
       {recipe.description ? (

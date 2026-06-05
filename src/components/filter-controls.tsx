@@ -41,6 +41,12 @@ export function FilterControls({
 }) {
   const [showAllTags, setShowAllTags] = useState(false);
   const [showAllIngredients, setShowAllIngredients] = useState(false);
+  // The pantry block is the tallest part of the panel, so it starts collapsed
+  // (recipes stay near the top of the page), but opens if a filter is already
+  // applied so an active selection is never hidden.
+  const [showPantry, setShowPantry] = useState(
+    filters.ingredientIds.length > 0,
+  );
 
   const toggle = (arr: string[], v: string) =>
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
@@ -91,7 +97,7 @@ export function FilterControls({
             value={filters.query}
             onChange={(e) => onChange({ ...filters, query: e.target.value })}
             placeholder="Search recipes…"
-            className="mt-2.5 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft/60 focus:border-terracotta"
+            className="mt-2.5 w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-lg text-ink placeholder:text-ink-soft focus:border-terracotta"
           />
         </label>
         <label className="flex items-center gap-2">
@@ -151,30 +157,63 @@ export function FilterControls({
 
       {ingredients.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span id="pantry-filter-label" className="kicker text-ink-soft">
-              What&rsquo;s in your kitchen?
-            </span>
-            <div className="flex items-center gap-1" role="group" aria-label="Match mode">
-              {(["any", "all"] as FilterMode[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  aria-pressed={filters.mode === m}
-                  onClick={() => onChange({ ...filters, mode: m })}
-                  className={`kicker px-2 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div
-            className="flex flex-wrap items-center gap-2"
-            role="group"
-            aria-labelledby="pantry-filter-label"
+          <button
+            type="button"
+            onClick={() => setShowPantry((v) => !v)}
+            aria-expanded={showPantry}
+            aria-controls="pantry-panel"
+            className="kicker flex items-center gap-1.5 text-ink-soft transition-colors hover:text-terracotta"
           >
-            {visibleIngredients.map((ing) => {
+            <span
+              aria-hidden
+              className={`text-base leading-none transition-transform ${showPantry ? "rotate-90" : ""}`}
+            >
+              ›
+            </span>
+            Filter by what&rsquo;s in your kitchen
+            {filters.ingredientIds.length > 0 ? (
+              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-clay-wash px-1.5 text-ink">
+                {filters.ingredientIds.length}
+              </span>
+            ) : null}
+          </button>
+
+          <div
+            id="pantry-panel"
+            hidden={!showPantry}
+            className="space-y-2 pt-1"
+          >
+            <div className="flex items-center justify-between">
+              <span id="pantry-match-label" className="kicker text-ink-soft">
+                Ingredient match
+              </span>
+              <div
+                className="flex items-center gap-1"
+                role="group"
+                aria-labelledby="pantry-match-label"
+              >
+                {(["any", "all"] as FilterMode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    aria-pressed={filters.mode === m}
+                    onClick={() => onChange({ ...filters, mode: m })}
+                    className={`kicker rounded-full px-3 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div
+              className="flex flex-wrap items-center gap-2"
+              role="group"
+              aria-labelledby="pantry-filter-label"
+            >
+              <span id="pantry-filter-label" className="sr-only">
+                Ingredients you have on hand
+              </span>
+              {visibleIngredients.map((ing) => {
               const active = filters.ingredientIds.includes(ing._id);
               return (
                 <button
@@ -184,7 +223,7 @@ export function FilterControls({
                   onClick={() =>
                     onChange({ ...filters, ingredientIds: toggle(filters.ingredientIds, ing._id) })
                   }
-                  className={`border px-2.5 py-1 text-sm ${active ? "border-clay bg-clay-wash text-clay" : "border-ink/20 text-ink-soft hover:border-clay"}`}
+                  className={`border px-2.5 py-1 text-sm ${active ? "border-clay bg-clay-wash text-ink" : "border-ink/20 text-ink-soft hover:border-clay"}`}
                 >
                   {ing.name}
                   {ingredientCounts[ing._id] ? (
@@ -200,13 +239,14 @@ export function FilterControls({
                 type="button"
                 onClick={() => setShowAllIngredients((v) => !v)}
                 aria-expanded={showAllIngredients}
-                className="kicker px-2 py-1 text-clay hover:text-clay/80"
+                className="kicker px-2 py-1 text-terracotta hover:text-terracotta-deep"
               >
                 {showAllIngredients
                   ? "Show fewer"
                   : `+${ingredients.length - ING_LIMIT} more`}
               </button>
             )}
+            </div>
           </div>
         </div>
       )}

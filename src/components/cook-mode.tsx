@@ -78,7 +78,7 @@ export function CookMode({
             onClick={() => setIndex(i)}
             aria-label={`Go to step ${i + 1}`}
             aria-current={i === p.current ? "step" : undefined}
-            className="p-1"
+            className="grid h-11 w-11 place-items-center"
           >
             <PawMark
               className={`h-4 w-4 ${
@@ -138,7 +138,7 @@ export function CookMode({
             href={`/recipe/${slug}`}
             onClick={markDone}
             aria-label="Done"
-            className="kicker flex min-h-12 items-center rounded-full border border-clay bg-clay-wash px-6 text-clay hover:bg-clay hover:text-paper"
+            className="kicker flex min-h-12 items-center rounded-full border border-terracotta bg-terracotta px-6 text-paper hover:bg-terracotta-deep"
           >
             Done <span aria-hidden>✓</span>
           </Link>

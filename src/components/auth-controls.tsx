@@ -7,7 +7,7 @@ export function AuthControls() {
   const { data: session, status } = useSession();
 
   if (status === "loading") {
-    return <span className="kicker text-ink-soft/50">···</span>;
+    return <span className="kicker text-ink-soft">···</span>;
   }
 
   if (session?.user) {

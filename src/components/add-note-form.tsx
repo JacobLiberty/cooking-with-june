@@ -35,7 +35,7 @@ export function AddNoteForm({ recipeId }: { recipeId: string }) {
           maxLength={500}
           aria-label="Add a note"
           placeholder="Add a note…"
-          className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft/60 focus:border-terracotta"
+          className="flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft focus:border-terracotta"
         />
         <button
           type="submit"
@@ -45,7 +45,7 @@ export function AddNoteForm({ recipeId }: { recipeId: string }) {
           {pending ? "Adding…" : "Add"}
         </button>
       </div>
-      {error ? <p className="mt-1 text-sm text-clay">{error}</p> : null}
+      {error ? <p className="mt-1 text-sm text-terracotta-deep">{error}</p> : null}
     </form>
   );
 }
