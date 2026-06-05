@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 
 export function AuthControls() {
@@ -12,6 +13,14 @@ export function AuthControls() {
   if (session?.user) {
     return (
       <span className="flex items-center gap-3">
+        {session.user.isEditor ? (
+          <Link
+            href="/plan"
+            className="kicker text-ink-soft transition-colors hover:text-terracotta"
+          >
+            Plan
+          </Link>
+        ) : null}
         {session.user.name ? (
           <span className="kicker text-ink-soft">{session.user.name}</span>
         ) : null}

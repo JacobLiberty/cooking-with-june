@@ -7,7 +7,7 @@ function fieldByName(type: typeof recipe, name: string) {
 }
 
 describe("schema content model", () => {
-  it("registers all four document types and three object types", () => {
+  it("registers all document types and object types", () => {
     const names = schemaTypes.map((t) => t.name);
     expect(names).toEqual(
       expect.arrayContaining([
@@ -15,9 +15,11 @@ describe("schema content model", () => {
         "ingredient",
         "tag",
         "editor",
+        "mealPlan",
         "ingredientLine",
         "rating",
         "recipeNote",
+        "manualGroceryItem",
       ]),
     );
   });
