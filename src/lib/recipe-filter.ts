@@ -15,6 +15,24 @@ export type RecipeFilters = {
   sort: SortKey;
 };
 
+/** How many recipes carry each tag (for facet counts). */
+export function countByTag(recipes: RecipeCardData[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const r of recipes)
+    for (const t of r.tags ?? []) counts[t] = (counts[t] ?? 0) + 1;
+  return counts;
+}
+
+/** How many recipes use each ingredient id (for facet counts). */
+export function countByIngredientId(
+  recipes: RecipeCardData[],
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const r of recipes)
+    for (const id of r.ingredientIds ?? []) counts[id] = (counts[id] ?? 0) + 1;
+  return counts;
+}
+
 export function matchesCollection(
   recipe: RecipeCardData,
   collection: CollectionKey,

@@ -26,3 +26,7 @@ export const PLAN_QUERY = defineQuery(`
 export const PLAN_RECIPE_IDS_QUERY = defineQuery(`
   *[_id == "mealPlan"][0].recipes[]._ref
 `);
+
+export const PLAN_PANTRY_QUERY = defineQuery(`
+  *[_id == "mealPlan"][0].pantryIngredients
+`);
