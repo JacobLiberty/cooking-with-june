@@ -28,11 +28,15 @@ export function FilterControls({
   filters,
   ingredients,
   tags,
+  tagCounts = {},
+  ingredientCounts = {},
   onChange,
 }: {
   filters: RecipeFilters;
   ingredients: IngredientOption[];
   tags: TagOption[];
+  tagCounts?: Record<string, number>;
+  ingredientCounts?: Record<string, number>;
   onChange: (next: RecipeFilters) => void;
 }) {
   const [showAllTags, setShowAllTags] = useState(false);
@@ -126,6 +130,9 @@ export function FilterControls({
                 className={`kicker border px-2 py-1 ${active ? "border-terracotta bg-terracotta-wash text-terracotta" : "border-ink/20 text-ink-soft hover:border-terracotta"}`}
               >
                 {t.name}
+                {tagCounts[t.name] ? (
+                  <span className="ml-1.5 opacity-60">{tagCounts[t.name]}</span>
+                ) : null}
               </button>
             );
           })}
@@ -180,6 +187,11 @@ export function FilterControls({
                   className={`border px-2.5 py-1 text-sm ${active ? "border-clay bg-clay-wash text-clay" : "border-ink/20 text-ink-soft hover:border-clay"}`}
                 >
                   {ing.name}
+                  {ingredientCounts[ing._id] ? (
+                    <span className="ml-1.5 opacity-60">
+                      {ingredientCounts[ing._id]}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}

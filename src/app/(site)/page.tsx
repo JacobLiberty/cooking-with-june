@@ -6,6 +6,7 @@ import {
   INGREDIENTS_QUERY,
   TAGS_QUERY,
 } from "@/sanity/lib/queries";
+import { PLAN_PANTRY_QUERY } from "@/sanity/lib/plan-queries";
 import type {
   RecipeCardData,
   IngredientOption,
@@ -24,6 +25,13 @@ export default async function HomePage() {
     client.fetch<TagOption[]>(TAGS_QUERY),
     getViewer(),
   ]);
+
+  // Editors get "Cook from pantry" — fetch what's currently in the pantry.
+  const pantryIds = viewer.isEditor
+    ? ((await client
+        .withConfig({ useCdn: false })
+        .fetch<string[] | null>(PLAN_PANTRY_QUERY)) ?? [])
+    : undefined;
 
   return (
     <section>
@@ -58,7 +66,12 @@ export default async function HomePage() {
 
       <div className="set set-2 mt-8">
         <Suspense fallback={null}>
-          <CollectionView recipes={recipes} ingredients={ingredients} tags={tags} />
+          <CollectionView
+            recipes={recipes}
+            ingredients={ingredients}
+            tags={tags}
+            pantryIds={pantryIds}
+          />
         </Suspense>
       </div>
     </section>

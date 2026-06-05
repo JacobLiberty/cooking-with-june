@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type {
   RecipeCardData,
@@ -9,8 +9,11 @@ import type {
 } from "@/sanity/types";
 import {
   applyRecipeFilters,
+  countByTag,
+  countByIngredientId,
   type RecipeFilters,
 } from "@/lib/recipe-filter";
+import { missingFromPantry } from "@/lib/pantry";
 import { parseFilters, serializeFilters } from "@/lib/recipe-query-state";
 import { FilterControls } from "@/components/filter-controls";
 import { RecipeGrid } from "@/components/recipe-grid";
@@ -20,19 +23,30 @@ export function CollectionView({
   recipes,
   ingredients,
   tags,
+  pantryIds,
 }: {
   recipes: RecipeCardData[];
   ingredients: IngredientOption[];
   tags: TagOption[];
+  pantryIds?: string[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [pantryOnly, setPantryOnly] = useState(false);
 
   const filters = useMemo(
     () => parseFilters(new URLSearchParams(searchParams.toString())),
     [searchParams],
   );
+
+  const tagCounts = useMemo(() => countByTag(recipes), [recipes]);
+  const ingredientCounts = useMemo(
+    () => countByIngredientId(recipes),
+    [recipes],
+  );
+  const pantrySet = useMemo(() => new Set(pantryIds ?? []), [pantryIds]);
+  const canCookFromPantry = (pantryIds?.length ?? 0) > 0;
 
   const setFilters = useCallback(
     (next: RecipeFilters) => {
@@ -42,10 +56,13 @@ export function CollectionView({
     [router, pathname],
   );
 
-  const filtered = useMemo(
-    () => applyRecipeFilters(recipes, filters),
-    [recipes, filters],
-  );
+  const filtered = useMemo(() => {
+    const base = applyRecipeFilters(recipes, filters);
+    if (!pantryOnly || !canCookFromPantry) return base;
+    return base.filter(
+      (r) => missingFromPantry(r.ingredientIds ?? [], pantrySet) === 0,
+    );
+  }, [recipes, filters, pantryOnly, canCookFromPantry, pantrySet]);
 
   const surprise = useCallback(() => {
     if (filtered.length === 0) return;
@@ -60,8 +77,25 @@ export function CollectionView({
         filters={filters}
         ingredients={ingredients}
         tags={tags}
+        tagCounts={tagCounts}
+        ingredientCounts={ingredientCounts}
         onChange={setFilters}
       />
+
+      {canCookFromPantry ? (
+        <button
+          type="button"
+          aria-pressed={pantryOnly}
+          onClick={() => setPantryOnly((v) => !v)}
+          className={`kicker rounded-full border px-4 py-2 transition-colors ${
+            pantryOnly
+              ? "border-clay bg-clay text-paper"
+              : "border-clay/50 text-clay hover:bg-clay-wash"
+          }`}
+        >
+          {pantryOnly ? "Showing what you can cook now" : "Cook from pantry"}
+        </button>
+      ) : null}
 
       <div className="flex items-center justify-between border-t border-terracotta/25 pt-4">
         <span className="kicker text-ink-soft" aria-live="polite">

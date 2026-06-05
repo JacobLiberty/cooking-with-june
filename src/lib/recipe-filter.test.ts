@@ -4,6 +4,8 @@ import {
   matchesIngredients,
   matchesTags,
   matchesCollection,
+  countByTag,
+  countByIngredientId,
   applyRecipeFilters,
   type RecipeFilters,
 } from "@/lib/recipe-filter";
@@ -93,6 +95,20 @@ describe("matchesCollection", () => {
   it("'approved' keeps only June-approved recipes", () => {
     expect(matchesCollection(approved, "approved")).toBe(true);
     expect(matchesCollection(plain, "approved")).toBe(false);
+  });
+});
+
+describe("facet counts", () => {
+  const recipes = [
+    recipe({ tags: ["Dinner", "Quick"], ingredientIds: ["beef", "onion"] }),
+    recipe({ tags: ["Dinner"], ingredientIds: ["onion"] }),
+    recipe({ tags: [], ingredientIds: ["tofu"] }),
+  ];
+  it("counts recipes per tag", () => {
+    expect(countByTag(recipes)).toEqual({ Dinner: 2, Quick: 1 });
+  });
+  it("counts recipes per ingredient id", () => {
+    expect(countByIngredientId(recipes)).toEqual({ beef: 1, onion: 2, tofu: 1 });
   });
 });
 
