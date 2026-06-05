@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveRecipe } from "@/app/actions/recipe-actions";
+import { downscaleImage } from "@/lib/image-resize";
 import type { IngredientOption, TagOption, RecipeEditData } from "@/sanity/types";
 
 type Row = { name: string; quantity: string; unit: string };
@@ -34,6 +35,11 @@ export function RecipeForm({
     setError(null);
     start(async () => {
       try {
+        // Shrink large photos client-side so they fit Vercel's upload limit.
+        const img = formData.get("image");
+        if (img instanceof File && img.size > 0) {
+          formData.set("image", await downscaleImage(img));
+        }
         const res = await saveRecipe(recipeId, formData);
         if (res.ok) router.push(`/recipe/${res.slug}`);
         else setError(res.error);
