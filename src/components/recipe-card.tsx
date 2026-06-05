@@ -43,12 +43,15 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
         <h3 className="editorial-display mt-1.5 text-2xl leading-tight text-ink transition-colors group-hover:text-terracotta">
           {recipe.title}
         </h3>
-        <div className="mt-2 h-5">
+        <div className="mt-2 flex h-5 items-center gap-2.5">
           {avg != null ? (
             <StarRating value={avg} />
           ) : recipe.wishlist ? null : (
             <span className="kicker text-ink-soft/70">Unrated</span>
           )}
+          {recipe.madeCount ? (
+            <span className="kicker text-ink-soft/70">made {recipe.madeCount}×</span>
+          ) : null}
         </div>
         {recipe.description ? (
           <p className="mt-1 line-clamp-2 leading-relaxed text-ink-soft">
