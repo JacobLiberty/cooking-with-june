@@ -127,10 +127,14 @@ export function normalizeUnit(unit: string | undefined | null): string {
   return u;
 }
 
-/** Density for an ingredient name (first matching keyword), default 1 g/ml. */
+// Match the most specific keyword first ("brown sugar" before "sugar").
+const bySpecificity = (table: Record<string, number>) =>
+  Object.keys(table).sort((a, b) => b.length - a.length);
+
+/** Density for an ingredient name (most-specific matching keyword), default 1 g/ml. */
 export function densityFor(name: string | null | undefined): number {
   const n = (name ?? "").toLowerCase();
-  for (const key of Object.keys(DENSITY)) {
+  for (const key of bySpecificity(DENSITY)) {
     if (n.includes(key)) return DENSITY[key];
   }
   return 1;
@@ -142,7 +146,7 @@ export function countWeightFor(
   unit: string,
 ): number | null {
   const n = (name ?? "").toLowerCase();
-  for (const key of Object.keys(COUNT_WEIGHTS)) {
+  for (const key of bySpecificity(COUNT_WEIGHTS)) {
     if (n.includes(key)) return COUNT_WEIGHTS[key];
   }
   if (unit && COUNT_WEIGHTS[unit] != null) return COUNT_WEIGHTS[unit];
