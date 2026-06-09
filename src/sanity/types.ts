@@ -34,6 +34,23 @@ export type IngredientLineView = {
 
 export type RecipeNoteView = { _key: string; author?: string; text: string };
 
+export type MacroSet = {
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+};
+
+export type RecipeMacros = {
+  /** Per serving, required ingredients only. */
+  base?: MacroSet;
+  /** Per serving, including optional ingredients. */
+  full?: MacroSet;
+  estimated?: boolean;
+  computedAt?: string;
+  unparsedLines?: string[];
+};
+
 export type RecipeEditData = {
   _id: string;
   title: string;
@@ -69,4 +86,5 @@ export type RecipeDetailData = {
   madeCount?: number;
   lastMadeAt?: string;
   notes: RecipeNoteView[] | null;
+  macros?: RecipeMacros | null;
 };

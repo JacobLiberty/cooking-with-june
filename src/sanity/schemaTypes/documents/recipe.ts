@@ -109,6 +109,39 @@ export const recipe = defineType({
       type: "array",
       of: [defineArrayMember({ type: "recipeNote" })],
     }),
+    defineField({
+      name: "macros",
+      title: "Nutrition (per serving)",
+      type: "object",
+      description:
+        "Auto-estimated from USDA data. base = required ingredients only; full = including optional ones.",
+      fields: [
+        defineField({
+          name: "base",
+          title: "Per serving — required only",
+          type: "macroSet",
+        }),
+        defineField({
+          name: "full",
+          title: "Per serving — including optional",
+          type: "macroSet",
+        }),
+        defineField({
+          name: "estimated",
+          title: "Estimated",
+          type: "boolean",
+          description: "Approximate values computed from USDA data.",
+        }),
+        defineField({ name: "computedAt", title: "Computed at", type: "datetime" }),
+        defineField({
+          name: "unparsedLines",
+          title: "Skipped ingredients",
+          type: "array",
+          of: [defineArrayMember({ type: "string" })],
+          description: "Lines we couldn't convert to grams or match in USDA.",
+        }),
+      ],
+    }),
   ],
   preview: {
     select: { title: "title", media: "images.0" },
