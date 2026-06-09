@@ -138,8 +138,8 @@ export function CollectionView({
             <>
               <p className="editorial-display text-2xl text-ink">Nothing here</p>
               <p className="text-ink-soft">
-                Try a different search, fewer filters, or switch the pantry match
-                to &ldquo;any.&rdquo;
+                Try a different search, fewer filters, or loosen the pantry match
+                to &ldquo;most&rdquo; or &ldquo;any.&rdquo;
               </p>
             </>
           )}

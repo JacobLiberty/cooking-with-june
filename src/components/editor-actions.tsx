@@ -18,11 +18,10 @@ const RATING_STEP = 0.5;
 const clampRating = (v: number) => Math.max(0, Math.min(MAX_RATING, v));
 
 /**
- * Half-step rating input modelled as a single ARIA slider (0–5, step 0.5):
- * keyboard users get one tab stop plus Arrow/Home/End/PageUp-Down keys and the
- * value is announced via aria-valuetext; pointer users tap the left half of a
- * star for n−0.5 or the right half for n. The half hit-targets are aria-hidden
- * so they don't add 10 noisy tab stops.
+ * Half-step rating input modelled as a single ARIA slider (0–5, step 0.5).
+ * Keyboard: one tab stop plus Arrow/Home/End/PageUp-Down keys, value announced
+ * via aria-valuetext. Pointer: the click (and a live hover preview) map the
+ * x-position across the five stars to the nearest 0.5 value.
  */
 function RatingInput({
   value,
@@ -33,6 +32,16 @@ function RatingInput({
   disabled: boolean;
   onRate: (v: number) => void;
 }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const shown = hover ?? value;
+
+  const valueFromX = (clientX: number, el: HTMLElement) => {
+    const { left, width } = el.getBoundingClientRect();
+    const ratio = (clientX - left) / width;
+    const v = clampRating(Math.ceil((ratio * MAX_RATING) / RATING_STEP) * RATING_STEP);
+    return Math.max(RATING_STEP, v);
+  };
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     let next = value;
     switch (e.key) {
@@ -63,14 +72,9 @@ function RatingInput({
     if (next !== value) onRate(next);
   };
 
-  // Pointer: map the click x-position across the 5 stars to a 0.5-step value
-  // (left half of a star → n−0.5, right half → n). Keyboard uses onKeyDown.
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
-    const { left, width } = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - left) / width;
-    const next = clampRating(Math.ceil((ratio * MAX_RATING) / RATING_STEP) * RATING_STEP);
-    onRate(Math.max(RATING_STEP, next));
+    onRate(valueFromX(e.clientX, e.currentTarget));
   };
 
   return (
@@ -85,13 +89,19 @@ function RatingInput({
       aria-disabled={disabled || undefined}
       onKeyDown={disabled ? undefined : onKeyDown}
       onClick={onClick}
+      onMouseMove={
+        disabled
+          ? undefined
+          : (e) => setHover(valueFromX(e.clientX, e.currentTarget))
+      }
+      onMouseLeave={() => setHover(null)}
       className={`inline-flex items-center rounded outline-offset-4 ${
         disabled ? "" : "cursor-pointer"
       }`}
     >
       {[1, 2, 3, 4, 5].map((n) => {
-        const full = value >= n;
-        const half = !full && value >= n - 0.5;
+        const full = shown >= n;
+        const half = !full && shown >= n - 0.5;
         return (
           <span
             key={n}
