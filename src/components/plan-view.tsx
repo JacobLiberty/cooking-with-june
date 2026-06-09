@@ -10,6 +10,7 @@ import type {
 } from "@/sanity/plan-types";
 import type { IngredientOption } from "@/sanity/types";
 import { missingFromPantry, groceryAfterRecipeRemoval } from "@/lib/pantry";
+import { groceryMetaByIngredient } from "@/lib/grocery";
 import { scaleQuantity } from "@/lib/scale";
 import { CheckBox } from "@/components/check-box";
 import { PlanRecipeRow } from "@/components/plan-recipe-row";
@@ -98,6 +99,13 @@ export function PlanView({
   }, [recipes, recipeScales]);
 
   const amountOf = (id: string) => amountById.get(id)?.join(" · ") ?? "";
+
+  // Per-ingredient: how many planned recipes use it, and whether it reads as
+  // optional (only when a single recipe uses it and marks it optional).
+  const groceryMeta = useMemo(
+    () => groceryMetaByIngredient(recipes ?? []),
+    [recipes],
+  );
 
   const act = (action: () => Promise<unknown>, revert: () => void) => {
     setError(null);
@@ -331,10 +339,27 @@ export function PlanView({
                       onChange={() => onCheck(row)}
                       label={`Got ${row.name}`}
                     />
-                    <span className="flex-1 text-ink">
-                      {row.name}
-                      {row.kind === "auto" && amountOf(row.id) ? (
-                        <span className="text-ink-soft"> · {amountOf(row.id)}</span>
+                    <span className="flex flex-1 flex-wrap items-center gap-x-2 text-ink">
+                      <span>
+                        {row.name}
+                        {row.kind === "auto" && amountOf(row.id) ? (
+                          <span className="text-ink-soft"> · {amountOf(row.id)}</span>
+                        ) : null}
+                      </span>
+                      {row.kind === "auto" &&
+                      (groceryMeta.get(row.id)?.recipeCount ?? 0) >= 2 ? (
+                        <span
+                          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-clay-wash px-1.5 text-xs text-ink"
+                          title={`Used in ${groceryMeta.get(row.id)?.recipeCount} recipes`}
+                          aria-label={`Used in ${groceryMeta.get(row.id)?.recipeCount} recipes`}
+                        >
+                          {groceryMeta.get(row.id)?.recipeCount}
+                        </span>
+                      ) : null}
+                      {row.kind === "auto" && groceryMeta.get(row.id)?.isOptional ? (
+                        <span className="kicker rounded-full bg-ink/5 px-2 py-0.5 text-ink-soft">
+                          optional
+                        </span>
                       ) : null}
                     </span>
                     <button

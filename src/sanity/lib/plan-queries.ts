@@ -14,7 +14,8 @@ export const PLAN_QUERY = defineQuery(`
         "ingredientId": ingredient._ref,
         "name": ingredient->name,
         quantity,
-        unit
+        unit,
+        optional
       }
     },
     manualItems[]{ _key, name, location },
