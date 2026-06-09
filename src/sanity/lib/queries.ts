@@ -38,7 +38,14 @@ export const RECIPE_QUERY = defineQuery(`
     wishlist,
     madeCount,
     lastMadeAt,
-    "notes": notes[]{ _key, author, text }
+    "notes": notes[]{ _key, author, text },
+    macros{
+      base{ calories, protein, carbs, fat },
+      full{ calories, protein, carbs, fat },
+      estimated,
+      computedAt,
+      unparsedLines
+    }
   }
 `);
 

@@ -24,6 +24,25 @@ export function scaleQuantity(
   return q;
 }
 
+/**
+ * Parse a free-text quantity to a single number for arithmetic (e.g. grams
+ * conversion). Ranges collapse to their midpoint ("2-3" → 2.5). Returns null
+ * when nothing numeric is present ("a pinch", "to taste", "").
+ */
+export function parseQuantityValue(
+  quantity: string | undefined | null,
+): number | null {
+  const q = (quantity ?? "").trim();
+  if (!q) return null;
+  const range = q.split(/\s*[-–]\s*/);
+  if (range.length === 2) {
+    const a = parseNum(range[0]);
+    const b = parseNum(range[1]);
+    if (a != null && b != null) return (a + b) / 2;
+  }
+  return parseNum(q);
+}
+
 /** Scale factor for a target serving count against the recipe's base. */
 export function servingFactor(
   base: number | undefined | null,

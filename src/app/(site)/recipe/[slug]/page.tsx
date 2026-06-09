@@ -25,6 +25,7 @@ import { ShareButton } from "@/components/share-button";
 import { AddNoteForm } from "@/components/add-note-form";
 import { AddToPlanButton } from "@/components/add-to-plan-button";
 import { DeleteRecipeButton } from "@/components/delete-recipe-button";
+import { RecipeMacrosPanel } from "@/components/recipe-macros";
 
 // revalidate removed — getViewer() (auth()) makes this page dynamic
 
@@ -174,6 +175,8 @@ export default async function RecipePage({
           {recipe.story}
         </p>
       ) : null}
+
+      <RecipeMacrosPanel macros={recipe.macros} />
 
       <div className="mt-10 grid gap-10 md:grid-cols-[1fr_1.6fr]">
         <section aria-labelledby="ingredients-heading">

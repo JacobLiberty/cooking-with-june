@@ -7,6 +7,7 @@ import { ingredientLine } from "./objects/ingredient-line";
 import { rating } from "./objects/rating";
 import { recipeNote } from "./objects/recipe-note";
 import { manualGroceryItem } from "./objects/manual-item";
+import { macroSet } from "./objects/macro-set";
 
 export const schemaTypes = [
   // documents
@@ -20,4 +21,5 @@ export const schemaTypes = [
   rating,
   recipeNote,
   manualGroceryItem,
+  macroSet,
 ];
