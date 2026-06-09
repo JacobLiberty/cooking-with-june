@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { requireEditor } from "@/lib/viewer";
+import { getWriteClient } from "@/sanity/lib/write-client";
 import {
   rateRecipe,
   markMade,
@@ -77,5 +78,53 @@ describe("recipe action guards", () => {
   it("unmarkMade propagates the authorization error for non-editors", async () => {
     mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
     await expect(unmarkMade("r1")).rejects.toThrow("Not authorized");
+  });
+});
+
+describe("saveRecipe ingredient persistence", () => {
+  // Capture the recipe document handed to write.create / write.patch so we can
+  // assert which ingredient fields survive a save.
+  function captureWriteClient() {
+    const created: Record<string, unknown>[] = [];
+    const fakeWrite = {
+      create: vi.fn(async (doc: Record<string, unknown>) => {
+        created.push(doc);
+        return { _id: doc._type === "ingredient" ? `ing-${doc.name}` : "recipe-1" };
+      }),
+      patch: vi.fn(() => ({
+        set: () => ({ commit: vi.fn().mockResolvedValue(undefined) }),
+      })),
+      assets: { upload: vi.fn() },
+    };
+    vi.mocked(getWriteClient).mockReturnValue(
+      fakeWrite as unknown as ReturnType<typeof getWriteClient>,
+    );
+    return created;
+  }
+
+  // The save path builds `doc.ingredients` from parallel form arrays via one
+  // shared loop used by both create and edit, so the create case locks in the
+  // fields that must survive a save — note included (it was previously dropped,
+  // wiping notes whenever a recipe was edited).
+  it("keeps each ingredient's note, optional flag, quantity, and unit", async () => {
+    const created = captureWriteClient();
+    const fd = new FormData();
+    fd.set("title", "Test Recipe");
+    fd.append("step", "Mix and cook");
+    fd.append("ingQty", "2");
+    fd.append("ingUnit", "cup");
+    fd.append("ingName", "flour");
+    fd.append("ingNote", "sifted");
+    fd.append("ingOptional", "true");
+
+    const res = await saveRecipe(null, fd);
+    expect(res.ok).toBe(true);
+
+    const recipe = created.find((d) => d._type === "recipe");
+    const line = (recipe?.ingredients as Record<string, unknown>[])[0];
+    expect(line.note).toBe("sifted");
+    expect(line.optional).toBe(true);
+    expect(line.quantity).toBe("2");
+    expect(line.unit).toBe("cup");
   });
 });
