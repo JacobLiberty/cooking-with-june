@@ -15,6 +15,19 @@ const SORT_LABELS: Record<SortKey, string> = {
   newest: "Newest",
 };
 
+const MODE_LABELS: Record<FilterMode, string> = {
+  any: "Any",
+  most: "Most",
+  all: "All",
+};
+
+// Plain-language hint for the active match mode (no thresholds — keep it human).
+const MODE_HINTS: Record<FilterMode, string> = {
+  any: "Recipes using anything you have.",
+  most: "Recipes you have most of the ingredients for.",
+  all: "Recipes you have every ingredient for.",
+};
+
 const COLLECTIONS: { key: CollectionKey; label: string }[] = [
   { key: "all", label: "All" },
   { key: "totry", label: "To try" },
@@ -137,7 +150,7 @@ export function FilterControls({
               >
                 {t.name}
                 {tagCounts[t.name] ? (
-                  <span className="ml-1.5 opacity-60">{tagCounts[t.name]}</span>
+                  <span className="ml-1.5 tabular-nums">{tagCounts[t.name]}</span>
                 ) : null}
               </button>
             );
@@ -188,23 +201,26 @@ export function FilterControls({
                 Ingredient match
               </span>
               <div
-                className="flex items-center gap-1"
+                className="inline-flex items-center rounded-full border border-ink/20 p-0.5"
                 role="group"
                 aria-labelledby="pantry-match-label"
               >
-                {(["any", "all"] as FilterMode[]).map((m) => (
+                {(["any", "most", "all"] as FilterMode[]).map((m) => (
                   <button
                     key={m}
                     type="button"
                     aria-pressed={filters.mode === m}
                     onClick={() => onChange({ ...filters, mode: m })}
-                    className={`kicker rounded-full px-3 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
+                    className={`kicker rounded-full px-3 py-1 transition-colors ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
                   >
-                    {m}
+                    {MODE_LABELS[m]}
                   </button>
                 ))}
               </div>
             </div>
+            <p className="text-sm text-ink-soft" aria-live="polite">
+              {MODE_HINTS[filters.mode]}
+            </p>
             <div
               className="flex flex-wrap items-center gap-2"
               role="group"
@@ -227,7 +243,7 @@ export function FilterControls({
                 >
                   {ing.name}
                   {ingredientCounts[ing._id] ? (
-                    <span className="ml-1.5 opacity-60">
+                    <span className="ml-1.5 tabular-nums">
                       {ingredientCounts[ing._id]}
                     </span>
                   ) : null}

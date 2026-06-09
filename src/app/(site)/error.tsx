@@ -9,9 +9,9 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-5 text-center">
+    <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-5 text-center">
       <JuneArt pose="sleeping" className="h-40 w-auto" />
-      <p className="kicker mt-6 text-clay">Something went sideways</p>
+      <p className="kicker mt-6 text-terracotta-deep">Something went sideways</p>
       <h1 className="editorial-display mt-2 text-4xl text-ink md:text-5xl">
         June spilled the sauce
       </h1>
@@ -25,6 +25,6 @@ export default function Error({
       >
         Try again
       </button>
-    </main>
+    </div>
   );
 }

@@ -94,12 +94,17 @@ export function CookMode({
       </div>
 
       <div className="mt-6 flex flex-1 flex-col justify-center">
-        <p className="kicker text-terracotta">
-          Step {p.total === 0 ? 0 : p.current + 1} of {p.total}
-        </p>
-        <p className="mt-3 text-3xl leading-snug text-ink md:text-5xl">
-          {steps[p.current] ?? "No steps yet."}
-        </p>
+        {/* Live region scoped to the step text only — keeping the running
+            StepTimer countdown out of it so a timer doesn't re-announce the
+            whole step every second. */}
+        <div aria-live="polite" aria-atomic="true">
+          <p className="kicker text-terracotta">
+            Step {p.total === 0 ? 0 : p.current + 1} of {p.total}
+          </p>
+          <p className="mt-3 text-3xl leading-snug text-ink md:text-5xl">
+            {steps[p.current] ?? "No steps yet."}
+          </p>
+        </div>
 
         {stepIngredients.length > 0 ? (
           <div className="mt-5 flex flex-wrap gap-2">

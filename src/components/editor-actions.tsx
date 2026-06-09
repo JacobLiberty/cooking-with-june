@@ -13,10 +13,15 @@ import { PawMark } from "@/components/paw-mark";
 import { Star } from "@/components/star-rating";
 import { useToast } from "@/components/toast";
 
+const MAX_RATING = 5;
+const RATING_STEP = 0.5;
+const clampRating = (v: number) => Math.max(0, Math.min(MAX_RATING, v));
+
 /**
- * Half-step rating input: each star is a 44px-tall slot split into two hit
- * targets — the left half sets n−0.5, the right half sets n — so editors can
- * enter the same 0.5-step values the display and "June approved" logic use.
+ * Half-step rating input modelled as a single ARIA slider (0–5, step 0.5).
+ * Keyboard: one tab stop plus Arrow/Home/End/PageUp-Down keys, value announced
+ * via aria-valuetext. Pointer: the click (and a live hover preview) map the
+ * x-position across the five stars to the nearest 0.5 value.
  */
 function RatingInput({
   value,
@@ -27,15 +32,80 @@ function RatingInput({
   disabled: boolean;
   onRate: (v: number) => void;
 }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const shown = hover ?? value;
+
+  const valueFromX = (clientX: number, el: HTMLElement) => {
+    const { left, width } = el.getBoundingClientRect();
+    const ratio = (clientX - left) / width;
+    const v = clampRating(Math.ceil((ratio * MAX_RATING) / RATING_STEP) * RATING_STEP);
+    return Math.max(RATING_STEP, v);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    let next = value;
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowUp":
+        next = clampRating(value + RATING_STEP);
+        break;
+      case "ArrowLeft":
+      case "ArrowDown":
+        next = clampRating(value - RATING_STEP);
+        break;
+      case "PageUp":
+        next = clampRating(value + 1);
+        break;
+      case "PageDown":
+        next = clampRating(value - 1);
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = MAX_RATING;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    if (next !== value) onRate(next);
+  };
+
+  const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    onRate(valueFromX(e.clientX, e.currentTarget));
+  };
+
   return (
-    <div className="flex items-center" role="group" aria-label="Set your rating">
+    <div
+      role="slider"
+      tabIndex={disabled ? -1 : 0}
+      aria-label="Your rating"
+      aria-valuemin={0}
+      aria-valuemax={MAX_RATING}
+      aria-valuenow={value}
+      aria-valuetext={`${value} of ${MAX_RATING} stars`}
+      aria-disabled={disabled || undefined}
+      onKeyDown={disabled ? undefined : onKeyDown}
+      onClick={onClick}
+      onMouseMove={
+        disabled
+          ? undefined
+          : (e) => setHover(valueFromX(e.clientX, e.currentTarget))
+      }
+      onMouseLeave={() => setHover(null)}
+      className={`inline-flex items-center rounded outline-offset-4 ${
+        disabled ? "" : "cursor-pointer"
+      }`}
+    >
       {[1, 2, 3, 4, 5].map((n) => {
-        const full = value >= n;
-        const half = !full && value >= n - 0.5;
+        const full = shown >= n;
+        const half = !full && shown >= n - 0.5;
         return (
           <span
             key={n}
-            className={`relative inline-flex h-11 w-8 items-center justify-center ${
+            className={`inline-flex h-11 w-8 items-center justify-center ${
               full || half ? "text-star" : "text-ink/30"
             }`}
           >
@@ -43,22 +113,6 @@ function RatingInput({
               fill={full ? "full" : half ? "half" : "empty"}
               index={n}
               className="h-6 w-6"
-            />
-            <button
-              type="button"
-              disabled={disabled}
-              aria-label={`${n - 0.5} stars`}
-              aria-pressed={value === n - 0.5}
-              onClick={() => onRate(n - 0.5)}
-              className="absolute inset-y-0 left-0 w-1/2"
-            />
-            <button
-              type="button"
-              disabled={disabled}
-              aria-label={`${n} star${n > 1 ? "s" : ""}`}
-              aria-pressed={value === n}
-              onClick={() => onRate(n)}
-              className="absolute inset-y-0 right-0 w-1/2"
             />
           </span>
         );

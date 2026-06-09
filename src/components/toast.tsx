@@ -39,10 +39,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const show = useCallback(
-    (input: ToastInput) => {
-      const id = (idRef.current += 1);
-      setToasts((ts) => [...ts, { ...input, id }]);
+  const resume = useCallback(
+    (id: number) => {
+      if (timers.current.has(id)) return;
       timers.current.set(
         id,
         setTimeout(() => dismiss(id), DISMISS_MS),
@@ -51,12 +50,32 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [dismiss],
   );
 
+  // Pause the auto-dismiss while the toast is hovered or focused, so keyboard
+  // and screen-reader users have time to reach the Undo action.
+  const pause = useCallback((id: number) => {
+    const tm = timers.current.get(id);
+    if (tm) {
+      clearTimeout(tm);
+      timers.current.delete(id);
+    }
+  }, []);
+
+  const show = useCallback(
+    (input: ToastInput) => {
+      const id = (idRef.current += 1);
+      setToasts((ts) => [...ts, { ...input, id }]);
+      resume(id);
+    },
+    [resume],
+  );
+
   return (
     <ToastContext.Provider value={show}>
       {children}
       <div
         className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4"
-        aria-live="polite"
+        role="status"
+        aria-atomic="true"
       >
         <AnimatePresence>
           {toasts.map((t) => (
@@ -66,7 +85,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="pointer-events-auto flex items-center gap-4 rounded-full border border-terracotta/30 bg-ink px-5 py-2.5 text-paper shadow-lg"
+              onMouseEnter={() => pause(t.id)}
+              onMouseLeave={() => resume(t.id)}
+              onFocusCapture={() => pause(t.id)}
+              onBlurCapture={() => resume(t.id)}
+              className="pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-4 rounded-full border border-terracotta/30 bg-ink px-5 py-2.5 text-paper shadow-lg"
             >
               <span className="text-sm">{t.message}</span>
               {t.actionLabel ? (

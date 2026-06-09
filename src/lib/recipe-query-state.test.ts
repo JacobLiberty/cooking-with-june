@@ -25,6 +25,9 @@ describe("parseFilters", () => {
       sort: "rating",
     });
   });
+  it("accepts the 'most' match mode", () => {
+    expect(parseFilters(new URLSearchParams("mode=most")).mode).toBe("most");
+  });
   it("ignores invalid mode/sort/collection, falling back to defaults", () => {
     const p = new URLSearchParams("mode=weird&sort=bogus&col=nope");
     const f = parseFilters(p);

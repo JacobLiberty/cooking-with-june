@@ -6,6 +6,18 @@
  * lives in at most one of the two.
  */
 
+import { type FilterMode, MOST_THRESHOLD } from "@/lib/recipe-filter";
+
+type WithIngredients = {
+  ingredientIds: string[] | null;
+  requiredIngredientIds?: string[] | null;
+};
+
+/** A recipe's ingredients that count toward coverage (optional ones excluded). */
+function requiredIds(recipe: WithIngredients): string[] {
+  return recipe.requiredIngredientIds ?? recipe.ingredientIds ?? [];
+}
+
 /** How many of a recipe's ingredients are NOT in the pantry (0 = have all). */
 export function missingFromPantry(
   ingredientIds: string[],
@@ -16,27 +28,30 @@ export function missingFromPantry(
 
 /**
  * "Cook from pantry" results, ranked by how few ingredients you're missing.
- * - mode "all": only recipes you have every ingredient for (missing 0).
- * - mode "any": recipes you have at least one ingredient for ("use what I have").
- * Recipes with no ingredient list are excluded either way.
+ * Coverage is measured against a recipe's *required* ingredients only:
+ * - mode "all":  you have every required ingredient.
+ * - mode "most": you have at least MOST_THRESHOLD of them.
+ * - mode "any":  you have at least one of them ("use what I have").
+ * Recipes with no required ingredients are excluded in every mode.
  */
-export function filterCookable<T extends { ingredientIds: string[] | null }>(
+export function filterCookable<T extends WithIngredients>(
   recipes: T[],
   pantry: Set<string>,
-  mode: "any" | "all",
+  mode: FilterMode,
 ): T[] {
   return recipes
     .filter((r) => {
-      const ids = r.ingredientIds ?? [];
+      const ids = requiredIds(r);
       if (ids.length === 0) return false;
-      return mode === "all"
-        ? missingFromPantry(ids, pantry) === 0
-        : ids.some((id) => pantry.has(id));
+      if (mode === "any") return ids.some((id) => pantry.has(id));
+      const coverage =
+        (ids.length - missingFromPantry(ids, pantry)) / ids.length;
+      return mode === "all" ? coverage >= 1 : coverage >= MOST_THRESHOLD;
     })
     .sort(
       (a, b) =>
-        missingFromPantry(a.ingredientIds ?? [], pantry) -
-        missingFromPantry(b.ingredientIds ?? [], pantry),
+        missingFromPantry(requiredIds(a), pantry) -
+        missingFromPantry(requiredIds(b), pantry),
     );
 }
 

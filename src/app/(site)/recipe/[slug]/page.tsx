@@ -226,6 +226,12 @@ export default async function RecipePage({
               </li>
             ))}
           </ul>
+          {isJuneApproved(recipe.ratings) ? (
+            <p className="mt-3 text-sm text-ink-soft">
+              <span className="text-terracotta">June approved</span> means
+              everyone who rated it gave 4.5★ or higher.
+            </p>
+          ) : null}
         </section>
       ) : null}
 
