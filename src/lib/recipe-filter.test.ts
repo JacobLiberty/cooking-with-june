@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   matchesQuery,
   matchesIngredients,
+  ingredientCoverage,
+  MOST_THRESHOLD,
   matchesTags,
   matchesCollection,
   countByTag,
@@ -43,24 +45,72 @@ describe("matchesQuery", () => {
   });
 });
 
-describe("matchesIngredients", () => {
-  const r = recipe({ ingredientIds: ["beef", "onion", "garlic"] });
-  it("passes when nothing selected", () => {
+describe("ingredientCoverage", () => {
+  it("returns the fraction of required ingredients you have on hand", () => {
+    const r = recipe({ ingredientIds: ["beef", "onion", "garlic", "salt"] });
+    expect(ingredientCoverage(r, ["beef"])).toBe(0.25);
+    expect(ingredientCoverage(r, ["beef", "onion", "garlic"])).toBe(0.75);
+    expect(ingredientCoverage(r, ["beef", "onion", "garlic", "salt"])).toBe(1);
+    expect(ingredientCoverage(r, ["tofu"])).toBe(0);
+  });
+  it("measures against required ingredients only, ignoring optional ones", () => {
+    // recipe needs beef + onion; garnish is optional (excluded from required)
+    const r = recipe({
+      ingredientIds: ["beef", "onion", "garnish"],
+      requiredIngredientIds: ["beef", "onion"],
+    });
+    expect(ingredientCoverage(r, ["beef", "onion"])).toBe(1);
+    expect(ingredientCoverage(r, ["beef"])).toBe(0.5);
+  });
+  it("returns null when the recipe lists no required ingredients", () => {
+    expect(ingredientCoverage(recipe({ ingredientIds: null }), ["beef"])).toBeNull();
+    expect(
+      ingredientCoverage(
+        recipe({ ingredientIds: ["garnish"], requiredIngredientIds: [] }),
+        ["beef"],
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("matchesIngredients (coverage-based)", () => {
+  const r = recipe({ ingredientIds: ["beef", "onion", "garlic", "salt"] });
+  it("passes when nothing selected, in every mode", () => {
     expect(matchesIngredients(r, [], "any")).toBe(true);
+    expect(matchesIngredients(r, [], "most")).toBe(true);
     expect(matchesIngredients(r, [], "all")).toBe(true);
   });
-  it("ANY: matches if at least one selected ingredient is present", () => {
+  it("ANY: matches when you have at least one of the recipe's ingredients", () => {
     expect(matchesIngredients(r, ["beef", "tofu"], "any")).toBe(true);
     expect(matchesIngredients(r, ["tofu"], "any")).toBe(false);
   });
-  it("ALL: matches only if every selected ingredient is present", () => {
-    expect(matchesIngredients(r, ["beef", "onion"], "all")).toBe(true);
-    expect(matchesIngredients(r, ["beef", "tofu"], "all")).toBe(false);
+  it("MOST: matches when you have at least the threshold share", () => {
+    // 3/4 = 0.75 meets the 0.75 threshold; 2/4 = 0.5 does not
+    expect(matchesIngredients(r, ["beef", "onion", "garlic"], "most")).toBe(true);
+    expect(matchesIngredients(r, ["beef", "onion"], "most")).toBe(false);
   });
-  it("treats null ingredientIds as empty (no match when filtering)", () => {
+  it("ALL: matches only when you have every required ingredient", () => {
+    expect(
+      matchesIngredients(r, ["beef", "onion", "garlic", "salt"], "all"),
+    ).toBe(true);
+    expect(matchesIngredients(r, ["beef", "onion", "garlic"], "all")).toBe(false);
+  });
+  it("ignores optional ingredients for MOST and ALL", () => {
+    const withOptional = recipe({
+      ingredientIds: ["beef", "onion", "garnish"],
+      requiredIngredientIds: ["beef", "onion"],
+    });
+    // having both required ingredients is a full match despite the missing garnish
+    expect(matchesIngredients(withOptional, ["beef", "onion"], "all")).toBe(true);
+  });
+  it("uses a 0.75 threshold for 'most'", () => {
+    expect(MOST_THRESHOLD).toBe(0.75);
+  });
+  it("treats a recipe with no required ingredients as no match when filtering", () => {
     const noIds = recipe({ ingredientIds: null });
     expect(matchesIngredients(noIds, [], "any")).toBe(true);
     expect(matchesIngredients(noIds, ["beef"], "any")).toBe(false);
+    expect(matchesIngredients(noIds, ["beef"], "most")).toBe(false);
     expect(matchesIngredients(noIds, ["beef"], "all")).toBe(false);
   });
 });

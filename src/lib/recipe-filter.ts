@@ -3,8 +3,11 @@ import { averageRating } from "@/lib/rating";
 import { isJuneApproved } from "@/lib/june-approved";
 
 export type SortKey = "name" | "rating" | "newest";
-export type FilterMode = "any" | "all";
+export type FilterMode = "any" | "most" | "all";
 export type CollectionKey = "all" | "totry" | "approved";
+
+/** "Most" matches recipes you have at least this share of the ingredients for. */
+export const MOST_THRESHOLD = 0.75;
 
 export type RecipeFilters = {
   query: string;
@@ -48,16 +51,44 @@ export function matchesQuery(recipe: RecipeCardData, query: string): boolean {
   return recipe.title.toLowerCase().includes(q);
 }
 
+/** A recipe's ingredients that count toward pantry coverage (optional excluded). */
+export function requiredIngredientIds(recipe: RecipeCardData): string[] {
+  return recipe.requiredIngredientIds ?? recipe.ingredientIds ?? [];
+}
+
+/**
+ * What share of a recipe's required ingredients you have on hand (0–1), or
+ * null when the recipe lists no required ingredients (nothing to measure).
+ */
+export function ingredientCoverage(
+  recipe: RecipeCardData,
+  haveIds: string[],
+): number | null {
+  const required = requiredIngredientIds(recipe);
+  if (required.length === 0) return null;
+  const have = new Set(haveIds);
+  const present = required.filter((id) => have.has(id)).length;
+  return present / required.length;
+}
+
+/**
+ * Pantry filter, by how much of the recipe you can already make:
+ * - "any":  you have at least one of its ingredients
+ * - "most": you have at least MOST_THRESHOLD of its required ingredients
+ * - "all":  you have every required ingredient
+ * Optional ingredients never count against "most"/"all".
+ */
 export function matchesIngredients(
   recipe: RecipeCardData,
   ingredientIds: string[],
   mode: FilterMode,
 ): boolean {
   if (ingredientIds.length === 0) return true;
-  const have = new Set(recipe.ingredientIds ?? []);
-  return mode === "all"
-    ? ingredientIds.every((id) => have.has(id))
-    : ingredientIds.some((id) => have.has(id));
+  const coverage = ingredientCoverage(recipe, ingredientIds);
+  if (coverage === null) return false;
+  if (mode === "any") return coverage > 0;
+  if (mode === "most") return coverage >= MOST_THRESHOLD;
+  return coverage >= 1;
 }
 
 export function matchesTags(recipe: RecipeCardData, tags: string[]): boolean {

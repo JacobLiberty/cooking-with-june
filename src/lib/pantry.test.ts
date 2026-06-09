@@ -41,6 +41,33 @@ describe("filterCookable", () => {
       filterCookable(recipes, pantry, "any").some((r) => r.id === "empty"),
     ).toBe(false);
   });
+
+  it("'most' keeps recipes you have at least 75% of the ingredients for", () => {
+    const r = [
+      { id: "all-four", ingredientIds: ["a", "b", "c", "d"] }, // 4/4 = 1.0
+      { id: "three-four", ingredientIds: ["a", "b", "c", "x"] }, // 3/4 = 0.75
+      { id: "two-four", ingredientIds: ["a", "b", "x", "y"] }, // 2/4 = 0.5
+    ];
+    const haveFour = new Set(["a", "b", "c", "d"]);
+    expect(filterCookable(r, haveFour, "most").map((x) => x.id)).toEqual([
+      "all-four", // missing 0, ranked first
+      "three-four", // missing 1
+    ]);
+  });
+
+  it("ignores optional ingredients when judging coverage", () => {
+    // recipe needs a + b; garnish is optional and not in the pantry
+    const r = [
+      {
+        id: "with-optional",
+        ingredientIds: ["a", "b", "garnish"],
+        requiredIngredientIds: ["a", "b"],
+      },
+    ];
+    expect(filterCookable(r, new Set(["a", "b"]), "all").map((x) => x.id)).toEqual(
+      ["with-optional"],
+    );
+  });
 });
 
 describe("groceryAfterRecipeRemoval", () => {

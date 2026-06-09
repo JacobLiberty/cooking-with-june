@@ -59,8 +59,8 @@ export function CollectionView({
   const filtered = useMemo(() => {
     const base = applyRecipeFilters(recipes, filters);
     if (!pantryOnly || !canCookFromPantry) return base;
-    // "Cook from pantry" respects the any/all toggle: "all" = have everything,
-    // "any" = use at least one pantry item. Ranked by fewest missing.
+    // "Cook from pantry" respects the match toggle: "all" = have everything,
+    // "most" = have ≥75%, "any" = at least one. Ranked by fewest missing.
     return filterCookable(base, pantrySet, filters.mode);
   }, [recipes, filters, pantryOnly, canCookFromPantry, pantrySet]);
 
@@ -98,8 +98,10 @@ export function CollectionView({
           {pantryOnly ? (
             <p className="text-sm text-ink-soft">
               {filters.mode === "all"
-                ? "Recipes you have every ingredient for. Set the ingredient match above to “any” to include ones you’re only missing a few of."
-                : "Recipes that use anything in your pantry — closest matches first."}
+                ? "Recipes you have every ingredient for. Set the ingredient match above to “most” or “any” to include ones you’re only missing a few of."
+                : filters.mode === "most"
+                  ? "Recipes you have most of the ingredients for — closest matches first. Worst case, a quick substitution or store run."
+                  : "Recipes that use anything in your pantry — closest matches first."}
             </p>
           ) : null}
         </div>
@@ -122,11 +124,25 @@ export function CollectionView({
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20 text-center">
           <JuneArt pose="sleeping" className="h-28 w-auto opacity-90" />
-          <p className="editorial-display text-2xl text-ink">Nothing here</p>
-          <p className="text-ink-soft">
-            Try a different search, fewer filters, or switch the pantry match to
-            &ldquo;any.&rdquo;
-          </p>
+          {recipes.length === 0 ? (
+            <>
+              <p className="editorial-display text-2xl text-ink">
+                No recipes yet
+              </p>
+              <p className="text-ink-soft">
+                June&rsquo;s kitchen is empty for now. Add the first recipe and
+                it&rsquo;ll show up here.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="editorial-display text-2xl text-ink">Nothing here</p>
+              <p className="text-ink-soft">
+                Try a different search, fewer filters, or switch the pantry match
+                to &ldquo;any.&rdquo;
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <RecipeGrid recipes={filtered} />

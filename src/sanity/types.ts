@@ -16,6 +16,8 @@ export type RecipeCardData = {
   tags: string[] | null;
   ratings: RatingView[] | null;
   ingredientIds: string[] | null;
+  /** Recipe ingredients excluding any marked optional — used for pantry coverage. */
+  requiredIngredientIds?: string[] | null;
   createdAt: string;
 };
 
@@ -42,7 +44,7 @@ export type RecipeEditData = {
   cookTime?: number;
   servings?: number;
   ingredients:
-    | { _key: string; quantity?: string; unit?: string; note?: string; ingredientId: string; name: string | null }[]
+    | { _key: string; quantity?: string; unit?: string; note?: string; optional?: boolean; ingredientId: string; name: string | null }[]
     | null;
   steps: string[] | null;
   tagIds: string[] | null;

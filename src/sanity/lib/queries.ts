@@ -15,6 +15,7 @@ export const RECIPES_QUERY = defineQuery(`
     "tags": tags[]->name,
     "ratings": ratings[]{ "editor": editor->name, value },
     "ingredientIds": ingredients[].ingredient._ref,
+    "requiredIngredientIds": ingredients[optional != true].ingredient._ref,
     "createdAt": _createdAt
   }
 `);
@@ -63,7 +64,7 @@ export const RECIPE_EDIT_QUERY = defineQuery(`
     prepTime,
     cookTime,
     servings,
-    "ingredients": ingredients[]{ _key, quantity, unit, note, "ingredientId": ingredient._ref, "name": ingredient->name },
+    "ingredients": ingredients[]{ _key, quantity, unit, note, optional, "ingredientId": ingredient._ref, "name": ingredient->name },
     steps,
     "tagIds": tags[]._ref,
     "hasImage": defined(images[0])

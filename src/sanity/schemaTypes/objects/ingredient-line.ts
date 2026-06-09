@@ -30,12 +30,28 @@ export const ingredientLine = defineType({
       type: "string",
       description: 'e.g. "finely chopped"',
     }),
+    defineField({
+      name: "optional",
+      title: "Optional",
+      type: "boolean",
+      description:
+        "Nice-to-have, not required. Optional ingredients don't count toward the pantry “most/all” match.",
+      initialValue: false,
+    }),
   ],
   preview: {
-    select: { quantity: "quantity", unit: "unit", note: "note" },
-    prepare({ quantity, unit, note }) {
+    select: {
+      quantity: "quantity",
+      unit: "unit",
+      note: "note",
+      optional: "optional",
+    },
+    prepare({ quantity, unit, note, optional }) {
       const left = [quantity, unit].filter(Boolean).join(" ");
-      return { title: left || "Ingredient", subtitle: note };
+      const subtitle = [note, optional ? "optional" : null]
+        .filter(Boolean)
+        .join(" · ");
+      return { title: left || "Ingredient", subtitle: subtitle || undefined };
     },
   },
 });

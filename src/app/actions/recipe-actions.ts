@@ -171,10 +171,11 @@ export async function saveRecipe(
       )
     : [];
 
-  // ingredient rows: parallel arrays ingName / ingQty / ingUnit
+  // ingredient rows: parallel arrays ingName / ingQty / ingUnit / ingOptional
   const names = formData.getAll("ingName").map((n) => String(n).trim());
   const qtys = formData.getAll("ingQty").map((q) => String(q).trim());
   const units = formData.getAll("ingUnit").map((u) => String(u).trim());
+  const optionals = formData.getAll("ingOptional").map((o) => String(o));
 
   const ingredients: {
     _key: string;
@@ -182,6 +183,7 @@ export async function saveRecipe(
     ingredient: { _type: "reference"; _ref: string };
     quantity?: string;
     unit?: string;
+    optional?: boolean;
   }[] = [];
   for (let i = 0; i < names.length; i++) {
     if (!names[i]) continue;
@@ -192,6 +194,7 @@ export async function saveRecipe(
       ingredient: { _type: "reference", _ref: id },
       quantity: qtys[i] || undefined,
       unit: units[i] || undefined,
+      optional: optionals[i] === "true" ? true : undefined,
     });
   }
 

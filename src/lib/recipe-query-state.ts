@@ -6,7 +6,7 @@ import type {
 } from "@/lib/recipe-filter";
 
 const SORTS: SortKey[] = ["name", "rating", "newest"];
-const MODES: FilterMode[] = ["any", "all"];
+const MODES: FilterMode[] = ["any", "most", "all"];
 const COLLECTIONS: CollectionKey[] = ["all", "totry", "approved"];
 
 function list(value: string | null): string[] {

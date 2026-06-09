@@ -15,6 +15,19 @@ const SORT_LABELS: Record<SortKey, string> = {
   newest: "Newest",
 };
 
+const MODE_LABELS: Record<FilterMode, string> = {
+  any: "Any",
+  most: "Most",
+  all: "All",
+};
+
+// Plain-language hint for the active match mode (no thresholds — keep it human).
+const MODE_HINTS: Record<FilterMode, string> = {
+  any: "Recipes using anything you have.",
+  most: "Recipes you have most of the ingredients for.",
+  all: "Recipes you have every ingredient for.",
+};
+
 const COLLECTIONS: { key: CollectionKey; label: string }[] = [
   { key: "all", label: "All" },
   { key: "totry", label: "To try" },
@@ -192,7 +205,7 @@ export function FilterControls({
                 role="group"
                 aria-labelledby="pantry-match-label"
               >
-                {(["any", "all"] as FilterMode[]).map((m) => (
+                {(["any", "most", "all"] as FilterMode[]).map((m) => (
                   <button
                     key={m}
                     type="button"
@@ -200,11 +213,14 @@ export function FilterControls({
                     onClick={() => onChange({ ...filters, mode: m })}
                     className={`kicker rounded-full px-3 py-1 transition-colors ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
                   >
-                    {m === "any" ? "Any" : "All"}
+                    {MODE_LABELS[m]}
                   </button>
                 ))}
               </div>
             </div>
+            <p className="text-sm text-ink-soft" aria-live="polite">
+              {MODE_HINTS[filters.mode]}
+            </p>
             <div
               className="flex flex-wrap items-center gap-2"
               role="group"
