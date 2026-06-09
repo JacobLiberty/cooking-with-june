@@ -93,7 +93,11 @@ export function CookMode({
         ))}
       </div>
 
-      <div className="mt-6 flex flex-1 flex-col justify-center">
+      <div
+        className="mt-6 flex flex-1 flex-col justify-center"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <p className="kicker text-terracotta">
           Step {p.total === 0 ? 0 : p.current + 1} of {p.total}
         </p>

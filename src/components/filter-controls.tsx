@@ -137,7 +137,7 @@ export function FilterControls({
               >
                 {t.name}
                 {tagCounts[t.name] ? (
-                  <span className="ml-1.5 opacity-60">{tagCounts[t.name]}</span>
+                  <span className="ml-1.5 tabular-nums">{tagCounts[t.name]}</span>
                 ) : null}
               </button>
             );
@@ -188,7 +188,7 @@ export function FilterControls({
                 Ingredient match
               </span>
               <div
-                className="flex items-center gap-1"
+                className="inline-flex items-center rounded-full border border-ink/20 p-0.5"
                 role="group"
                 aria-labelledby="pantry-match-label"
               >
@@ -198,9 +198,9 @@ export function FilterControls({
                     type="button"
                     aria-pressed={filters.mode === m}
                     onClick={() => onChange({ ...filters, mode: m })}
-                    className={`kicker rounded-full px-3 py-1 ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
+                    className={`kicker rounded-full px-3 py-1 transition-colors ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
                   >
-                    {m}
+                    {m === "any" ? "Any" : "All"}
                   </button>
                 ))}
               </div>
@@ -227,7 +227,7 @@ export function FilterControls({
                 >
                   {ing.name}
                   {ingredientCounts[ing._id] ? (
-                    <span className="ml-1.5 opacity-60">
+                    <span className="ml-1.5 tabular-nums">
                       {ingredientCounts[ing._id]}
                     </span>
                   ) : null}

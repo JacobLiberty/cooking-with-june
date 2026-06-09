@@ -55,7 +55,7 @@ export function StepTimer({ timer }: { timer: Timer }) {
       }
       className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-base transition-colors ${
         done
-          ? "border-clay bg-clay text-paper"
+          ? "border-terracotta bg-terracotta text-paper"
           : running
             ? "border-terracotta bg-terracotta-wash text-terracotta"
             : "border-terracotta/50 text-terracotta hover:bg-terracotta-wash"

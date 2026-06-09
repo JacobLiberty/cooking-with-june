@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteRecipe } from "@/app/actions/recipe-actions";
 
@@ -20,6 +20,13 @@ export function DeleteRecipeButton({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const router = useRouter();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Move focus to the safer Cancel button when the confirm step appears, so
+  // keyboard/screen-reader users land on the destructive prompt deliberately.
+  useEffect(() => {
+    if (confirming) cancelRef.current?.focus();
+  }, [confirming]);
 
   if (!confirming) {
     return (
@@ -37,7 +44,12 @@ export function DeleteRecipeButton({
   }
 
   return (
-    <span className="inline-flex flex-wrap items-center gap-3">
+    <span
+      className="inline-flex flex-wrap items-center gap-3"
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !pending) setConfirming(false);
+      }}
+    >
       <span className="kicker text-terracotta-deep">Delete this recipe?</span>
       <button
         type="button"
@@ -58,6 +70,7 @@ export function DeleteRecipeButton({
         {pending ? "Deleting…" : `Delete ${title}`}
       </button>
       <button
+        ref={cancelRef}
         type="button"
         disabled={pending}
         onClick={() => setConfirming(false)}

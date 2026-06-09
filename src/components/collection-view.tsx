@@ -89,8 +89,8 @@ export function CollectionView({
             onClick={() => setPantryOnly((v) => !v)}
             className={`kicker rounded-full border px-4 py-2 transition-colors ${
               pantryOnly
-                ? "border-clay bg-clay text-paper"
-                : "border-clay/50 text-clay hover:bg-clay-wash"
+                ? "border-terracotta bg-terracotta text-paper"
+                : "border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
             }`}
           >
             {pantryOnly ? "Cooking from pantry — on" : "Cook from pantry"}

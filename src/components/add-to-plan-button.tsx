@@ -56,13 +56,9 @@ export function AddToPlanButton({
         onClick={go}
         disabled={pending}
         aria-pressed={inPlan}
-        className={`kicker border px-3 py-1 disabled:opacity-50 ${
-          inPlan
-            ? "border-terracotta bg-terracotta-wash text-terracotta"
-            : "border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
-        }`}
+        className="kicker text-terracotta transition-colors hover:text-terracotta-deep disabled:opacity-50"
       >
-        {inPlan ? "In your plan" : "Add to plan"}
+        {inPlan ? "In your plan ✓" : "Add to plan"}
       </button>
       <AnimatePresence>
         {celebrate ? (
