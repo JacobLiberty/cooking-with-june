@@ -6,7 +6,13 @@ import { saveRecipe } from "@/app/actions/recipe-actions";
 import { downscaleImage } from "@/lib/image-resize";
 import type { IngredientOption, TagOption, RecipeEditData } from "@/sanity/types";
 
-type Row = { name: string; quantity: string; unit: string; optional: boolean };
+type Row = {
+  name: string;
+  quantity: string;
+  unit: string;
+  note: string;
+  optional: boolean;
+};
 
 export function RecipeForm({
   recipeId = null,
@@ -27,8 +33,9 @@ export function RecipeForm({
       name: i.name ?? "",
       quantity: i.quantity ?? "",
       unit: i.unit ?? "",
+      note: i.note ?? "",
       optional: i.optional ?? false,
-    })) ?? [{ name: "", quantity: "", unit: "", optional: false }],
+    })) ?? [{ name: "", quantity: "", unit: "", note: "", optional: false }],
   );
   const [steps, setSteps] = useState<string[]>(initial?.steps ?? [""]);
 
@@ -105,6 +112,7 @@ export function RecipeForm({
               <input name="ingQty" defaultValue={row.quantity} placeholder="1" aria-label={`Quantity, ingredient ${i + 1}`} className="w-16 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta" />
               <input name="ingUnit" defaultValue={row.unit} placeholder="cup" aria-label={`Unit, ingredient ${i + 1}`} className="w-20 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta" />
               <input name="ingName" defaultValue={row.name} list="ingredient-options" placeholder="ingredient" aria-label={`Ingredient ${i + 1} name`} className="min-w-32 flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta" />
+              <input name="ingNote" defaultValue={row.note} placeholder="note (e.g. chopped)" aria-label={`Note, ingredient ${i + 1}`} className="min-w-32 flex-1 border-b border-ink/25 bg-transparent pb-1 text-ink focus:border-terracotta" />
               {/* Hidden field keeps one aligned value per row (unchecked boxes don't submit). */}
               <input type="hidden" name="ingOptional" value={row.optional ? "true" : "false"} />
               <label className="kicker flex items-center gap-1.5 whitespace-nowrap text-ink-soft">
@@ -123,7 +131,7 @@ export function RecipeForm({
             </div>
           ))}
         </div>
-        <button type="button" onClick={() => setRows((r) => [...r, { name: "", quantity: "", unit: "", optional: false }])} className="kicker mt-2 text-terracotta">+ add ingredient</button>
+        <button type="button" onClick={() => setRows((r) => [...r, { name: "", quantity: "", unit: "", note: "", optional: false }])} className="kicker mt-2 text-terracotta">+ add ingredient</button>
       </fieldset>
 
       <fieldset>
