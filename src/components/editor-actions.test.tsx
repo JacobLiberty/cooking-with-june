@@ -10,6 +10,7 @@ const actions = vi.hoisted(() => ({
 }));
 const convexMocks = vi.hoisted(() => ({ rateMutation: vi.fn() }));
 vi.mock("@/app/actions/recipe-actions", () => actions);
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("convex/react", () => ({ useMutation: () => convexMocks.rateMutation }));
 vi.mock("@cvx/_generated/api", () => ({
   api: { ratings: { rate: "ratings.rate" } },

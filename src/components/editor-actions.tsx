@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, m } from "motion/react";
 import { useMutation } from "convex/react";
 import { api } from "@cvx/_generated/api";
@@ -132,6 +133,7 @@ export function EditorActions({
   initialWishlist: boolean;
 }) {
   const [pending, start] = useTransition();
+  const router = useRouter();
   const rateMutation = useMutation(api.ratings.rate);
   const [myRating, setMyRating] = useState(initialMyRating ?? 0);
   const [wishlist, setWishlist] = useState(initialWishlist);
@@ -152,11 +154,14 @@ export function EditorActions({
   const rate = (v: number) => {
     const prev = myRating;
     setMyRating(v);
-    // Optimistic: don't block the slider on the write, but revert if it fails.
-    rateMutation({ recipeId, value: v }).catch(() => {
-      setMyRating(prev);
-      toast({ message: "Couldn't save your rating" });
-    });
+    // Optimistic slider; refresh the server-rendered aggregate once it saves,
+    // and revert if the write fails.
+    rateMutation({ recipeId, value: v })
+      .then(() => router.refresh())
+      .catch(() => {
+        setMyRating(prev);
+        toast({ message: "Couldn't save your rating" });
+      });
     if (shouldCelebrate(v)) {
       setCelebrate(true);
       if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
