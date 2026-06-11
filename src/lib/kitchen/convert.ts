@@ -48,3 +48,32 @@ export function lineToGrams(
 
   return { unparseable: true, reason: `unknown unit "${unit ?? ""}"` };
 }
+
+export type CanonicalResult =
+  | { ok: true; amount: number }
+  | { ok: false; reason: string };
+
+/**
+ * Convert a line to the ingredient's canonical unit: grams for mass/volume-kind,
+ * item count for count-kind. Count conversion divides grams by the per-item
+ * weight (stored `avgUnitGrams`, else the name heuristic).
+ */
+export function lineToCanonical(
+  quantity: string | undefined | null,
+  unit: string | undefined | null,
+  meta: ConversionMeta,
+  name: string,
+): CanonicalResult {
+  const g = lineToGrams(quantity, unit, meta, name);
+  if ("unparseable" in g) return { ok: false, reason: g.reason };
+
+  if (meta.canonicalUnitKind === "count") {
+    const per = meta.avgUnitGrams ?? countWeightFor(name, "") ?? null;
+    if (per == null || per <= 0) {
+      return { ok: false, reason: `no per-item weight for "${name}"` };
+    }
+    return { ok: true, amount: g.grams / per };
+  }
+
+  return { ok: true, amount: g.grams };
+}
