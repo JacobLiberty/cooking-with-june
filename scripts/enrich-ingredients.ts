@@ -23,6 +23,13 @@ async function main() {
   const force = process.argv.includes("--force");
   const dry = process.argv.includes("--dry");
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("ANTHROPIC_API_KEY is required (set it in .env.local)");
+  }
+  if (!dry && !process.env.SANITY_API_WRITE_TOKEN) {
+    throw new Error("SANITY_API_WRITE_TOKEN is required for writes (or use --dry)");
+  }
+
   const docs = await client.fetch<IngredientDoc[]>(
     `*[_type == "ingredient"]{ _id, name, category, canonicalUnitKind, density, avgUnitGrams, restockQuantity }`,
   );
@@ -36,6 +43,9 @@ async function main() {
 
   for (let i = 0; i < todo.length; i += BATCH) {
     const slice = todo.slice(i, i + BATCH);
+    const batchNum = Math.floor(i / BATCH) + 1;
+    const batchTotal = Math.ceil(todo.length / BATCH);
+    console.log(`Batch ${batchNum}/${batchTotal}: enriching ${slice.length}…`);
     const byName = new Map(slice.map((d) => [d.name.toLowerCase(), d]));
     const items = await enrichBatch(slice.map((d) => d.name));
 
@@ -56,16 +66,21 @@ async function main() {
         console.log(`DRY ${doc.name} ->`, JSON.stringify(m));
         continue;
       }
-      await write
-        .patch(doc._id)
-        .set({
-          canonicalUnitKind: m.canonicalUnitKind,
-          ...(m.density != null ? { density: m.density } : {}),
-          ...(m.avgUnitGrams != null ? { avgUnitGrams: m.avgUnitGrams } : {}),
-          restockQuantity: m.restockQuantity,
-          category: m.category,
-        })
-        .commit();
+      // Unset the cross-kind field so re-enriching (e.g. via --force) a doc that
+      // changed kind doesn't leave a stale density/avgUnitGrams behind.
+      const unsetFields = [
+        ...(m.canonicalUnitKind !== "volume" ? ["density"] : []),
+        ...(m.canonicalUnitKind !== "count" ? ["avgUnitGrams"] : []),
+      ];
+      let patch = write.patch(doc._id).set({
+        canonicalUnitKind: m.canonicalUnitKind,
+        ...(m.density != null ? { density: m.density } : {}),
+        ...(m.avgUnitGrams != null ? { avgUnitGrams: m.avgUnitGrams } : {}),
+        restockQuantity: m.restockQuantity,
+        category: m.category,
+      });
+      if (unsetFields.length > 0) patch = patch.unset(unsetFields);
+      await patch.commit();
       written++;
     }
   }
@@ -74,6 +89,8 @@ async function main() {
   if (skipped.length) console.log("Needs manual review in Studio:\n" + skipped.join("\n"));
 }
 
+// A batch-level failure aborts the run; re-running is safe because
+// selectIngredientsNeedingEnrichment() skips already-enriched docs.
 main().catch((e) => {
   console.error(e);
   process.exit(1);
