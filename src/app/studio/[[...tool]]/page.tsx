@@ -10,6 +10,7 @@ export { metadata, viewport } from "next-sanity/studio";
 // getViewer() reads the Convex auth token, making this route dynamic — intended.
 export default async function StudioPage() {
   const viewer = await getViewer();
-  if (!viewer.isEditor) redirect("/");
+  if (!viewer.isAuthenticated) redirect("/");
+  if (!viewer.isMember) redirect("/household/setup");
   return <NextStudio config={config} />;
 }

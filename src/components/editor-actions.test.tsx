@@ -4,12 +4,16 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { EditorActions } from "@/components/editor-actions";
 
 const actions = vi.hoisted(() => ({
-  rateRecipe: vi.fn(),
   toggleWishlist: vi.fn(),
   markMade: vi.fn(),
   unmarkMade: vi.fn(),
 }));
+const convexMocks = vi.hoisted(() => ({ rateMutation: vi.fn() }));
 vi.mock("@/app/actions/recipe-actions", () => actions);
+vi.mock("convex/react", () => ({ useMutation: () => convexMocks.rateMutation }));
+vi.mock("@cvx/_generated/api", () => ({
+  api: { ratings: { rate: "ratings.rate" } },
+}));
 vi.mock("@/components/toast", () => ({ useToast: () => vi.fn() }));
 
 // Render motion components as plain elements (we test rating logic, not motion).
@@ -25,7 +29,7 @@ vi.mock("motion/react", () => {
 });
 
 beforeEach(() => {
-  actions.rateRecipe.mockReset();
+  convexMocks.rateMutation.mockReset();
 });
 
 describe("EditorActions rating slider", () => {
@@ -45,10 +49,10 @@ describe("EditorActions rating slider", () => {
     const slider = screen.getByRole("slider", { name: "Your rating" });
 
     fireEvent.keyDown(slider, { key: "ArrowRight" });
-    expect(actions.rateRecipe).toHaveBeenLastCalledWith("r1", 0.5);
+    expect(convexMocks.rateMutation).toHaveBeenLastCalledWith({ recipeId: "r1", value: 0.5 });
 
     fireEvent.keyDown(slider, { key: "ArrowRight" });
-    expect(actions.rateRecipe).toHaveBeenLastCalledWith("r1", 1);
+    expect(convexMocks.rateMutation).toHaveBeenLastCalledWith({ recipeId: "r1", value: 1 });
   });
 
   it("jumps to the ends with Home and End and never exceeds the range", () => {
@@ -58,12 +62,12 @@ describe("EditorActions rating slider", () => {
     const slider = screen.getByRole("slider", { name: "Your rating" });
 
     fireEvent.keyDown(slider, { key: "End" });
-    expect(actions.rateRecipe).toHaveBeenLastCalledWith("r1", 5);
+    expect(convexMocks.rateMutation).toHaveBeenLastCalledWith({ recipeId: "r1", value: 5 });
     // already at max → no further change
     fireEvent.keyDown(slider, { key: "ArrowRight" });
-    expect(actions.rateRecipe).toHaveBeenCalledTimes(1);
+    expect(convexMocks.rateMutation).toHaveBeenCalledTimes(1);
 
     fireEvent.keyDown(slider, { key: "Home" });
-    expect(actions.rateRecipe).toHaveBeenLastCalledWith("r1", 0);
+    expect(convexMocks.rateMutation).toHaveBeenLastCalledWith({ recipeId: "r1", value: 0 });
   });
 });

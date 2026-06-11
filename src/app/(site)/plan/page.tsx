@@ -9,7 +9,8 @@ import { PlanView } from "@/components/plan-view";
 
 export default async function PlanPage() {
   const viewer = await getViewer();
-  if (!viewer.isEditor) redirect("/");
+  if (!viewer.isAuthenticated) redirect("/");
+  if (!viewer.isMember) redirect("/household/setup");
 
   const fresh = client.withConfig({ useCdn: false });
   const [plan, ingredients] = await Promise.all([

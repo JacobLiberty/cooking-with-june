@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getWriteClient } from "@/sanity/lib/write-client";
 import { client } from "@/sanity/lib/client";
-import { requireEditor } from "@/lib/viewer";
+import { requireMember } from "@/lib/viewer";
 import { groceryAfterRecipeRemoval, ingredientsToSeed } from "@/lib/pantry";
 import type { ManualLocation } from "@/sanity/plan-types";
 
@@ -73,7 +73,7 @@ async function patchLists(
 // ── Recipes ───────────────────────────────────────────────────────────────
 
 export async function addToPlan(recipeId: string, scale = 1) {
-  await requireEditor();
+  await requireMember();
   const id = safeId(recipeId);
   const s = Number.isFinite(scale) && scale > 0 ? scale : 1;
   await assertRecipe(id);
@@ -104,7 +104,7 @@ export async function addToPlan(recipeId: string, scale = 1) {
 }
 
 export async function removeFromPlan(recipeId: string) {
-  await requireEditor();
+  await requireMember();
   const id = safeId(recipeId);
   const removedIds = await recipeIngredientIds(id);
   const write = getWriteClient();
@@ -133,7 +133,7 @@ export async function removeFromPlan(recipeId: string) {
 
 /** Re-seed the grocery list from every planned recipe (manual refresh). */
 export async function syncGroceryFromRecipes() {
-  await requireEditor();
+  await requireMember();
   const ids = await reader().fetch<string[] | null>(
     `*[_id == $id][0].recipes[]->ingredients[].ingredient._ref`,
     { id: PLAN_ID },
@@ -150,7 +150,7 @@ export async function syncGroceryFromRecipes() {
 
 /** Check off → move from the grocery list into the pantry. */
 export async function checkGroceryIngredient(ingredientId: string) {
-  await requireEditor();
+  await requireMember();
   const id = safeId(ingredientId);
   await patchLists((grocery, pantry) => {
     grocery.delete(id);
@@ -161,7 +161,7 @@ export async function checkGroceryIngredient(ingredientId: string) {
 
 /** Skip → remove from the grocery list (pantry untouched). */
 export async function skipGroceryIngredient(ingredientId: string) {
-  await requireEditor();
+  await requireMember();
   const id = safeId(ingredientId);
   await patchLists((grocery) => {
     grocery.delete(id);
@@ -173,7 +173,7 @@ export async function skipGroceryIngredient(ingredientId: string) {
 
 /** Used it up — remove from the pantry entirely. */
 export async function removePantryIngredient(ingredientId: string) {
-  await requireEditor();
+  await requireMember();
   const id = safeId(ingredientId);
   await patchLists((_grocery, pantry) => {
     pantry.delete(id);
@@ -183,7 +183,7 @@ export async function removePantryIngredient(ingredientId: string) {
 
 /** Out of it — move from the pantry back onto the grocery list. */
 export async function movePantryIngredientToGrocery(ingredientId: string) {
-  await requireEditor();
+  await requireMember();
   const id = safeId(ingredientId);
   await patchLists((grocery, pantry) => {
     pantry.delete(id);
@@ -195,7 +195,7 @@ export async function movePantryIngredientToGrocery(ingredientId: string) {
 // ── Manual items ────────────────────────────────────────────────────────────
 
 export async function addManualItem(name: string, key: string) {
-  await requireEditor();
+  await requireMember();
   const k = safeId(key);
   const clean = name.trim();
   if (!clean) return { ok: false, error: "Item is empty" };
@@ -214,7 +214,7 @@ export async function addManualItem(name: string, key: string) {
 }
 
 export async function setManualLocation(key: string, location: ManualLocation) {
-  await requireEditor();
+  await requireMember();
   const k = safeId(key);
   if (location !== "grocery" && location !== "pantry") {
     throw new Error("Invalid location");
@@ -228,7 +228,7 @@ export async function setManualLocation(key: string, location: ManualLocation) {
 }
 
 export async function removeManualItem(key: string) {
-  await requireEditor();
+  await requireMember();
   const k = safeId(key);
   const write = getWriteClient();
   await write.patch(PLAN_ID).unset([`manualItems[_key=="${k}"]`]).commit();

@@ -15,7 +15,8 @@ export default async function EditRecipePage({
   params: Promise<{ slug: string }>;
 }) {
   const viewer = await getViewer();
-  if (!viewer.isEditor) redirect("/");
+  if (!viewer.isAuthenticated) redirect("/");
+  if (!viewer.isMember) redirect("/household/setup");
   const { slug } = await params;
   const [recipe, ingredients, tags] = await Promise.all([
     client.withConfig({ useCdn: false }).fetch<RecipeEditData | null>(RECIPE_EDIT_QUERY, { slug }),

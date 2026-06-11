@@ -7,7 +7,8 @@ import { RecipeForm } from "@/components/recipe-form";
 
 export default async function NewRecipePage() {
   const viewer = await getViewer();
-  if (!viewer.isEditor) redirect("/");
+  if (!viewer.isAuthenticated) redirect("/");
+  if (!viewer.isMember) redirect("/household/setup");
   const [ingredients, tags] = await Promise.all([
     client.fetch<IngredientOption[]>(INGREDIENTS_QUERY),
     client.fetch<TagOption[]>(TAGS_QUERY),

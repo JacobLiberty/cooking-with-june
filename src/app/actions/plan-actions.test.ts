@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { requireEditor } from "@/lib/viewer";
+import { requireMember } from "@/lib/viewer";
 import {
   addToPlan,
   removeFromPlan,
@@ -18,7 +18,7 @@ const chain: Record<string, unknown> = {};
 });
 (chain as { commit: unknown }).commit = vi.fn().mockResolvedValue({});
 
-vi.mock("@/lib/viewer", () => ({ requireEditor: vi.fn() }));
+vi.mock("@/lib/viewer", () => ({ requireMember: vi.fn() }));
 vi.mock("@/sanity/lib/write-client", () => ({
   getWriteClient: vi.fn(() => ({
     createIfNotExists: vi.fn().mockResolvedValue({}),
@@ -30,11 +30,11 @@ vi.mock("@/sanity/lib/client", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-const mockRequireEditor = vi.mocked(requireEditor);
+const mockRequireMember = vi.mocked(requireMember);
 
 beforeEach(() => {
-  mockRequireEditor.mockReset();
-  mockRequireEditor.mockResolvedValue({ editorId: "e1", isEditor: true, name: "Jacob" });
+  mockRequireMember.mockReset();
+  mockRequireMember.mockResolvedValue({ userId: "u1", householdId: "h1" });
 });
 
 describe("plan action guards", () => {
@@ -57,7 +57,7 @@ describe("plan action guards", () => {
   });
 
   it("propagates the authorization error for non-editors", async () => {
-    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
+    mockRequireMember.mockRejectedValue(new Error("Not authorized: household members only"));
     await expect(addToPlan("r1")).rejects.toThrow("Not authorized");
     await expect(checkGroceryIngredient("i1")).rejects.toThrow("Not authorized");
     await expect(skipGroceryIngredient("i1")).rejects.toThrow("Not authorized");

@@ -8,8 +8,10 @@ import {
 } from "@/sanity/lib/queries";
 import { PLAN_RECIPE_IDS_QUERY } from "@/sanity/lib/plan-queries";
 import type { RecipeDetailData } from "@/sanity/types";
+import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { api } from "@cvx/_generated/api";
 import { totalTime } from "@/lib/format";
-import { averageRating } from "@/lib/rating";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 import { RecipeIngredients } from "@/components/recipe-ingredients";
@@ -19,7 +21,6 @@ import { SITE_URL } from "@/lib/site";
 import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
 import { EditorActions } from "@/components/editor-actions";
-import { isJuneApproved } from "@/lib/june-approved";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
 import { ShareButton } from "@/components/share-button";
 import { AddNoteForm } from "@/components/add-note-form";
@@ -75,17 +76,21 @@ export default async function RecipePage({
   ]);
   if (!recipe) notFound();
 
-  const plannedIds = viewer.isEditor
+  const plannedIds = viewer.isMember
     ? await client.withConfig({ useCdn: false }).fetch<string[] | null>(PLAN_RECIPE_IDS_QUERY)
     : null;
 
-  const myRating = viewer.editorId
-    ? (recipe.ratings?.find((r) => r._key === `rating-${viewer.editorId}`)?.value ?? null)
-    : null;
+  const token = await convexAuthNextjsToken();
+  const rating = await fetchQuery(
+    api.ratings.forRecipe,
+    { recipeId: recipe._id },
+    token ? { token } : {},
+  );
+  const myRating = rating.mine;
 
   const time = totalTime(recipe.prepTime, recipe.cookTime);
-  const avg = averageRating(recipe.ratings);
-  const ratingCount = recipe.ratings?.length ?? 0;
+  const avg = rating.count > 0 ? Math.round(rating.average * 2) / 2 : null;
+  const ratingCount = rating.count;
   const ingredientCount = recipe.ingredients?.length ?? 0;
   const madeCount = recipe.madeCount ?? 0;
 
@@ -121,7 +126,7 @@ export default async function RecipePage({
               made {madeCount}×
             </span>
           ) : null}
-          {isJuneApproved(recipe.ratings) ? <JuneApprovedBadge /> : null}
+          {rating.approved ? <JuneApprovedBadge /> : null}
         </div>
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
@@ -134,19 +139,19 @@ export default async function RecipePage({
             </Link>
           ) : null}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            {viewer.isEditor ? (
+            {viewer.isMember ? (
               <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
                 Edit
               </Link>
             ) : null}
-            {viewer.isEditor ? (
+            {viewer.isMember ? (
               <AddToPlanButton
                 recipeId={recipe._id}
                 inPlan={Boolean(plannedIds?.includes(recipe._id))}
               />
             ) : null}
             <ShareButton />
-            {viewer.isEditor ? (
+            {viewer.isMember ? (
               <DeleteRecipeButton recipeId={recipe._id} title={recipe.title} />
             ) : null}
           </div>
@@ -213,7 +218,7 @@ export default async function RecipePage({
         <JuneArt pose="divider" className="h-14 w-auto opacity-90" />
       </div>
 
-      {recipe.ratings?.length ? (
+      {ratingCount > 0 && avg != null ? (
         <section
           className="mt-6 border-t border-terracotta/25 pt-6"
           aria-labelledby="ratings-heading"
@@ -221,15 +226,13 @@ export default async function RecipePage({
           <h2 id="ratings-heading" className="kicker text-terracotta">
             Ratings
           </h2>
-          <ul className="mt-3 flex flex-wrap gap-6">
-            {recipe.ratings.map((r) => (
-              <li key={r._key} className="flex items-center gap-2">
-                <span className="kicker text-ink-soft">{r.editor ?? "—"}</span>
-                <StarRating value={r.value} />
-              </li>
-            ))}
-          </ul>
-          {isJuneApproved(recipe.ratings) ? (
+          <p className="mt-3 flex items-center gap-2">
+            <StarRating value={avg} />
+            <span className="kicker text-ink-soft">
+              {avg.toFixed(1)} · {ratingCount} rating{ratingCount === 1 ? "" : "s"}
+            </span>
+          </p>
+          {rating.approved ? (
             <p className="mt-3 text-sm text-ink-soft">
               <span className="text-terracotta">June approved</span> means
               everyone who rated it gave 4.5★ or higher.
@@ -251,7 +254,7 @@ export default async function RecipePage({
         </div>
       ) : null}
 
-      {recipe.notes?.length || viewer.isEditor ? (
+      {recipe.notes?.length || viewer.isMember ? (
         <section
           className="mt-10 border-t border-terracotta/25 pt-6"
           aria-labelledby="notes-heading"
@@ -271,11 +274,11 @@ export default async function RecipePage({
               ))}
             </ul>
           ) : null}
-          {viewer.isEditor ? <AddNoteForm recipeId={recipe._id} /> : null}
+          {viewer.isMember ? <AddNoteForm recipeId={recipe._id} /> : null}
         </section>
       ) : null}
 
-      {viewer.isEditor ? (
+      {viewer.isMember ? (
         <EditorActions
           recipeId={recipe._id}
           initialMyRating={myRating}

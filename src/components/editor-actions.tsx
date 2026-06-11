@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { AnimatePresence, m } from "motion/react";
+import { useMutation } from "convex/react";
+import { api } from "@cvx/_generated/api";
 import {
-  rateRecipe,
   toggleWishlist,
   markMade,
   unmarkMade,
@@ -131,6 +132,7 @@ export function EditorActions({
   initialWishlist: boolean;
 }) {
   const [pending, start] = useTransition();
+  const rateMutation = useMutation(api.ratings.rate);
   const [myRating, setMyRating] = useState(initialMyRating ?? 0);
   const [wishlist, setWishlist] = useState(initialWishlist);
   const [celebrate, setCelebrate] = useState(false);
@@ -149,7 +151,8 @@ export function EditorActions({
 
   const rate = (v: number) => {
     setMyRating(v);
-    start(() => rateRecipe(recipeId, v));
+    // Optimistic + fire-and-forget: don't block the slider on the network write.
+    void rateMutation({ recipeId, value: v });
     if (shouldCelebrate(v)) {
       setCelebrate(true);
       if (celebrateTimer.current) clearTimeout(celebrateTimer.current);

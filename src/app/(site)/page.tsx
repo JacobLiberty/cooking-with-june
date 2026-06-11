@@ -28,7 +28,7 @@ export default async function HomePage() {
   ]);
 
   // Editors get "Cook from pantry" — fetch what's currently in the pantry.
-  const pantryIds = viewer.isEditor
+  const pantryIds = viewer.isMember
     ? ((await client
         .withConfig({ useCdn: false })
         .fetch<string[] | null>(PLAN_PANTRY_QUERY)) ?? [])
@@ -53,7 +53,7 @@ export default async function HomePage() {
           />
           <div className="rule-draw h-px w-full bg-terracotta/40" />
         </div>
-        {viewer.isEditor ? (
+        {viewer.isMember ? (
           <div className="mt-4">
             <Link
               href="/recipe/new"

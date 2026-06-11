@@ -1,19 +1,37 @@
-import type { EditorRecord } from "@/lib/editor-allowlist";
+export type ViewerRecord = {
+  userId: string;
+  name: string | null;
+  householdId: string | null;
+  role: "owner" | "member" | null;
+};
 
 export type Viewer = {
-  isEditor: boolean;
-  editorId: string | null;
+  isAuthenticated: boolean;
+  isMember: boolean;
+  userId: string | null;
+  householdId: string | null;
+  role: "owner" | "member" | null;
   name: string | null;
 };
 
-// Bridge: a signed-in user is an "editor" iff a Sanity editor doc matched their email.
-export function mapEditorToViewer(
-  editor: EditorRecord | null,
-  fallbackName: string | null,
-): Viewer {
+export const ANON_VIEWER: Viewer = {
+  isAuthenticated: false,
+  isMember: false,
+  userId: null,
+  householdId: null,
+  role: null,
+  name: null,
+};
+
+// A signed-in user is a "member" once they belong to a household.
+export function mapViewer(record: ViewerRecord | null): Viewer {
+  if (!record) return ANON_VIEWER;
   return {
-    isEditor: editor != null,
-    editorId: editor?._id ?? null,
-    name: editor?.name ?? fallbackName ?? null,
+    isAuthenticated: true,
+    isMember: record.householdId != null,
+    userId: record.userId,
+    householdId: record.householdId,
+    role: record.role,
+    name: record.name,
   };
 }

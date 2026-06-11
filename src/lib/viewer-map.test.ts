@@ -1,33 +1,40 @@
 import { describe, it, expect } from "vitest";
-import { mapEditorToViewer } from "./viewer-map";
+import { mapViewer } from "./viewer-map";
 
-describe("mapEditorToViewer", () => {
-  it("treats a resolved editor as an editor", () => {
-    const viewer = mapEditorToViewer(
-      { _id: "editor-1", name: "Jacob" },
-      "Google Name",
-    );
-    expect(viewer).toEqual({
-      isEditor: true,
-      editorId: "editor-1",
+describe("mapViewer", () => {
+  it("maps a member with a household", () => {
+    expect(
+      mapViewer({ userId: "u1", name: "Jacob", householdId: "h1", role: "owner" }),
+    ).toEqual({
+      isAuthenticated: true,
+      isMember: true,
+      userId: "u1",
+      householdId: "h1",
+      role: "owner",
       name: "Jacob",
     });
   });
 
-  it("treats a null editor as a non-editor and falls back to the auth name", () => {
-    const viewer = mapEditorToViewer(null, "Google Name");
-    expect(viewer).toEqual({
-      isEditor: false,
-      editorId: null,
-      name: "Google Name",
+  it("maps an authenticated user without a household", () => {
+    expect(
+      mapViewer({ userId: "u1", name: null, householdId: null, role: null }),
+    ).toEqual({
+      isAuthenticated: true,
+      isMember: false,
+      userId: "u1",
+      householdId: null,
+      role: null,
+      name: null,
     });
   });
 
-  it("returns a null name when neither editor nor fallback is present", () => {
-    const viewer = mapEditorToViewer(null, null);
-    expect(viewer).toEqual({
-      isEditor: false,
-      editorId: null,
+  it("maps an anonymous viewer from null", () => {
+    expect(mapViewer(null)).toEqual({
+      isAuthenticated: false,
+      isMember: false,
+      userId: null,
+      householdId: null,
+      role: null,
       name: null,
     });
   });

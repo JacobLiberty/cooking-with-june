@@ -13,20 +13,24 @@ export const forRecipe = query({
     const count = rows.length;
     const average =
       count === 0 ? 0 : rows.reduce((s, r) => s + r.value, 0) / count;
+    const approved = count >= 2 && rows.every((r) => r.value >= 4.5);
 
     const userId = await getAuthUserId(ctx);
     const mine = userId
       ? (rows.find((r) => r.userId === userId)?.value ?? null)
       : null;
 
-    return { average, count, mine };
+    return { average, count, mine, approved };
   },
 });
 
 export const forRecipes = query({
   args: { recipeIds: v.array(v.string()) },
   handler: async (ctx, { recipeIds }) => {
-    const out: Record<string, { average: number; count: number }> = {};
+    const out: Record<
+      string,
+      { average: number; count: number; approved: boolean }
+    > = {};
     for (const recipeId of recipeIds) {
       const rows = await ctx.db
         .query("ratings")
@@ -36,6 +40,7 @@ export const forRecipes = query({
       out[recipeId] = {
         count,
         average: count === 0 ? 0 : rows.reduce((s, r) => s + r.value, 0) / count,
+        approved: count >= 2 && rows.every((r) => r.value >= 4.5),
       };
     }
     return out;

@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { requireEditor } from "@/lib/viewer";
+import { requireMember, getViewer } from "@/lib/viewer";
 import { getWriteClient } from "@/sanity/lib/write-client";
 import {
-  rateRecipe,
   markMade,
   saveRecipe,
   addNote,
@@ -10,30 +9,36 @@ import {
   unmarkMade,
 } from "@/app/actions/recipe-actions";
 
-vi.mock("@/lib/viewer", () => ({ requireEditor: vi.fn() }));
+vi.mock("@/lib/viewer", () => ({
+  requireMember: vi.fn(),
+  getViewer: vi.fn(),
+}));
 vi.mock("@/sanity/lib/write-client", () => ({ getWriteClient: vi.fn(() => ({})) }));
 vi.mock("@/sanity/lib/client", () => ({
   client: { withConfig: () => ({ fetch: vi.fn().mockResolvedValue(null) }) },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-const mockRequireEditor = vi.mocked(requireEditor);
+const mockRequireMember = vi.mocked(requireMember);
+const mockGetViewer = vi.mocked(getViewer);
+
+const MEMBER_VIEWER = {
+  isAuthenticated: true,
+  isMember: true,
+  userId: "u1",
+  householdId: "h1",
+  role: "owner" as const,
+  name: "Jacob",
+};
 
 beforeEach(() => {
-  mockRequireEditor.mockReset();
-  mockRequireEditor.mockResolvedValue({
-    editorId: "e1",
-    isEditor: true,
-    name: "Jacob",
-  });
+  mockRequireMember.mockReset();
+  mockRequireMember.mockResolvedValue({ userId: "u1", householdId: "h1" });
+  mockGetViewer.mockReset();
+  mockGetViewer.mockResolvedValue(MEMBER_VIEWER);
 });
 
 describe("recipe action guards", () => {
-  it("rateRecipe rejects out-of-range values", async () => {
-    await expect(rateRecipe("r1", 6)).rejects.toThrow("Rating must be 0–5");
-    await expect(rateRecipe("r1", -1)).rejects.toThrow("Rating must be 0–5");
-  });
-
   it("markMade rejects an invalid timestamp", async () => {
     await expect(markMade("r1", "not-a-date")).rejects.toThrow("Invalid timestamp");
   });
@@ -43,9 +48,13 @@ describe("recipe action guards", () => {
     expect(res).toEqual({ ok: false, error: "Title is required" });
   });
 
-  it("propagates the authorization error for non-editors", async () => {
-    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
-    await expect(rateRecipe("r1", 4)).rejects.toThrow("Not authorized");
+  it("propagates the authorization error for non-members", async () => {
+    mockRequireMember.mockRejectedValue(
+      new Error("Not authorized: household members only"),
+    );
+    await expect(markMade("r1", new Date().toISOString())).rejects.toThrow(
+      "Not authorized",
+    );
     await expect(saveRecipe(null, new FormData())).rejects.toThrow("Not authorized");
   });
 
@@ -58,13 +67,18 @@ describe("recipe action guards", () => {
     });
   });
 
-  it("addNote propagates the authorization error for non-editors", async () => {
-    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
-    await expect(addNote("r1", "looks good")).rejects.toThrow("Not authorized");
+  it("addNote refuses a non-member", async () => {
+    mockGetViewer.mockResolvedValue({ ...MEMBER_VIEWER, isMember: false });
+    expect(await addNote("r1", "looks good")).toEqual({
+      ok: false,
+      error: "Not authorized",
+    });
   });
 
-  it("deleteRecipe propagates the authorization error for non-editors", async () => {
-    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
+  it("deleteRecipe propagates the authorization error for non-members", async () => {
+    mockRequireMember.mockRejectedValue(
+      new Error("Not authorized: household members only"),
+    );
     await expect(deleteRecipe("r1")).rejects.toThrow("Not authorized");
   });
 
@@ -75,8 +89,10 @@ describe("recipe action guards", () => {
     );
   });
 
-  it("unmarkMade propagates the authorization error for non-editors", async () => {
-    mockRequireEditor.mockRejectedValue(new Error("Not authorized: editors only"));
+  it("unmarkMade propagates the authorization error for non-members", async () => {
+    mockRequireMember.mockRejectedValue(
+      new Error("Not authorized: household members only"),
+    );
     await expect(unmarkMade("r1")).rejects.toThrow("Not authorized");
   });
 });

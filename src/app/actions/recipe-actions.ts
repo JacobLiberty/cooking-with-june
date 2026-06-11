@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getWriteClient } from "@/sanity/lib/write-client";
 import { client } from "@/sanity/lib/client";
-import { requireEditor } from "@/lib/viewer";
-import { upsertRating, type StoredRating } from "@/lib/rating-mutate";
+import { getViewer, requireMember } from "@/lib/viewer";
 import { slugify } from "@/lib/slug";
 
 const reader = () => client.withConfig({ useCdn: false });
@@ -47,24 +46,8 @@ async function uniqueSlug(base: string): Promise<string> {
   return `${base}-${n}`;
 }
 
-export async function rateRecipe(recipeId: string, value: number) {
-  const { editorId } = await requireEditor();
-  if (typeof value !== "number" || value < 0 || value > 5) {
-    throw new Error("Rating must be 0–5");
-  }
-  await assertRecipe(recipeId);
-  const write = getWriteClient();
-  const current = await reader().fetch<StoredRating[] | null>(
-    `*[_id == $id][0].ratings`,
-    { id: recipeId },
-  );
-  const next = upsertRating(current ?? [], editorId, value);
-  await write.patch(recipeId).set({ ratings: next }).commit();
-  revalidatePath("/", "layout");
-}
-
 export async function toggleWishlist(recipeId: string) {
-  await requireEditor();
+  await requireMember();
   await assertRecipe(recipeId);
   const write = getWriteClient();
   const current = await reader().fetch<boolean | null>(
@@ -76,7 +59,7 @@ export async function toggleWishlist(recipeId: string) {
 }
 
 export async function markMade(recipeId: string, isoNow: string) {
-  await requireEditor();
+  await requireMember();
   if (Number.isNaN(Date.parse(isoNow))) throw new Error("Invalid timestamp");
   await assertRecipe(recipeId);
   const write = getWriteClient();
@@ -103,7 +86,7 @@ function safeRecipeId(id: string): string {
 export async function deleteRecipe(
   recipeId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  await requireEditor();
+  await requireMember();
   await assertRecipe(recipeId);
   const id = safeRecipeId(recipeId);
   const write = getWriteClient();
@@ -125,7 +108,7 @@ export async function deleteRecipe(
 // Undo for "Made it": decrement the counter (never below 0). Used by the
 // toast's Undo action so a stray tap on Made it is reversible.
 export async function unmarkMade(recipeId: string) {
-  await requireEditor();
+  await requireMember();
   await assertRecipe(recipeId);
   const write = getWriteClient();
   const current = await reader().fetch<number | null>(
@@ -145,7 +128,7 @@ export async function saveRecipe(
   recipeId: string | null,
   formData: FormData,
 ): Promise<SaveRecipeResult> {
-  await requireEditor();
+  await requireMember();
   const write = getWriteClient();
 
   const title = String(formData.get("title") ?? "").trim();
@@ -269,7 +252,9 @@ export async function addNote(
   recipeId: string,
   text: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { name } = await requireEditor();
+  const viewer = await getViewer();
+  if (!viewer.isMember) return { ok: false, error: "Not authorized" };
+  const author = viewer.name ?? undefined;
   const clean = text.trim();
   if (!clean) return { ok: false, error: "Note is empty" };
   if (clean.length > 500) return { ok: false, error: "Note too long (max 500)" };
@@ -282,7 +267,7 @@ export async function addNote(
       {
         _key: crypto.randomUUID(),
         _type: "recipeNote",
-        author: name ?? undefined,
+        author,
         text: clean,
       },
     ])
