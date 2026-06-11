@@ -37,14 +37,22 @@ export const createHousehold = mutation({
   },
 });
 
+const INVITE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // 31 unambiguous chars
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // codes expire after 7 days
+
+// Invite codes grant household access, so use a CSPRNG (Web Crypto) with
+// rejection sampling to avoid modulo bias — not Math.random.
 function makeCode(): string {
-  // 8 chars, unambiguous alphabet. Math.random is allowed in Convex mutations.
-  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  let out = "";
-  for (let i = 0; i < 8; i++) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  const n = INVITE_ALPHABET.length;
+  const limit = Math.floor(256 / n) * n; // reject bytes >= limit (248)
+  const out: string[] = [];
+  const buf = new Uint8Array(1);
+  while (out.length < 8) {
+    crypto.getRandomValues(buf);
+    if (buf[0] >= limit) continue;
+    out.push(INVITE_ALPHABET[buf[0] % n]);
   }
-  return out;
+  return out.join("");
 }
 
 export const createInvite = mutation({
@@ -57,6 +65,7 @@ export const createInvite = mutation({
       householdId,
       code,
       createdByUserId: userId,
+      expiresAt: Date.now() + INVITE_TTL_MS,
     });
     return code;
   },
