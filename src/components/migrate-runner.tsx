@@ -42,6 +42,20 @@ export function MigrateRunner() {
               ))}
             </ul>
           </div>
+          {review.matchedManual.length ? (
+            <div>
+              <p className="font-semibold">
+                Matched manual items → grocery list (check for wrong matches):
+              </p>
+              <ul className="list-disc pl-5">
+                {review.matchedManual.map((m) => (
+                  <li key={m.ingredientId}>
+                    {m.name} → {m.ingredientId}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {review.skippedPantry.length ? (
             <div>
               <p className="font-semibold">Skipped pantry (fix in Studio):</p>
