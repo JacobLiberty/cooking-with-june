@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, m } from "motion/react";
 import { useMutation } from "convex/react";
 import { api } from "@cvx/_generated/api";
-import {
-  toggleWishlist,
-  markMade,
-  unmarkMade,
-} from "@/app/actions/recipe-actions";
 import { shouldCelebrate } from "@/lib/celebrate";
 import { PawMark } from "@/components/paw-mark";
 import { Star } from "@/components/star-rating";
@@ -126,17 +121,19 @@ function RatingInput({
 export function EditorActions({
   recipeId,
   initialMyRating,
-  initialWishlist,
+  initialToTry,
 }: {
   recipeId: string;
   initialMyRating: number | null;
-  initialWishlist: boolean;
+  initialToTry: boolean;
 }) {
-  const [pending, start] = useTransition();
   const router = useRouter();
   const rateMutation = useMutation(api.ratings.rate);
+  const markMadeMut = useMutation(api.recipeState.markMade);
+  const unmarkMadeMut = useMutation(api.recipeState.unmarkMade);
+  const setToTryMut = useMutation(api.recipeState.setToTry);
   const [myRating, setMyRating] = useState(initialMyRating ?? 0);
-  const [wishlist, setWishlist] = useState(initialWishlist);
+  const [toTry, setToTry] = useState(initialToTry);
   const [celebrate, setCelebrate] = useState(false);
   const [madePop, setMadePop] = useState(false);
   const celebrateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -170,14 +167,16 @@ export function EditorActions({
   };
 
   const made = () => {
-    start(() => markMade(recipeId, new Date().toISOString()));
+    markMadeMut({ recipeId, at: Date.now() }).then(() => router.refresh());
     setMadePop(true);
     if (madeTimer.current) clearTimeout(madeTimer.current);
     madeTimer.current = setTimeout(() => setMadePop(false), 900);
     toast({
       message: "Logged — you made it",
       actionLabel: "Undo",
-      onAction: () => start(() => unmarkMade(recipeId)),
+      onAction: () => {
+        unmarkMadeMut({ recipeId }).then(() => router.refresh());
+      },
     });
   };
 
@@ -191,7 +190,7 @@ export function EditorActions({
         <div className="flex items-center gap-2">
           <span className="kicker text-ink-soft">Your rating</span>
           <div className="relative">
-            <RatingInput value={myRating} disabled={pending} onRate={rate} />
+            <RatingInput value={myRating} disabled={false} onRate={rate} />
             {celebrate ? (
               <span className="pointer-events-none absolute inset-0" aria-hidden>
                 {[-20, -8, 6, 18].map((x, i) => (
@@ -212,9 +211,8 @@ export function EditorActions({
         <span className="relative inline-flex">
           <button
             type="button"
-            disabled={pending}
             onClick={made}
-            className="kicker flex min-h-11 items-center rounded-full border border-clay px-4 text-terracotta-deep transition-colors hover:bg-clay-wash disabled:opacity-50"
+            className="kicker flex min-h-11 items-center rounded-full border border-clay px-4 text-terracotta-deep transition-colors hover:bg-clay-wash"
           >
             Made it
           </button>
@@ -236,18 +234,20 @@ export function EditorActions({
 
         <button
           type="button"
-          disabled={pending}
           onClick={() => {
-            setWishlist((w) => !w);
-            start(() => toggleWishlist(recipeId));
+            const next = !toTry;
+            setToTry(next);
+            setToTryMut({ recipeId, value: next })
+              .then(() => router.refresh())
+              .catch(() => setToTry(!next));
           }}
-          className={`kicker flex min-h-11 items-center rounded-full border px-4 disabled:opacity-50 ${
-            wishlist
+          className={`kicker flex min-h-11 items-center rounded-full border px-4 ${
+            toTry
               ? "border-terracotta bg-terracotta-wash text-terracotta"
               : "border-ink/25 text-ink-soft hover:border-terracotta"
           }`}
         >
-          {wishlist ? "On the to-try list" : "Add to to-try"}
+          {toTry ? "On the to-try list" : "Add to to-try"}
         </button>
       </div>
     </section>

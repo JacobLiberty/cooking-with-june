@@ -13,7 +13,14 @@ vi.mock("@/app/actions/recipe-actions", () => actions);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("convex/react", () => ({ useMutation: () => convexMocks.rateMutation }));
 vi.mock("@cvx/_generated/api", () => ({
-  api: { ratings: { rate: "ratings.rate" } },
+  api: {
+    ratings: { rate: "ratings.rate" },
+    recipeState: {
+      markMade: "recipeState.markMade",
+      unmarkMade: "recipeState.unmarkMade",
+      setToTry: "recipeState.setToTry",
+    },
+  },
 }));
 vi.mock("@/components/toast", () => ({ useToast: () => vi.fn() }));
 
@@ -36,7 +43,7 @@ beforeEach(() => {
 describe("EditorActions rating slider", () => {
   it("exposes the rating as a slider with the current value", () => {
     render(
-      <EditorActions recipeId="r1" initialMyRating={3.5} initialWishlist={false} />,
+      <EditorActions recipeId="r1" initialMyRating={3.5} initialToTry={false} />,
     );
     const slider = screen.getByRole("slider", { name: "Your rating" });
     expect(slider).toHaveAttribute("aria-valuenow", "3.5");
@@ -45,7 +52,7 @@ describe("EditorActions rating slider", () => {
 
   it("steps by half a star with the arrow keys", () => {
     render(
-      <EditorActions recipeId="r1" initialMyRating={null} initialWishlist={false} />,
+      <EditorActions recipeId="r1" initialMyRating={null} initialToTry={false} />,
     );
     const slider = screen.getByRole("slider", { name: "Your rating" });
 
@@ -58,7 +65,7 @@ describe("EditorActions rating slider", () => {
 
   it("jumps to the ends with Home and End and never exceeds the range", () => {
     render(
-      <EditorActions recipeId="r1" initialMyRating={2} initialWishlist={false} />,
+      <EditorActions recipeId="r1" initialMyRating={2} initialToTry={false} />,
     );
     const slider = screen.getByRole("slider", { name: "Your rating" });
 

@@ -82,18 +82,25 @@ export default async function RecipePage({
     : null;
 
   const token = await convexAuthNextjsToken();
-  const rating = await fetchQuery(
-    api.ratings.forRecipe,
-    { recipeId: recipe._id },
-    token ? { token } : {},
-  ).catch(() => ({ average: 0, count: 0, mine: null, approved: false }));
+  const opts = token ? { token } : {};
+  const [rating, state, notes] = await Promise.all([
+    fetchQuery(api.ratings.forRecipe, { recipeId: recipe._id }, opts).catch(
+      () => ({ average: 0, count: 0, mine: null, approved: false }),
+    ),
+    fetchQuery(api.recipeState.forRecipe, { recipeId: recipe._id }, opts).catch(
+      () => ({ madeCount: 0, lastMadeAt: null, toTry: false }),
+    ),
+    fetchQuery(api.notes.forRecipe, { recipeId: recipe._id }, opts).catch(
+      () => [] as { _id: string; author: string | null; text: string }[],
+    ),
+  ]);
   const myRating = rating.mine;
 
   const time = totalTime(recipe.prepTime, recipe.cookTime);
   const avg = rating.count > 0 ? rating.average : null; // raw; rounded at display
   const ratingCount = rating.count;
   const ingredientCount = recipe.ingredients?.length ?? 0;
-  const madeCount = recipe.madeCount ?? 0;
+  const madeCount = state.madeCount;
 
   return (
     <article className="mx-auto max-w-3xl">
@@ -255,7 +262,7 @@ export default async function RecipePage({
         </div>
       ) : null}
 
-      {recipe.notes?.length || viewer.isMember ? (
+      {notes.length || viewer.isMember ? (
         <section
           className="mt-10 border-t border-terracotta/25 pt-6"
           aria-labelledby="notes-heading"
@@ -263,10 +270,10 @@ export default async function RecipePage({
           <h2 id="notes-heading" className="kicker text-terracotta">
             From our kitchen
           </h2>
-          {recipe.notes?.length ? (
+          {notes.length ? (
             <ul className="mt-3 space-y-2">
-              {recipe.notes.map((n) => (
-                <li key={n._key} className="text-ink">
+              {notes.map((n) => (
+                <li key={n._id} className="text-ink">
                   {n.author ? (
                     <span className="kicker mr-2 text-ink-soft">{n.author}</span>
                   ) : null}
@@ -283,7 +290,7 @@ export default async function RecipePage({
         <EditorActions
           recipeId={recipe._id}
           initialMyRating={myRating}
-          initialWishlist={Boolean(recipe.wishlist)}
+          initialToTry={state.toTry}
         />
       ) : null}
     </article>

@@ -2,13 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addNote } from "@/app/actions/recipe-actions";
+import { useMutation } from "convex/react";
+import { api } from "@cvx/_generated/api";
 
 export function AddNoteForm({ recipeId }: { recipeId: string }) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const router = useRouter();
+  const addNote = useMutation(api.notes.add);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,12 +18,12 @@ export function AddNoteForm({ recipeId }: { recipeId: string }) {
     if (!t) return;
     setError(null);
     start(async () => {
-      const res = await addNote(recipeId, t);
-      if (res.ok) {
+      try {
+        await addNote({ recipeId, text: t });
         setText("");
         router.refresh();
-      } else {
-        setError(res.error ?? "Couldn't add the note");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't add the note");
       }
     });
   }
