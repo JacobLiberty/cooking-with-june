@@ -44,4 +44,47 @@ describe("validateEnrichmentResult", () => {
     expect(validateEnrichmentResult({ canonicalUnitKind: "volume", restockQuantity: { quantity: 1, unit: "l" }, category: "pantry" }).ok).toBe(false);
     expect(validateEnrichmentResult({ canonicalUnitKind: "volume", density: 0.9, restockQuantity: { quantity: 1, unit: "l" }, category: "pantry" }).ok).toBe(true);
   });
+
+  it("accepts a well-formed mass result", () => {
+    const r = validateEnrichmentResult({
+      canonicalUnitKind: "mass",
+      restockQuantity: { quantity: 2, unit: "lb" },
+      category: "protein",
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it("strips cross-kind density/avgUnitGrams from the result", () => {
+    const r = validateEnrichmentResult({
+      canonicalUnitKind: "mass",
+      density: 0.9,
+      avgUnitGrams: 50,
+      restockQuantity: { quantity: 2, unit: "lb" },
+      category: "protein",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.density).toBeUndefined();
+      expect(r.value.avgUnitGrams).toBeUndefined();
+    }
+  });
+
+  it("rejects NaN avgUnitGrams", () => {
+    const r = validateEnrichmentResult({
+      canonicalUnitKind: "count",
+      avgUnitGrams: NaN,
+      restockQuantity: { quantity: 12, unit: "" },
+      category: "produce",
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it("rejects a non-object restockQuantity", () => {
+    const r = validateEnrichmentResult({
+      canonicalUnitKind: "mass",
+      restockQuantity: "2 lb",
+      category: "protein",
+    });
+    expect(r.ok).toBe(false);
+  });
 });

@@ -48,6 +48,19 @@ describe("ingredientNeedsEnrichment", () => {
       ingredientNeedsEnrichment({ ...complete, canonicalUnitKind: "mass", density: undefined, avgUnitGrams: undefined }),
     ).toBe(false);
   });
+
+  it("false for a count item whose restock unit is an empty string (idempotent)", () => {
+    expect(
+      ingredientNeedsEnrichment({
+        _id: "e",
+        name: "egg",
+        category: "produce",
+        canonicalUnitKind: "count",
+        avgUnitGrams: 50,
+        restockQuantity: { quantity: 12, unit: "" },
+      }),
+    ).toBe(false);
+  });
 });
 
 describe("selectIngredientsNeedingEnrichment", () => {

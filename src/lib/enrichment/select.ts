@@ -8,7 +8,9 @@ export function ingredientNeedsEnrichment(doc: IngredientDoc): boolean {
   if (kind === "volume" && typeof doc.density !== "number") return true;
   if (kind === "count" && typeof doc.avgUnitGrams !== "number") return true;
   const r = doc.restockQuantity;
-  if (!r || typeof r.quantity !== "number" || !r.unit) return true;
+  // unit may legitimately be "" for count items (e.g. eggs), so check the type,
+  // not truthiness — otherwise such ingredients would re-enrich on every run.
+  if (!r || typeof r.quantity !== "number" || typeof r.unit !== "string") return true;
   return false;
 }
 

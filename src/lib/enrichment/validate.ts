@@ -30,28 +30,33 @@ export function validateEnrichmentResult(raw: unknown): ValidationResult {
     errors.push("count-kind requires a positive avgUnitGrams");
   }
 
-  const restock = r.restockQuantity as Record<string, unknown> | undefined;
-  if (!restock || !isPosNumber(restock.quantity) || typeof restock.unit !== "string") {
+  const restock = r.restockQuantity;
+  const restockOk =
+    typeof restock === "object" &&
+    restock !== null &&
+    isPosNumber((restock as Record<string, unknown>).quantity) &&
+    typeof (restock as Record<string, unknown>).unit === "string";
+  if (!restockOk) {
     errors.push("restockQuantity must have a positive quantity and a unit string");
   }
 
   const category = r.category;
-  if (typeof category !== "string" || !(CATEGORIES as string[]).includes(category)) {
+  if (typeof category !== "string" || !CATEGORIES.includes(category as IngredientCategory)) {
     errors.push("category must be one of the known categories");
   }
 
   if (errors.length > 0) return { ok: false, errors };
 
+  const validRestock = restock as { quantity: number; unit: string };
   return {
     ok: true,
     value: {
       canonicalUnitKind: kind as StockMetadata["canonicalUnitKind"],
-      density: typeof r.density === "number" ? r.density : undefined,
-      avgUnitGrams: typeof r.avgUnitGrams === "number" ? r.avgUnitGrams : undefined,
-      restockQuantity: {
-        quantity: (restock as { quantity: number }).quantity,
-        unit: (restock as { unit: string }).unit,
-      },
+      // Only carry the field meaningful for this kind; drop any cross-kind value
+      // the model may have hallucinated so it never reaches Sanity.
+      density: kind === "volume" ? (r.density as number) : undefined,
+      avgUnitGrams: kind === "count" ? (r.avgUnitGrams as number) : undefined,
+      restockQuantity: { quantity: validRestock.quantity, unit: validRestock.unit },
       category: category as IngredientCategory,
     },
   };
