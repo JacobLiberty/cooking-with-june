@@ -7,7 +7,9 @@ vi.mock("convex/react", () => ({
 vi.mock("@convex-dev/auth/react", () => ({
   useAuthActions: () => ({ signIn: vi.fn(), signOut: vi.fn() }),
 }));
-vi.mock("@cvx/_generated/api", () => ({ api: { users: { me: "users.me" } } }));
+vi.mock("@cvx/_generated/api", () => ({
+  api: { households: { viewer: "households.viewer" } },
+}));
 
 import { useQuery } from "convex/react";
 import { AuthControls } from "@/components/auth-controls";
@@ -31,18 +33,18 @@ describe("AuthControls", () => {
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 
-  it("renders the Plan link, name, and Sign out when signed in", () => {
-    mockUseQuery.mockReturnValue({ name: "Jacob" });
+  it("renders the Plan link, name, and Sign out for a household member", () => {
+    mockUseQuery.mockReturnValue({ name: "Jacob", householdId: "h1" });
     render(<AuthControls />);
     expect(screen.getByRole("link", { name: "Plan" })).toBeInTheDocument();
     expect(screen.getByText("Jacob")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
-  it("renders Sign out without a name when the user has no name", () => {
-    mockUseQuery.mockReturnValue({ name: null });
+  it("renders Finish setup (not Plan) when signed in without a household", () => {
+    mockUseQuery.mockReturnValue({ name: "Jacob", householdId: null });
     render(<AuthControls />);
-    expect(screen.queryByText("Jacob")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Finish setup" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Plan" })).not.toBeInTheDocument();
   });
 });

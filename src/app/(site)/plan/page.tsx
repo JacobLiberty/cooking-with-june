@@ -6,6 +6,7 @@ import { INGREDIENTS_QUERY } from "@/sanity/lib/queries";
 import type { PlanData } from "@/sanity/plan-types";
 import type { IngredientOption } from "@/sanity/types";
 import { PlanView } from "@/components/plan-view";
+import { InvitePanel } from "@/components/invite-panel";
 
 export default async function PlanPage() {
   const viewer = await getViewer();
@@ -26,6 +27,7 @@ export default async function PlanPage() {
           The Plan
         </h1>
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
+        {viewer.role === "owner" ? <InvitePanel /> : null}
       </header>
       <div className="set set-2 mt-8">
         <PlanView

@@ -7,23 +7,34 @@ import { api } from "@cvx/_generated/api";
 
 export function AuthControls() {
   const { signIn, signOut } = useAuthActions();
-  const me = useQuery(api.users.me);
+  const viewer = useQuery(api.households.viewer);
 
-  if (me === undefined) {
+  if (viewer === undefined) {
     return <span className="kicker text-ink-soft">···</span>;
   }
 
-  if (me) {
+  if (viewer) {
     return (
       <span className="flex items-center gap-3">
-        <Link
-          href="/plan"
-          className="kicker text-ink-soft transition-colors hover:text-terracotta"
-        >
-          Plan
-        </Link>
-        {me.name ? (
-          <span className="kicker hidden text-ink-soft sm:inline">{me.name}</span>
+        {viewer.householdId ? (
+          <Link
+            href="/plan"
+            className="kicker text-ink-soft transition-colors hover:text-terracotta"
+          >
+            Plan
+          </Link>
+        ) : (
+          <Link
+            href="/household/setup"
+            className="kicker text-clay transition-colors hover:text-terracotta"
+          >
+            Finish setup
+          </Link>
+        )}
+        {viewer.name ? (
+          <span className="kicker hidden text-ink-soft sm:inline">
+            {viewer.name}
+          </span>
         ) : null}
         <button
           type="button"
