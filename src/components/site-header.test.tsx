@@ -7,11 +7,9 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
 }));
 
-// AuthControls uses useSession — stub it so tests don't need a SessionProvider.
-vi.mock("next-auth/react", () => ({
-  useSession: () => ({ data: null, status: "unauthenticated" }),
-  signIn: vi.fn(),
-  signOut: vi.fn(),
+// AuthControls needs Convex providers — stub it to a no-op for header tests.
+vi.mock("./auth-controls", () => ({
+  AuthControls: () => null,
 }));
 
 describe("SiteHeader", () => {

@@ -1,34 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useQuery } from "convex/react";
+import { api } from "@cvx/_generated/api";
 
 export function AuthControls() {
-  const { data: session, status } = useSession();
+  const { signIn, signOut } = useAuthActions();
+  const me = useQuery(api.users.me);
 
-  if (status === "loading") {
+  if (me === undefined) {
     return <span className="kicker text-ink-soft">···</span>;
   }
 
-  if (session?.user) {
+  if (me) {
     return (
       <span className="flex items-center gap-3">
-        {session.user.isEditor ? (
-          <Link
-            href="/plan"
-            className="kicker text-ink-soft transition-colors hover:text-terracotta"
-          >
-            Plan
-          </Link>
-        ) : null}
-        {session.user.name ? (
-          <span className="kicker hidden text-ink-soft sm:inline">
-            {session.user.name}
-          </span>
+        <Link
+          href="/plan"
+          className="kicker text-ink-soft transition-colors hover:text-terracotta"
+        >
+          Plan
+        </Link>
+        {me.name ? (
+          <span className="kicker hidden text-ink-soft sm:inline">{me.name}</span>
         ) : null}
         <button
           type="button"
-          onClick={() => signOut()}
+          onClick={() => void signOut()}
           className="kicker text-ink-soft transition-colors hover:text-terracotta"
         >
           Sign out
@@ -40,7 +39,7 @@ export function AuthControls() {
   return (
     <button
       type="button"
-      onClick={() => signIn("google")}
+      onClick={() => void signIn("google")}
       className="kicker text-ink-soft transition-colors hover:text-terracotta"
     >
       Sign in

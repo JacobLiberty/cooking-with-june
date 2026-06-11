@@ -1,45 +1,46 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(),
+}));
+vi.mock("@convex-dev/auth/react", () => ({
+  useAuthActions: () => ({ signIn: vi.fn(), signOut: vi.fn() }),
+}));
+vi.mock("@cvx/_generated/api", () => ({ api: { users: { me: "users.me" } } }));
+
+import { useQuery } from "convex/react";
 import { AuthControls } from "@/components/auth-controls";
 
-vi.mock("next-auth/react", () => ({
-  useSession: vi.fn(),
-  signIn: vi.fn(),
-  signOut: vi.fn(),
-}));
-
-import { useSession } from "next-auth/react";
-
-const mockUseSession = useSession as ReturnType<typeof vi.fn>;
+const mockUseQuery = useQuery as ReturnType<typeof vi.fn>;
 
 describe("AuthControls", () => {
-  it("renders a loading placeholder while session is resolving", () => {
-    mockUseSession.mockReturnValue({ data: null, status: "loading" });
+  beforeEach(() => {
+    mockUseQuery.mockReset();
+  });
+
+  it("renders a loading placeholder while the query is resolving", () => {
+    mockUseQuery.mockReturnValue(undefined);
     render(<AuthControls />);
     expect(screen.getByText("···")).toBeInTheDocument();
   });
 
-  it("renders Sign in button when unauthenticated", () => {
-    mockUseSession.mockReturnValue({ data: null, status: "unauthenticated" });
+  it("renders Sign in when unauthenticated", () => {
+    mockUseQuery.mockReturnValue(null);
     render(<AuthControls />);
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 
-  it("renders editor name and Sign out button when authenticated", () => {
-    mockUseSession.mockReturnValue({
-      data: { user: { name: "Jacob", isEditor: true } },
-      status: "authenticated",
-    });
+  it("renders the Plan link, name, and Sign out when signed in", () => {
+    mockUseQuery.mockReturnValue({ name: "Jacob" });
     render(<AuthControls />);
+    expect(screen.getByRole("link", { name: "Plan" })).toBeInTheDocument();
     expect(screen.getByText("Jacob")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
-  it("renders Sign out without a name when session user has no name", () => {
-    mockUseSession.mockReturnValue({
-      data: { user: { name: null, isEditor: true } },
-      status: "authenticated",
-    });
+  it("renders Sign out without a name when the user has no name", () => {
+    mockUseQuery.mockReturnValue({ name: null });
     render(<AuthControls />);
     expect(screen.queryByText("Jacob")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();

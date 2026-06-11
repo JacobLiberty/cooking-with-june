@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Libre_Caslon_Display, Newsreader } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/components/providers";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
+import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { SITE_URL } from "@/lib/site";
 
 const libreCaslon = Libre_Caslon_Display({
@@ -58,10 +59,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${libreCaslon.variable} ${newsreader.variable}`}>
-      <body className="min-h-screen bg-paper font-body text-ink antialiased">
-        <Providers>{children}</Providers>
-      </body>
-    </html>
+    <ConvexAuthNextjsServerProvider>
+      <html lang="en" className={`${libreCaslon.variable} ${newsreader.variable}`}>
+        <body className="min-h-screen bg-paper font-body text-ink antialiased">
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </body>
+      </html>
+    </ConvexAuthNextjsServerProvider>
   );
 }
