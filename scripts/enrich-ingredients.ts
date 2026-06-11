@@ -37,7 +37,9 @@ async function main() {
   console.log(`Catalog: ${docs.length} ingredients, ${todo.length} need enrichment.`);
   if (todo.length === 0) return;
 
-  const write = getWriteClient();
+  // Only construct the write client when we'll actually write — keeps --dry
+  // runnable without SANITY_API_WRITE_TOKEN (matches the env guard above).
+  const write = dry ? null : getWriteClient();
   let written = 0;
   const skipped: string[] = [];
 
@@ -72,7 +74,7 @@ async function main() {
         ...(m.canonicalUnitKind !== "volume" ? ["density"] : []),
         ...(m.canonicalUnitKind !== "count" ? ["avgUnitGrams"] : []),
       ];
-      let patch = write.patch(doc._id).set({
+      let patch = write!.patch(doc._id).set({
         canonicalUnitKind: m.canonicalUnitKind,
         ...(m.density != null ? { density: m.density } : {}),
         ...(m.avgUnitGrams != null ? { avgUnitGrams: m.avgUnitGrams } : {}),
