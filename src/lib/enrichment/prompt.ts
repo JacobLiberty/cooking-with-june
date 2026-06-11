@@ -3,10 +3,7 @@
  * enrichment. Kept pure (no SDK import) so it is unit-tested in isolation.
  */
 
-const KIND_ENUM = ["mass", "volume", "count"] as const;
-const CATEGORY_ENUM = [
-  "produce", "protein", "dairy", "pantry", "spice", "other", "nonfood",
-] as const;
+import { CANONICAL_UNIT_KINDS, INGREDIENT_CATEGORIES } from "@/lib/enrichment/types";
 
 /** The cached system block: classification rules + ground-truth examples. */
 export function buildSystemRules(): string {
@@ -23,7 +20,7 @@ export function buildSystemRules(): string {
     "- restockQuantity { quantity, unit }: ONE typical grocery purchase. Examples:",
     "  eggs -> { quantity: 12, unit: '' }, flour -> { quantity: 5, unit: 'lb' },",
     "  milk -> { quantity: 1, unit: 'l' }. Use '' for unit on pure counts.",
-    `- category: one of ${CATEGORY_ENUM.join(", ")}. Use 'nonfood' for paper towels,`,
+    `- category: one of ${INGREDIENT_CATEGORIES.join(", ")}. Use 'nonfood' for paper towels,`,
     "  foil, dish soap, etc. Non-food items are excluded from the cookable filter.",
     "Be consistent with the example values above.",
   ].join("\n");
@@ -53,7 +50,7 @@ export const ENRICHMENT_TOOL = {
           type: "object" as const,
           properties: {
             name: { type: "string" as const },
-            canonicalUnitKind: { type: "string" as const, enum: [...KIND_ENUM] },
+            canonicalUnitKind: { type: "string" as const, enum: [...CANONICAL_UNIT_KINDS] },
             density: { type: "number" as const },
             avgUnitGrams: { type: "number" as const },
             restockQuantity: {
@@ -64,7 +61,7 @@ export const ENRICHMENT_TOOL = {
               },
               required: ["quantity", "unit"],
             },
-            category: { type: "string" as const, enum: [...CATEGORY_ENUM] },
+            category: { type: "string" as const, enum: [...INGREDIENT_CATEGORIES] },
           },
           required: ["name", "canonicalUnitKind", "restockQuantity", "category"],
         },

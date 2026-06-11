@@ -1,9 +1,9 @@
-import type { StockMetadata, IngredientCategory } from "@/lib/enrichment/types";
-
-const KINDS = ["mass", "volume", "count"] as const;
-const CATEGORIES: IngredientCategory[] = [
-  "produce", "protein", "dairy", "pantry", "spice", "other", "nonfood",
-];
+import {
+  CANONICAL_UNIT_KINDS,
+  INGREDIENT_CATEGORIES,
+  type StockMetadata,
+  type IngredientCategory,
+} from "@/lib/enrichment/types";
 
 export type ValidationResult =
   | { ok: true; value: StockMetadata }
@@ -20,7 +20,7 @@ export function validateEnrichmentResult(raw: unknown): ValidationResult {
   const r = raw as Record<string, unknown>;
 
   const kind = r.canonicalUnitKind;
-  if (typeof kind !== "string" || !(KINDS as readonly string[]).includes(kind)) {
+  if (typeof kind !== "string" || !(CANONICAL_UNIT_KINDS as readonly string[]).includes(kind)) {
     errors.push("canonicalUnitKind must be mass|volume|count");
   }
   if (kind === "volume" && !isPosNumber(r.density)) {
@@ -41,7 +41,7 @@ export function validateEnrichmentResult(raw: unknown): ValidationResult {
   }
 
   const category = r.category;
-  if (typeof category !== "string" || !CATEGORIES.includes(category as IngredientCategory)) {
+  if (typeof category !== "string" || !INGREDIENT_CATEGORIES.includes(category as IngredientCategory)) {
     errors.push("category must be one of the known categories");
   }
 
