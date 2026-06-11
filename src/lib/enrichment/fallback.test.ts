@@ -18,6 +18,12 @@ describe("fallbackMetadata", () => {
     const fb = fallbackMetadata("dragonfruit");
     expect(fb.canonicalUnitKind).toBeUndefined();
   });
+
+  it("classifies a density-1.0 ingredient (cream) as volume", () => {
+    const fb = fallbackMetadata("heavy cream");
+    expect(fb.canonicalUnitKind).toBe("volume");
+    expect(fb.density).toBe(1);
+  });
 });
 
 describe("mergeWithFallback", () => {
