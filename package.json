@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "enrich:ingredients": "node --import tsx --env-file=.env.local scripts/enrich-ingredients.ts"
+    "enrich:ingredients": "node --import tsx --env-file=.env --env-file=.env.local scripts/enrich-ingredients.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
