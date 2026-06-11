@@ -12,7 +12,7 @@ vi.mock("@/sanity/lib/client", () => ({
 }));
 
 import { requireMember } from "@/lib/viewer";
-import { getShopData, getCookableCoverage } from "@/app/actions/kitchen-data";
+import { getShopData, getCookableCoverage, getPlanData } from "@/app/actions/kitchen-data";
 
 const REQS = [
   {
@@ -61,5 +61,26 @@ describe("getCookableCoverage", () => {
     sanityFetch.mockResolvedValueOnce(REQS);
     const cov = await getCookableCoverage(["r1"]);
     expect(cov.r1).toEqual({ cookable: true, missingRequired: 0 });
+  });
+});
+
+describe("getPlanData", () => {
+  it("returns each planned recipe with its scale and scaled coverage", async () => {
+    fetchQuery
+      .mockResolvedValueOnce([{ recipeId: "r1", scale: 2 }]) // plan
+      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 500, restockOverride: null, updatedAt: 1 }]); // pantry
+    sanityFetch.mockResolvedValueOnce(REQS);
+    const data = await getPlanData();
+    expect(data).toHaveLength(1);
+    expect(data[0]).toMatchObject({ recipeId: "r1", scale: 2 });
+    // beef required at 2x = 907.2g, pantry 500 -> short -> not cookable
+    expect(data[0].coverage).toEqual({ cookable: false, missingRequired: 1 });
+  });
+});
+
+describe("auth", () => {
+  it("getShopData rejects when not a member", async () => {
+    vi.mocked(requireMember).mockRejectedValueOnce(new Error("Not authorized"));
+    await expect(getShopData()).rejects.toThrow(/authorized/i);
   });
 });

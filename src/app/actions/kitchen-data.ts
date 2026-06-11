@@ -38,6 +38,7 @@ export async function getCookableCoverage(
   recipeIds: string[],
 ): Promise<Record<string, { cookable: boolean; missingRequired: number }>> {
   await requireMember();
+  if (recipeIds.length === 0) return {};
   const token = await convexAuthNextjsToken();
   const [pantryRows, reqDocs] = await Promise.all([
     fetchQuery(api.pantry.pantry, {}, token ? { token } : {}) as Promise<PantryRow[]>,
@@ -48,6 +49,8 @@ export async function getCookableCoverage(
   for (const doc of reqDocs) {
     const lines = doc.lines ?? [];
     const metaFor = buildMetaFor(lines);
+    // Browse cookability = "can I make this recipe as written?" → base scale 1,
+    // independent of any plan scale (plan-scaled coverage lives in getPlanData).
     const { requirements } = recipeRequirements(toRecipeLines(lines), 1, metaFor);
     out[doc._id] = recipeCoverage(requirements, pantry);
   }
