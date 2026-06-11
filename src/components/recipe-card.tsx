@@ -1,20 +1,18 @@
 import Link from "next/link";
 import type { RecipeCardData } from "@/sanity/types";
-import { averageRating } from "@/lib/rating";
 import { totalTime } from "@/lib/format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
-import { isJuneApproved } from "@/lib/june-approved";
 import { coverTransitionName } from "@/lib/view-transition";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
 
 export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
-  const avg = averageRating(recipe.ratings);
+  const avg = recipe.ratingAvg;
   const time = totalTime(recipe.prepTime, recipe.cookTime);
   const meta = [time, recipe.servings ? `serves ${recipe.servings}` : null]
     .filter(Boolean)
     .join(" · ");
-  const approved = isJuneApproved(recipe.ratings);
+  const approved = recipe.ratingApproved;
   const tags = recipe.tags?.slice(0, 2) ?? [];
 
   return (

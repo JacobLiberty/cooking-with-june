@@ -13,7 +13,6 @@ export const RECIPES_QUERY = defineQuery(`
     wishlist,
     madeCount,
     "tags": tags[]->name,
-    "ratings": ratings[]{ "editor": editor->name, value },
     "ingredientIds": ingredients[].ingredient._ref,
     "requiredIngredientIds": ingredients[optional != true].ingredient._ref,
     "createdAt": _createdAt
@@ -34,7 +33,6 @@ export const RECIPE_QUERY = defineQuery(`
     cookTime,
     servings,
     "tags": tags[]->name,
-    "ratings": ratings[]{ _key, "editor": editor->name, value },
     wishlist,
     madeCount,
     lastMadeAt,

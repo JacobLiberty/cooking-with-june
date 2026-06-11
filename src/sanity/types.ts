@@ -1,7 +1,5 @@
 import type { SanityImageSource } from "@sanity/image-url";
 
-export type RatingView = { editor: string | null; value: number };
-
 export type RecipeCardData = {
   _id: string;
   title: string;
@@ -14,7 +12,9 @@ export type RecipeCardData = {
   wishlist?: boolean;
   madeCount?: number;
   tags: string[] | null;
-  ratings: RatingView[] | null;
+  /** Convex rating aggregate (merged server-side; rounded to 0.5 for display). */
+  ratingAvg: number | null;
+  ratingApproved: boolean;
   ingredientIds: string[] | null;
   /** Recipe ingredients excluding any marked optional — used for pantry coverage. */
   requiredIngredientIds?: string[] | null;
@@ -81,7 +81,6 @@ export type RecipeDetailData = {
   cookTime?: number;
   servings?: number;
   tags: string[] | null;
-  ratings: (RatingView & { _key: string })[] | null;
   wishlist?: boolean;
   madeCount?: number;
   lastMadeAt?: string;

@@ -12,20 +12,38 @@ import type {
   IngredientOption,
   TagOption,
 } from "@/sanity/types";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@cvx/_generated/api";
 import { CollectionView } from "@/components/collection-view";
 import { JuneArt } from "@/components/june";
 import { PawTrail } from "@/components/paw-trail";
 import { getViewer } from "@/lib/viewer";
 
+// Recipe content comes from Sanity; rating aggregates are merged from Convex.
+type RawRecipe = Omit<RecipeCardData, "ratingAvg" | "ratingApproved">;
+
 // revalidate removed — getViewer() (Convex auth token) makes this page dynamic
 
 export default async function HomePage() {
-  const [recipes, ingredients, tags, viewer] = await Promise.all([
-    client.fetch<RecipeCardData[]>(RECIPES_QUERY),
+  const [rawRecipes, ingredients, tags, viewer] = await Promise.all([
+    client.fetch<RawRecipe[]>(RECIPES_QUERY),
     client.fetch<IngredientOption[]>(INGREDIENTS_QUERY),
     client.fetch<TagOption[]>(TAGS_QUERY),
     getViewer(),
   ]);
+
+  const ratingsById = await fetchQuery(api.ratings.forRecipes, {
+    recipeIds: rawRecipes.map((r) => r._id),
+  });
+  const recipes: RecipeCardData[] = rawRecipes.map((r) => {
+    const agg = ratingsById[r._id];
+    return {
+      ...r,
+      ratingAvg:
+        agg && agg.count > 0 ? Math.round(agg.average * 2) / 2 : null,
+      ratingApproved: agg?.approved ?? false,
+    };
+  });
 
   // Editors get "Cook from pantry" — fetch what's currently in the pantry.
   const pantryIds = viewer.isMember

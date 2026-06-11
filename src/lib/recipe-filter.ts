@@ -1,6 +1,4 @@
 import type { RecipeCardData } from "@/sanity/types";
-import { averageRating } from "@/lib/rating";
-import { isJuneApproved } from "@/lib/june-approved";
 
 export type SortKey = "name" | "rating" | "newest";
 export type FilterMode = "any" | "most" | "all";
@@ -41,7 +39,7 @@ export function matchesCollection(
   collection: CollectionKey,
 ): boolean {
   if (collection === "totry") return Boolean(recipe.wishlist);
-  if (collection === "approved") return isJuneApproved(recipe.ratings);
+  if (collection === "approved") return recipe.ratingApproved;
   return true;
 }
 
@@ -101,8 +99,8 @@ function compare(a: RecipeCardData, b: RecipeCardData, sort: SortKey): number {
   if (sort === "name") return a.title.localeCompare(b.title);
   if (sort === "newest") return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
   // rating: high → low, unrated (null) last
-  const ra = averageRating(a.ratings);
-  const rb = averageRating(b.ratings);
+  const ra = a.ratingAvg;
+  const rb = b.ratingAvg;
   if (ra == null && rb == null) return a.title.localeCompare(b.title);
   if (ra == null) return 1;
   if (rb == null) return -1;

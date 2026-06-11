@@ -14,10 +14,8 @@ describe("schema content model", () => {
         "recipe",
         "ingredient",
         "tag",
-        "editor",
         "mealPlan",
         "ingredientLine",
-        "rating",
         "recipeNote",
         "manualGroceryItem",
       ]),
@@ -39,7 +37,6 @@ describe("schema content model", () => {
         "cookTime",
         "servings",
         "tags",
-        "ratings",
         "wishlist",
         "madeCount",
         "lastMadeAt",
@@ -62,9 +59,4 @@ describe("schema content model", () => {
     expect(member.to[0].type).toBe("tag");
   });
 
-  it("recipe.ratings is a list of rating objects", () => {
-    const ratings = fieldByName(recipe, "ratings");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((ratings as any).of[0].type).toBe("rating");
-  });
 });

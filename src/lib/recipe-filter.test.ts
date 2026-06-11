@@ -19,7 +19,8 @@ function recipe(partial: Partial<RecipeCardData>): RecipeCardData {
     title: "Test",
     slug: "test",
     tags: [],
-    ratings: [],
+    ratingAvg: null,
+    ratingApproved: false,
     ingredientIds: [],
     createdAt: "2026-01-01T00:00:00Z",
     ...partial,
@@ -125,14 +126,9 @@ describe("matchesTags", () => {
 });
 
 describe("matchesCollection", () => {
-  const approved = recipe({
-    ratings: [
-      { editor: "Jacob", value: 5 },
-      { editor: "Lily", value: 4.5 },
-    ],
-  });
-  const toTry = recipe({ wishlist: true, ratings: [] });
-  const plain = recipe({ ratings: [{ editor: "Jacob", value: 3 }] });
+  const approved = recipe({ ratingAvg: 4.75, ratingApproved: true });
+  const toTry = recipe({ wishlist: true });
+  const plain = recipe({ ratingAvg: 3, ratingApproved: false });
 
   it("passes everything for 'all'", () => {
     expect(matchesCollection(plain, "all")).toBe(true);
@@ -163,9 +159,9 @@ describe("facet counts", () => {
 });
 
 describe("applyRecipeFilters", () => {
-  const a = recipe({ _id: "a", title: "Apple Cake", ratings: [{ editor: "J", value: 3 }], createdAt: "2026-01-03T00:00:00Z" });
-  const b = recipe({ _id: "b", title: "Beef Stew", ratings: [{ editor: "J", value: 5 }], createdAt: "2026-01-01T00:00:00Z" });
-  const c = recipe({ _id: "c", title: "Carrot Soup", ratings: [], createdAt: "2026-01-02T00:00:00Z" });
+  const a = recipe({ _id: "a", title: "Apple Cake", ratingAvg: 3, createdAt: "2026-01-03T00:00:00Z" });
+  const b = recipe({ _id: "b", title: "Beef Stew", ratingAvg: 5, createdAt: "2026-01-01T00:00:00Z" });
+  const c = recipe({ _id: "c", title: "Carrot Soup", ratingAvg: null, createdAt: "2026-01-02T00:00:00Z" });
   const all = [c, a, b];
 
   it("sorts by name (default, A→Z)", () => {

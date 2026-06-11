@@ -80,12 +80,6 @@ export const recipe = defineType({
       of: [defineArrayMember({ type: "reference", to: [{ type: "tag" }] })],
     }),
     defineField({
-      name: "ratings",
-      title: "Ratings",
-      type: "array",
-      of: [defineArrayMember({ type: "rating" })],
-    }),
-    defineField({
       name: "wishlist",
       title: "To-try (wishlist)",
       type: "boolean",

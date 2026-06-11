@@ -21,7 +21,8 @@ const base: RecipeCardData = {
   wishlist: false,
   madeCount: 3,
   tags: ["Dinner"],
-  ratings: [{ editor: "Jacob", value: 4.5 }],
+  ratingAvg: 4.5,
+  ratingApproved: false,
   ingredientIds: ["beef", "onion"],
   createdAt: "2026-01-01T00:00:00Z",
 };
@@ -42,31 +43,21 @@ describe("RecipeCard", () => {
   });
 
   it("shows 'To try' for an unrated wishlist recipe", () => {
-    render(<RecipeCard recipe={{ ...base, ratings: [], wishlist: true }} />);
+    render(
+      <RecipeCard
+        recipe={{ ...base, ratingAvg: null, ratingApproved: false, wishlist: true }}
+      />,
+    );
     expect(screen.getByText("To try")).toBeInTheDocument();
   });
 
-  it("shows 'June approved' badge when both ratings are >= 4.5", () => {
-    render(
-      <RecipeCard
-        recipe={{
-          ...base,
-          ratings: [
-            { editor: "Jacob", value: 5 },
-            { editor: "Lily", value: 4.5 },
-          ],
-        }}
-      />,
-    );
+  it("shows 'June approved' badge when the recipe is approved", () => {
+    render(<RecipeCard recipe={{ ...base, ratingApproved: true }} />);
     expect(screen.getByText("June approved")).toBeInTheDocument();
   });
 
-  it("does not show 'June approved' badge with only one rating", () => {
-    render(
-      <RecipeCard
-        recipe={{ ...base, ratings: [{ editor: "Jacob", value: 5 }] }}
-      />,
-    );
+  it("does not show 'June approved' badge when not approved", () => {
+    render(<RecipeCard recipe={{ ...base, ratingApproved: false }} />);
     expect(screen.queryByText("June approved")).not.toBeInTheDocument();
   });
 });
