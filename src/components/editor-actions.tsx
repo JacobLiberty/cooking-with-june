@@ -167,7 +167,9 @@ export function EditorActions({
   };
 
   const made = () => {
-    markMadeMut({ recipeId, at: Date.now() }).then(() => router.refresh());
+    markMadeMut({ recipeId, at: Date.now() })
+      .then(() => router.refresh())
+      .catch(() => toast({ message: "Couldn't log that — try again" }));
     setMadePop(true);
     if (madeTimer.current) clearTimeout(madeTimer.current);
     madeTimer.current = setTimeout(() => setMadePop(false), 900);
@@ -175,7 +177,9 @@ export function EditorActions({
       message: "Logged — you made it",
       actionLabel: "Undo",
       onAction: () => {
-        unmarkMadeMut({ recipeId }).then(() => router.refresh());
+        unmarkMadeMut({ recipeId })
+          .then(() => router.refresh())
+          .catch(() => toast({ message: "Couldn't undo — try again" }));
       },
     });
   };

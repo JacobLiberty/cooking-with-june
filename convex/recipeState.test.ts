@@ -23,6 +23,14 @@ test("markMade increments count and records lastMadeAt", async () => {
   expect(s).toEqual({ madeCount: 2, lastMadeAt: 2000, toTry: false });
 });
 
+test("markMade rejects a non-finite or non-positive timestamp", async () => {
+  const t = convexTest(schema, modules);
+  const a = await member(t, "a@example.com");
+  await expect(
+    a.mutation(api.recipeState.markMade, { recipeId: "r1", at: 0 }),
+  ).rejects.toThrow(/timestamp/i);
+});
+
 test("unmarkMade floors at zero", async () => {
   const t = convexTest(schema, modules);
   const a = await member(t, "a@example.com");

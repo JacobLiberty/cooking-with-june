@@ -88,11 +88,13 @@ async function upsert(
 
 export const markMade = mutation({
   args: { recipeId: v.string(), at: v.number() },
-  handler: (ctx, { recipeId, at }) =>
-    upsert(ctx, recipeId, (cur) => ({
+  handler: (ctx, { recipeId, at }) => {
+    if (!Number.isFinite(at) || at <= 0) throw new Error("Invalid timestamp");
+    return upsert(ctx, recipeId, (cur) => ({
       madeCount: cur.madeCount + 1,
       lastMadeAt: at,
-    })),
+    }));
+  },
 });
 
 export const unmarkMade = mutation({
