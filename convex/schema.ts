@@ -36,4 +36,24 @@ export default defineSchema({
   })
     .index("by_recipe", ["recipeId"])
     .index("by_recipe_user", ["recipeId", "userId"]),
+
+  // Per-household made-it / to-try state over the shared (Sanity) recipes.
+  recipeState: defineTable({
+    householdId: v.id("households"),
+    recipeId: v.string(),
+    madeCount: v.number(),
+    lastMadeAt: v.optional(v.number()),
+    toTry: v.boolean(),
+  })
+    .index("by_household", ["householdId"])
+    .index("by_household_recipe", ["householdId", "recipeId"]),
+
+  // Per-household, author-attributed recipe notes.
+  recipeNotes: defineTable({
+    householdId: v.id("households"),
+    recipeId: v.string(),
+    userId: v.id("users"),
+    author: v.optional(v.string()),
+    text: v.string(),
+  }).index("by_household_recipe", ["householdId", "recipeId"]),
 });
