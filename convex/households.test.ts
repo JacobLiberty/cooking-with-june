@@ -1,7 +1,7 @@
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
@@ -34,6 +34,27 @@ test("createHousehold rejects a second household for the same user", async () =>
   await expect(
     as.mutation(api.households.createHousehold, { name: "Two" }),
   ).rejects.toThrow(/already/i);
+});
+
+test("createHousehold is invite-only when FOUNDER_EMAILS is set", async () => {
+  vi.stubEnv("FOUNDER_EMAILS", "founder@example.com");
+  try {
+    const t = convexTest(schema, modules);
+    const outsider = await newUser(t, "random@example.com");
+    await expect(
+      t
+        .withIdentity({ subject: outsider })
+        .mutation(api.households.createHousehold, { name: "Nope" }),
+    ).rejects.toThrow(/invite-only/i);
+
+    const founder = await newUser(t, "founder@example.com");
+    const hid = await t
+      .withIdentity({ subject: founder })
+      .mutation(api.households.createHousehold, { name: "Yes" });
+    expect(hid).toBeTruthy();
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });
 
 test("invite code lets a second user join", async () => {

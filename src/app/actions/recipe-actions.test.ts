@@ -29,6 +29,7 @@ const MEMBER_VIEWER = {
   householdId: "h1",
   role: "owner" as const,
   name: "Jacob",
+  canCreateHousehold: true,
 };
 
 beforeEach(() => {

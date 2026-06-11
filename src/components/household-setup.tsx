@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "@cvx/_generated/api";
 
-export function HouseholdSetup() {
+export function HouseholdSetup({ canCreate = true }: { canCreate?: boolean }) {
   const router = useRouter();
   const createHousehold = useMutation(api.households.createHousehold);
   const acceptInvite = useMutation(api.households.acceptInvite);
@@ -47,29 +47,31 @@ export function HouseholdSetup() {
       ) : null}
 
       <div className="mt-6 flex flex-col gap-8">
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void run(() => createHousehold({ name }));
-          }}
-        >
-          <h2 className="kicker text-ink-soft">Create a household</h2>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Jacob &amp; Lily"
-            aria-label="Household name"
-            className="min-h-11 rounded-lg border border-ink/20 bg-paper px-3 text-ink focus-visible:border-terracotta focus-visible:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={busy || !name.trim()}
-            className="kicker min-h-11 rounded-full bg-terracotta px-6 text-paper transition-colors hover:bg-terracotta-deep disabled:opacity-50"
+        {canCreate ? (
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run(() => createHousehold({ name }));
+            }}
           >
-            Create household
-          </button>
-        </form>
+            <h2 className="kicker text-ink-soft">Create a household</h2>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Jacob &amp; Lily"
+              aria-label="Household name"
+              className="min-h-11 rounded-lg border border-ink/20 bg-paper px-3 text-ink focus-visible:border-terracotta focus-visible:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={busy || !name.trim()}
+              className="kicker min-h-11 rounded-full bg-terracotta px-6 text-paper transition-colors hover:bg-terracotta-deep disabled:opacity-50"
+            >
+              Create household
+            </button>
+          </form>
+        ) : null}
 
         <form
           className="flex flex-col gap-3"

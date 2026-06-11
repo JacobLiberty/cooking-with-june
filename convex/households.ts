@@ -3,6 +3,20 @@ import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { getMembership, requireUserId, requireMembership } from "./lib/auth";
 
+// Household creation is invite-only when FOUNDER_EMAILS is set on the deployment
+// (comma-separated). Unset/empty => open (dev/test). Joining via code is always
+// allowed. Relax once per-household data isolation (Spec 2) lands.
+function isFounderEmail(email: string | null): boolean {
+  const raw = process.env.FOUNDER_EMAILS;
+  if (!raw || !raw.trim()) return true;
+  if (!email) return false;
+  const allow = raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return allow.includes(email.toLowerCase());
+}
+
 // Current user's identity + household context, or null when unauthenticated.
 export const viewer = query({
   args: {},
@@ -16,6 +30,7 @@ export const viewer = query({
       name: user?.name ?? null,
       householdId: membership?.householdId ?? null,
       role: membership?.role ?? null,
+      canCreateHousehold: isFounderEmail(user?.email ?? null),
     };
   },
 });
@@ -24,6 +39,12 @@ export const createHousehold = mutation({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
     const userId = await requireUserId(ctx);
+    const user = await ctx.db.get(userId);
+    if (!isFounderEmail(user?.email ?? null)) {
+      throw new Error(
+        "Household creation is invite-only right now — ask for an invite code",
+      );
+    }
     const existing = await getMembership(ctx, userId);
     if (existing) throw new Error("You already belong to a household");
     const clean = name.trim();

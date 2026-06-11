@@ -3,6 +3,7 @@ export type ViewerRecord = {
   name: string | null;
   householdId: string | null;
   role: "owner" | "member" | null;
+  canCreateHousehold: boolean;
 };
 
 export type Viewer = {
@@ -12,6 +13,7 @@ export type Viewer = {
   householdId: string | null;
   role: "owner" | "member" | null;
   name: string | null;
+  canCreateHousehold: boolean;
 };
 
 export const ANON_VIEWER: Viewer = {
@@ -21,6 +23,7 @@ export const ANON_VIEWER: Viewer = {
   householdId: null,
   role: null,
   name: null,
+  canCreateHousehold: false,
 };
 
 // A signed-in user is a "member" once they belong to a household.
@@ -33,5 +36,6 @@ export function mapViewer(record: ViewerRecord | null): Viewer {
     householdId: record.householdId,
     role: record.role,
     name: record.name,
+    canCreateHousehold: record.canCreateHousehold,
   };
 }

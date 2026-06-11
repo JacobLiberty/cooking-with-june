@@ -4,7 +4,13 @@ import { mapViewer } from "./viewer-map";
 describe("mapViewer", () => {
   it("maps a member with a household", () => {
     expect(
-      mapViewer({ userId: "u1", name: "Jacob", householdId: "h1", role: "owner" }),
+      mapViewer({
+        userId: "u1",
+        name: "Jacob",
+        householdId: "h1",
+        role: "owner",
+        canCreateHousehold: true,
+      }),
     ).toEqual({
       isAuthenticated: true,
       isMember: true,
@@ -12,12 +18,19 @@ describe("mapViewer", () => {
       householdId: "h1",
       role: "owner",
       name: "Jacob",
+      canCreateHousehold: true,
     });
   });
 
-  it("maps an authenticated user without a household", () => {
+  it("maps an authenticated non-founder without a household", () => {
     expect(
-      mapViewer({ userId: "u1", name: null, householdId: null, role: null }),
+      mapViewer({
+        userId: "u1",
+        name: null,
+        householdId: null,
+        role: null,
+        canCreateHousehold: false,
+      }),
     ).toEqual({
       isAuthenticated: true,
       isMember: false,
@@ -25,6 +38,7 @@ describe("mapViewer", () => {
       householdId: null,
       role: null,
       name: null,
+      canCreateHousehold: false,
     });
   });
 
@@ -36,6 +50,7 @@ describe("mapViewer", () => {
       householdId: null,
       role: null,
       name: null,
+      canCreateHousehold: false,
     });
   });
 });

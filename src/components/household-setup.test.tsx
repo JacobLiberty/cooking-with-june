@@ -56,6 +56,16 @@ describe("HouseholdSetup", () => {
     expect(mocks.push).toHaveBeenCalledWith("/plan");
   });
 
+  it("hides the create form for non-founders (invite-only)", () => {
+    render(<HouseholdSetup canCreate={false} />);
+    expect(
+      screen.queryByRole("button", { name: "Create household" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Join household" }),
+    ).toBeInTheDocument();
+  });
+
   it("shows the error and does not route when a mutation fails", async () => {
     mocks.acceptInvite.mockRejectedValue(new Error("Invalid invite code"));
     render(<HouseholdSetup />);

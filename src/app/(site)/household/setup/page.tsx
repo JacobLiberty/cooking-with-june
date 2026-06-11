@@ -7,5 +7,5 @@ export default async function HouseholdSetupPage() {
   const viewer = await getViewer();
   if (!viewer.isAuthenticated) redirect("/");
   if (viewer.isMember) redirect("/plan");
-  return <HouseholdSetup />;
+  return <HouseholdSetup canCreate={viewer.canCreateHousehold} />;
 }
