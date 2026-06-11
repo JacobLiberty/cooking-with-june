@@ -21,6 +21,8 @@ function recipe(partial: Partial<RecipeCardData>): RecipeCardData {
     tags: [],
     ratingAvg: null,
     ratingApproved: false,
+    toTry: false,
+    madeCount: 0,
     ingredientIds: [],
     createdAt: "2026-01-01T00:00:00Z",
     ...partial,
@@ -127,7 +129,8 @@ describe("matchesTags", () => {
 
 describe("matchesCollection", () => {
   const approved = recipe({ ratingAvg: 4.75, ratingApproved: true });
-  const toTry = recipe({ wishlist: true });
+  const toTry = recipe({ toTry: true });
+  const made = recipe({ madeCount: 2 });
   const plain = recipe({ ratingAvg: 3, ratingApproved: false });
 
   it("passes everything for 'all'", () => {
@@ -137,6 +140,10 @@ describe("matchesCollection", () => {
   it("'totry' keeps only wishlisted recipes", () => {
     expect(matchesCollection(toTry, "totry")).toBe(true);
     expect(matchesCollection(plain, "totry")).toBe(false);
+  });
+  it("'made' keeps only recipes made at least once", () => {
+    expect(matchesCollection(made, "made")).toBe(true);
+    expect(matchesCollection(plain, "made")).toBe(false);
   });
   it("'approved' keeps only June-approved recipes", () => {
     expect(matchesCollection(approved, "approved")).toBe(true);

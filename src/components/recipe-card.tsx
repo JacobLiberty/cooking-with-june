@@ -34,7 +34,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           <span className="absolute left-3 top-3 inline-flex h-7 items-center rounded-full bg-paper px-2.5 shadow-sm">
             <JuneApprovedBadge />
           </span>
-        ) : recipe.wishlist && avg == null ? (
+        ) : recipe.toTry && avg == null ? (
           <span className="kicker absolute right-3 top-3 inline-flex h-7 items-center rounded-full bg-paper px-2.5 text-terracotta shadow-sm">
             To try
           </span>
@@ -49,7 +49,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
         <div className="mt-2 flex h-5 items-center gap-2.5">
           {avg != null ? (
             <StarRating value={avg} />
-          ) : recipe.wishlist ? null : (
+          ) : recipe.toTry ? null : (
             <span className="kicker text-ink-soft">Unrated</span>
           )}
           {recipe.madeCount ? (

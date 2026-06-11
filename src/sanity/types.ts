@@ -9,8 +9,9 @@ export type RecipeCardData = {
   prepTime?: number;
   cookTime?: number;
   servings?: number;
-  wishlist?: boolean;
-  madeCount?: number;
+  /** Per-household state, merged server-side from Convex. */
+  toTry: boolean;
+  madeCount: number;
   tags: string[] | null;
   /** Convex rating aggregate (merged server-side; rounded to 0.5 for display). */
   ratingAvg: number | null;

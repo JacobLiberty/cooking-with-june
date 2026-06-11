@@ -7,7 +7,7 @@ import type {
 
 const SORTS: SortKey[] = ["name", "rating", "newest"];
 const MODES: FilterMode[] = ["any", "most", "all"];
-const COLLECTIONS: CollectionKey[] = ["all", "totry", "approved"];
+const COLLECTIONS: CollectionKey[] = ["all", "totry", "made", "approved"];
 
 function list(value: string | null): string[] {
   return value ? value.split(",").map((s) => s.trim()).filter(Boolean) : [];

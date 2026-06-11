@@ -13,14 +13,18 @@ import type {
   TagOption,
 } from "@/sanity/types";
 import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "@cvx/_generated/api";
 import { CollectionView } from "@/components/collection-view";
 import { JuneArt } from "@/components/june";
 import { PawTrail } from "@/components/paw-trail";
 import { getViewer } from "@/lib/viewer";
 
-// Recipe content comes from Sanity; rating aggregates are merged from Convex.
-type RawRecipe = Omit<RecipeCardData, "ratingAvg" | "ratingApproved">;
+// Recipe content comes from Sanity; ratings + per-household state are merged from Convex.
+type RawRecipe = Omit<
+  RecipeCardData,
+  "ratingAvg" | "ratingApproved" | "toTry" | "madeCount"
+>;
 
 // revalidate removed — getViewer() (Convex auth token) makes this page dynamic
 
@@ -32,18 +36,35 @@ export default async function HomePage() {
     getViewer(),
   ]);
 
-  // Ratings live in Convex; if it's briefly unreachable, still render the
-  // (public) collection with unrated cards rather than 500.
-  const ratingsById = await fetchQuery(api.ratings.forRecipes, {
-    recipeIds: rawRecipes.map((r) => r._id),
-  }).catch(() => ({}) as Record<string, { average: number; count: number; approved: boolean }>);
+  const token = viewer.isMember ? await convexAuthNextjsToken() : null;
+
+  // Ratings (global) + per-household made/to-try live in Convex; if it's briefly
+  // unreachable, still render the (public) collection rather than 500.
+  const [ratingsById, myStates] = await Promise.all([
+    fetchQuery(api.ratings.forRecipes, {
+      recipeIds: rawRecipes.map((r) => r._id),
+    }).catch(
+      () =>
+        ({}) as Record<
+          string,
+          { average: number; count: number; approved: boolean }
+        >,
+    ),
+    fetchQuery(api.recipeState.mine, {}, viewer.isMember && token ? { token } : {}).catch(
+      () => [] as { recipeId: string; madeCount: number; toTry: boolean }[],
+    ),
+  ]);
+  const stateById = new Map(myStates.map((s) => [s.recipeId, s]));
   const recipes: RecipeCardData[] = rawRecipes.map((r) => {
     const agg = ratingsById[r._id];
+    const st = stateById.get(r._id);
     return {
       ...r,
       // Store the precise average (display rounds via roundHalf); sort stays accurate.
       ratingAvg: agg && agg.count > 0 ? agg.average : null,
       ratingApproved: agg?.approved ?? false,
+      toTry: st?.toTry ?? false,
+      madeCount: st?.madeCount ?? 0,
     };
   });
 

@@ -18,7 +18,7 @@ const base: RecipeCardData = {
   prepTime: 10,
   cookTime: 35,
   servings: 4,
-  wishlist: false,
+  toTry: false,
   madeCount: 3,
   tags: ["Dinner"],
   ratingAvg: 4.5,
@@ -45,7 +45,7 @@ describe("RecipeCard", () => {
   it("shows 'To try' for an unrated wishlist recipe", () => {
     render(
       <RecipeCard
-        recipe={{ ...base, ratingAvg: null, ratingApproved: false, wishlist: true }}
+        recipe={{ ...base, ratingAvg: null, ratingApproved: false, toTry: true }}
       />,
     );
     expect(screen.getByText("To try")).toBeInTheDocument();

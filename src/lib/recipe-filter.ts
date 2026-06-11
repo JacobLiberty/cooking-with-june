@@ -2,7 +2,7 @@ import type { RecipeCardData } from "@/sanity/types";
 
 export type SortKey = "name" | "rating" | "newest";
 export type FilterMode = "any" | "most" | "all";
-export type CollectionKey = "all" | "totry" | "approved";
+export type CollectionKey = "all" | "totry" | "made" | "approved";
 
 /** "Most" matches recipes you have at least this share of the ingredients for. */
 export const MOST_THRESHOLD = 0.75;
@@ -38,7 +38,8 @@ export function matchesCollection(
   recipe: RecipeCardData,
   collection: CollectionKey,
 ): boolean {
-  if (collection === "totry") return Boolean(recipe.wishlist);
+  if (collection === "totry") return recipe.toTry;
+  if (collection === "made") return recipe.madeCount > 0;
   if (collection === "approved") return recipe.ratingApproved;
   return true;
 }

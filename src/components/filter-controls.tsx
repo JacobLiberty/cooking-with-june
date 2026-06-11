@@ -31,6 +31,7 @@ const MODE_HINTS: Record<FilterMode, string> = {
 const COLLECTIONS: { key: CollectionKey; label: string }[] = [
   { key: "all", label: "All" },
   { key: "totry", label: "To try" },
+  { key: "made", label: "Made it" },
   { key: "approved", label: "June approved" },
 ];
 
