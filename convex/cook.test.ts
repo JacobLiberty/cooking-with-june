@@ -65,3 +65,31 @@ test("cook rejects a bad timestamp and requires membership", async () => {
     t.mutation(api.cook.cook, { recipeId: "r1", at: 1000, deltas: [] }),
   ).rejects.toThrow();
 });
+
+test("cook increments madeCount across repeated cooks", async () => {
+  const t = convexTest(schema, modules);
+  const a = await member(t, "a@example.com");
+  await a.mutation(api.cook.cook, { recipeId: "r1", at: 1000, deltas: [] });
+  await a.mutation(api.cook.cook, { recipeId: "r1", at: 2000, deltas: [] });
+  const state = await a.query(api.recipeState.forRecipe, { recipeId: "r1" });
+  expect(state).toMatchObject({ madeCount: 2, lastMadeAt: 2000 });
+});
+
+test("cook rejects a negative subtract (no partial effect)", async () => {
+  const t = convexTest(schema, modules);
+  const a = await member(t, "a@example.com");
+  await a.mutation(api.pantry.adjustPantry, { ingredientId: "beef", deltaG: 500 });
+  await a.mutation(api.plan.addToPlan, { recipeId: "r1", scale: 1 });
+  await expect(
+    a.mutation(api.cook.cook, {
+      recipeId: "r1",
+      at: 1000,
+      deltas: [{ ingredientId: "beef", subtract: -10 }],
+    }),
+  ).rejects.toThrow();
+  // transaction rolled back: pantry untouched, recipe still planned, not made
+  const pantry = await a.query(api.pantry.pantry, {});
+  expect(pantry.find((r) => r.ingredientId === "beef")?.quantityG).toBe(500);
+  expect(await a.query(api.plan.plan, {})).toHaveLength(1);
+  expect((await a.query(api.recipeState.forRecipe, { recipeId: "r1" })).madeCount).toBe(0);
+});

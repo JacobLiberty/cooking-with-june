@@ -9,11 +9,15 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as cook from "../cook.js";
+import type * as grocery from "../grocery.js";
 import type * as households from "../households.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as migrations from "../migrations.js";
 import type * as notes from "../notes.js";
+import type * as pantry from "../pantry.js";
+import type * as plan from "../plan.js";
 import type * as ratings from "../ratings.js";
 import type * as recipeState from "../recipeState.js";
 
@@ -25,11 +29,15 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  cook: typeof cook;
+  grocery: typeof grocery;
   households: typeof households;
   http: typeof http;
   "lib/auth": typeof lib_auth;
   migrations: typeof migrations;
   notes: typeof notes;
+  pantry: typeof pantry;
+  plan: typeof plan;
   ratings: typeof ratings;
   recipeState: typeof recipeState;
 }>;

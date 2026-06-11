@@ -67,7 +67,11 @@ export const cook = mutation({
     const { householdId } = await requireMembership(ctx);
 
     for (const d of deltas) {
-      if (!Number.isFinite(d.subtract) || d.subtract < 0) continue;
+      if (!Number.isFinite(d.subtract) || d.subtract < 0) {
+        throw new Error("Invalid delta: subtract must be a non-negative number");
+      }
+    }
+    for (const d of deltas) {
       await depleteOne(ctx, householdId, d.ingredientId, d.subtract);
     }
 
