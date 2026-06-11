@@ -80,30 +80,6 @@ export const recipe = defineType({
       of: [defineArrayMember({ type: "reference", to: [{ type: "tag" }] })],
     }),
     defineField({
-      name: "wishlist",
-      title: "To-try (wishlist)",
-      type: "boolean",
-      initialValue: false,
-    }),
-    defineField({
-      name: "madeCount",
-      title: "Times made",
-      type: "number",
-      initialValue: 0,
-      validation: (rule) => rule.min(0),
-    }),
-    defineField({
-      name: "lastMadeAt",
-      title: "Last made",
-      type: "datetime",
-    }),
-    defineField({
-      name: "notes",
-      title: "Notes",
-      type: "array",
-      of: [defineArrayMember({ type: "recipeNote" })],
-    }),
-    defineField({
       name: "macros",
       title: "Nutrition (per serving)",
       type: "object",

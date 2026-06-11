@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getWriteClient } from "@/sanity/lib/write-client";
 import { client } from "@/sanity/lib/client";
-import { getViewer, requireMember } from "@/lib/viewer";
+import { requireMember } from "@/lib/viewer";
 import { slugify } from "@/lib/slug";
 
 const reader = () => client.withConfig({ useCdn: false });
@@ -46,32 +46,6 @@ async function uniqueSlug(base: string): Promise<string> {
   return `${base}-${n}`;
 }
 
-export async function toggleWishlist(recipeId: string) {
-  await requireMember();
-  await assertRecipe(recipeId);
-  const write = getWriteClient();
-  const current = await reader().fetch<boolean | null>(
-    `*[_id == $id][0].wishlist`,
-    { id: recipeId },
-  );
-  await write.patch(recipeId).set({ wishlist: !current }).commit();
-  revalidatePath("/", "layout");
-}
-
-export async function markMade(recipeId: string, isoNow: string) {
-  await requireMember();
-  if (Number.isNaN(Date.parse(isoNow))) throw new Error("Invalid timestamp");
-  await assertRecipe(recipeId);
-  const write = getWriteClient();
-  await write
-    .patch(recipeId)
-    .setIfMissing({ madeCount: 0 })
-    .inc({ madeCount: 1 })
-    .set({ lastMadeAt: isoNow })
-    .commit();
-  revalidatePath("/", "layout");
-}
-
 const PLAN_ID = "mealPlan";
 
 // Recipe ids are Sanity ids; restrict the characters before interpolating one
@@ -103,21 +77,6 @@ export async function deleteRecipe(
   await write.delete(id);
   revalidatePath("/", "layout");
   return { ok: true };
-}
-
-// Undo for "Made it": decrement the counter (never below 0). Used by the
-// toast's Undo action so a stray tap on Made it is reversible.
-export async function unmarkMade(recipeId: string) {
-  await requireMember();
-  await assertRecipe(recipeId);
-  const write = getWriteClient();
-  const current = await reader().fetch<number | null>(
-    `*[_id == $id][0].madeCount`,
-    { id: recipeId },
-  );
-  const next = Math.max(0, (current ?? 0) - 1);
-  await write.patch(recipeId).set({ madeCount: next }).commit();
-  revalidatePath("/", "layout");
 }
 
 export type SaveRecipeResult =
@@ -238,40 +197,10 @@ export async function saveRecipe(
     await write.create({
       ...doc,
       slug: { _type: "slug", current: slug },
-      wishlist: false,
-      madeCount: 0,
     });
   }
 
   revalidatePath("/", "layout");
   revalidatePath(`/recipe/${slug}`);
   return { ok: true, slug };
-}
-
-export async function addNote(
-  recipeId: string,
-  text: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const viewer = await getViewer();
-  if (!viewer.isMember) return { ok: false, error: "Not authorized" };
-  const author = viewer.name ?? undefined;
-  const clean = text.trim();
-  if (!clean) return { ok: false, error: "Note is empty" };
-  if (clean.length > 500) return { ok: false, error: "Note too long (max 500)" };
-  await assertRecipe(recipeId);
-  const write = getWriteClient();
-  await write
-    .patch(recipeId)
-    .setIfMissing({ notes: [] })
-    .append("notes", [
-      {
-        _key: crypto.randomUUID(),
-        _type: "recipeNote",
-        author,
-        text: clean,
-      },
-    ])
-    .commit();
-  revalidatePath("/", "layout");
-  return { ok: true };
 }

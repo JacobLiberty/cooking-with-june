@@ -33,8 +33,6 @@ export type IngredientLineView = {
   name: string | null;
 };
 
-export type RecipeNoteView = { _key: string; author?: string; text: string };
-
 export type MacroSet = {
   calories?: number;
   protein?: number;
@@ -82,9 +80,5 @@ export type RecipeDetailData = {
   cookTime?: number;
   servings?: number;
   tags: string[] | null;
-  wishlist?: boolean;
-  madeCount?: number;
-  lastMadeAt?: string;
-  notes: RecipeNoteView[] | null;
   macros?: RecipeMacros | null;
 };

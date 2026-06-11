@@ -16,7 +16,6 @@ describe("schema content model", () => {
         "tag",
         "mealPlan",
         "ingredientLine",
-        "recipeNote",
         "manualGroceryItem",
       ]),
     );
@@ -37,10 +36,6 @@ describe("schema content model", () => {
         "cookTime",
         "servings",
         "tags",
-        "wishlist",
-        "madeCount",
-        "lastMadeAt",
-        "notes",
       ]),
     );
   });

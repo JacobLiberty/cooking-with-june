@@ -1,18 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { requireMember, getViewer } from "@/lib/viewer";
+import { requireMember } from "@/lib/viewer";
 import { getWriteClient } from "@/sanity/lib/write-client";
-import {
-  markMade,
-  saveRecipe,
-  addNote,
-  deleteRecipe,
-  unmarkMade,
-} from "@/app/actions/recipe-actions";
+import { saveRecipe, deleteRecipe } from "@/app/actions/recipe-actions";
 
-vi.mock("@/lib/viewer", () => ({
-  requireMember: vi.fn(),
-  getViewer: vi.fn(),
-}));
+vi.mock("@/lib/viewer", () => ({ requireMember: vi.fn() }));
 vi.mock("@/sanity/lib/write-client", () => ({ getWriteClient: vi.fn(() => ({})) }));
 vi.mock("@/sanity/lib/client", () => ({
   client: { withConfig: () => ({ fetch: vi.fn().mockResolvedValue(null) }) },
@@ -20,30 +11,13 @@ vi.mock("@/sanity/lib/client", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 const mockRequireMember = vi.mocked(requireMember);
-const mockGetViewer = vi.mocked(getViewer);
-
-const MEMBER_VIEWER = {
-  isAuthenticated: true,
-  isMember: true,
-  userId: "u1",
-  householdId: "h1",
-  role: "owner" as const,
-  name: "Jacob",
-  canCreateHousehold: true,
-};
 
 beforeEach(() => {
   mockRequireMember.mockReset();
   mockRequireMember.mockResolvedValue({ userId: "u1", householdId: "h1" });
-  mockGetViewer.mockReset();
-  mockGetViewer.mockResolvedValue(MEMBER_VIEWER);
 });
 
 describe("recipe action guards", () => {
-  it("markMade rejects an invalid timestamp", async () => {
-    await expect(markMade("r1", "not-a-date")).rejects.toThrow("Invalid timestamp");
-  });
-
   it("saveRecipe requires a title", async () => {
     const res = await saveRecipe(null, new FormData());
     expect(res).toEqual({ ok: false, error: "Title is required" });
@@ -53,33 +27,7 @@ describe("recipe action guards", () => {
     mockRequireMember.mockRejectedValue(
       new Error("Not authorized: household members only"),
     );
-    await expect(markMade("r1", new Date().toISOString())).rejects.toThrow(
-      "Not authorized",
-    );
     await expect(saveRecipe(null, new FormData())).rejects.toThrow("Not authorized");
-  });
-
-  it("addNote rejects empty and over-long notes", async () => {
-    expect(await addNote("r1", "   ")).toEqual({ ok: false, error: "Note is empty" });
-    const longNote = "x".repeat(501);
-    expect(await addNote("r1", longNote)).toEqual({
-      ok: false,
-      error: "Note too long (max 500)",
-    });
-  });
-
-  it("addNote refuses a non-member", async () => {
-    mockGetViewer.mockResolvedValue({ ...MEMBER_VIEWER, isMember: false });
-    expect(await addNote("r1", "looks good")).toEqual({
-      ok: false,
-      error: "Not authorized",
-    });
-  });
-
-  it("deleteRecipe propagates the authorization error for non-members", async () => {
-    mockRequireMember.mockRejectedValue(
-      new Error("Not authorized: household members only"),
-    );
     await expect(deleteRecipe("r1")).rejects.toThrow("Not authorized");
   });
 
@@ -88,13 +36,6 @@ describe("recipe action guards", () => {
     await expect(deleteRecipe("not-a-recipe")).rejects.toThrow(
       "Target document is not a recipe",
     );
-  });
-
-  it("unmarkMade propagates the authorization error for non-members", async () => {
-    mockRequireMember.mockRejectedValue(
-      new Error("Not authorized: household members only"),
-    );
-    await expect(unmarkMade("r1")).rejects.toThrow("Not authorized");
   });
 });
 
