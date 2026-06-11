@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Local Claude Code tooling/skills — not application source.
     ".claude/**",
+    // Convex codegen output — generated, not hand-maintained.
+    "convex/_generated/**",
   ]),
 ]);
 

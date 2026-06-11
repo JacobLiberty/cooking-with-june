@@ -17,7 +17,7 @@ import { JuneArt } from "@/components/june";
 import { PawTrail } from "@/components/paw-trail";
 import { getViewer } from "@/lib/viewer";
 
-// revalidate removed — getViewer() (auth()) makes this page dynamic
+// revalidate removed — getViewer() (Convex auth token) makes this page dynamic
 
 export default async function HomePage() {
   const [recipes, ingredients, tags, viewer] = await Promise.all([

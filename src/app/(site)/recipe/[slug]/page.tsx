@@ -27,7 +27,7 @@ import { AddToPlanButton } from "@/components/add-to-plan-button";
 import { DeleteRecipeButton } from "@/components/delete-recipe-button";
 import { RecipeMacrosPanel } from "@/components/recipe-macros";
 
-// revalidate removed — getViewer() (auth()) makes this page dynamic
+// revalidate removed — getViewer() (Convex auth token) makes this page dynamic
 
 export async function generateStaticParams() {
   const slugs = await client
