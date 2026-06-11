@@ -13,7 +13,7 @@ vi.mock("@/sanity/lib/client", () => ({
 
 import { getViewer } from "@/lib/viewer";
 import { api } from "@cvx/_generated/api";
-import { runPantryMigration } from "@/app/actions/migrate-actions";
+import { runPantryMigration, correctPantryQuantity } from "@/app/actions/migrate-actions";
 
 const OWNER = { isAuthenticated: true, isMember: true, userId: "u1", householdId: "h1", role: "owner", name: "F", canCreateHousehold: false };
 
@@ -66,5 +66,28 @@ describe("runPantryMigration", () => {
     ]);
     expect(review.unmappedManual).toEqual(["grandma sauce"]);
     expect(review.skippedPantry).toEqual([]);
+  });
+});
+
+describe("correctPantryQuantity", () => {
+  it("rejects a non-owner", async () => {
+    vi.mocked(getViewer).mockResolvedValue({ ...OWNER, role: "member" } as never);
+    await expect(correctPantryQuantity("beef", 500)).rejects.toThrow(/owner/i);
+  });
+
+  it("rejects a negative quantity without calling the mutation", async () => {
+    const res = await correctPantryQuantity("beef", -5);
+    expect(res.ok).toBe(false);
+    expect(fetchMutation).not.toHaveBeenCalled();
+  });
+
+  it("sets the absolute pantry quantity under the owner token", async () => {
+    const res = await correctPantryQuantity("beef", 750);
+    expect(res.ok).toBe(true);
+    expect(fetchMutation).toHaveBeenCalledWith(
+      api.pantry.setPantryQuantity,
+      { ingredientId: "beef", quantityG: 750 },
+      { token: "tok" },
+    );
   });
 });
