@@ -91,4 +91,19 @@ describe("ingredient stock metadata (Spec 2a)", () => {
     const sub = (restock as any).fields.map((f: any) => f.name);
     expect(sub).toEqual(expect.arrayContaining(["quantity", "unit"]));
   });
+
+  it("density and avgUnitGrams are numbers", () => {
+    const density = ingredient.fields.find((f) => f.name === "density");
+    const avg = ingredient.fields.find((f) => f.name === "avgUnitGrams");
+    expect(density?.type).toBe("number");
+    expect(avg?.type).toBe("number");
+  });
+
+  it("restockQuantity sub-fields are typed (quantity number, unit string)", () => {
+    const restock = ingredient.fields.find((f) => f.name === "restockQuantity");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sub = (restock as any).fields as any[];
+    expect(sub.find((f) => f.name === "quantity")?.type).toBe("number");
+    expect(sub.find((f) => f.name === "unit")?.type).toBe("string");
+  });
 });

@@ -60,12 +60,14 @@ export const ingredient = defineType({
       title: "Density (g/ml)",
       type: "number",
       description: "Only meaningful for volume-kind ingredients (e.g. flour 0.53).",
+      validation: (rule) => rule.min(0),
     }),
     defineField({
       name: "avgUnitGrams",
       title: "Average grams per item",
       type: "number",
       description: "Only meaningful for count-kind ingredients (e.g. egg 50).",
+      validation: (rule) => rule.min(0),
     }),
     defineField({
       name: "restockQuantity",
@@ -73,7 +75,7 @@ export const ingredient = defineType({
       type: "object",
       description: 'A typical purchase, e.g. 1 "dozen" or 5 "lb".',
       fields: [
-        defineField({ name: "quantity", title: "Quantity", type: "number" }),
+        defineField({ name: "quantity", title: "Quantity", type: "number", validation: (rule) => rule.min(0) }),
         defineField({ name: "unit", title: "Unit", type: "string" }),
       ],
     }),
