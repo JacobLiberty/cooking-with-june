@@ -150,9 +150,13 @@ export function EditorActions({
   );
 
   const rate = (v: number) => {
+    const prev = myRating;
     setMyRating(v);
-    // Optimistic + fire-and-forget: don't block the slider on the network write.
-    void rateMutation({ recipeId, value: v });
+    // Optimistic: don't block the slider on the write, but revert if it fails.
+    rateMutation({ recipeId, value: v }).catch(() => {
+      setMyRating(prev);
+      toast({ message: "Couldn't save your rating" });
+    });
     if (shouldCelebrate(v)) {
       setCelebrate(true);
       if (celebrateTimer.current) clearTimeout(celebrateTimer.current);

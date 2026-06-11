@@ -12,6 +12,7 @@ import { fetchQuery } from "convex/nextjs";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "@cvx/_generated/api";
 import { totalTime } from "@/lib/format";
+import { roundHalf } from "@/lib/rating-format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 import { RecipeIngredients } from "@/components/recipe-ingredients";
@@ -85,11 +86,11 @@ export default async function RecipePage({
     api.ratings.forRecipe,
     { recipeId: recipe._id },
     token ? { token } : {},
-  );
+  ).catch(() => ({ average: 0, count: 0, mine: null, approved: false }));
   const myRating = rating.mine;
 
   const time = totalTime(recipe.prepTime, recipe.cookTime);
-  const avg = rating.count > 0 ? Math.round(rating.average * 2) / 2 : null;
+  const avg = rating.count > 0 ? rating.average : null; // raw; rounded at display
   const ratingCount = rating.count;
   const ingredientCount = recipe.ingredients?.length ?? 0;
   const madeCount = recipe.madeCount ?? 0;
@@ -112,7 +113,7 @@ export default async function RecipePage({
           ) : null}
           {avg != null ? (
             <span className="flex items-center gap-2">
-              <StarRating value={avg} />
+              <StarRating value={roundHalf(avg) ?? 0} />
               <span className="kicker text-ink-soft">
                 {avg.toFixed(1)}
                 {ratingCount > 1 ? ` · ${ratingCount}` : ""}
@@ -227,15 +228,15 @@ export default async function RecipePage({
             Ratings
           </h2>
           <p className="mt-3 flex items-center gap-2">
-            <StarRating value={avg} />
+            <StarRating value={roundHalf(avg) ?? 0} />
             <span className="kicker text-ink-soft">
               {avg.toFixed(1)} · {ratingCount} rating{ratingCount === 1 ? "" : "s"}
             </span>
           </p>
           {rating.approved ? (
             <p className="mt-3 text-sm text-ink-soft">
-              <span className="text-terracotta">June approved</span> means
-              everyone who rated it gave 4.5★ or higher.
+              <span className="text-terracotta">June approved</span> means at
+              least two people rated it and everyone gave 4.5★ or higher.
             </p>
           ) : null}
         </section>

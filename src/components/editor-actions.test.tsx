@@ -29,7 +29,7 @@ vi.mock("motion/react", () => {
 });
 
 beforeEach(() => {
-  convexMocks.rateMutation.mockReset();
+  convexMocks.rateMutation.mockReset().mockResolvedValue(undefined);
 });
 
 describe("EditorActions rating slider", () => {

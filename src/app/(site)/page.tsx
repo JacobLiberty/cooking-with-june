@@ -32,15 +32,17 @@ export default async function HomePage() {
     getViewer(),
   ]);
 
+  // Ratings live in Convex; if it's briefly unreachable, still render the
+  // (public) collection with unrated cards rather than 500.
   const ratingsById = await fetchQuery(api.ratings.forRecipes, {
     recipeIds: rawRecipes.map((r) => r._id),
-  });
+  }).catch(() => ({}) as Record<string, { average: number; count: number; approved: boolean }>);
   const recipes: RecipeCardData[] = rawRecipes.map((r) => {
     const agg = ratingsById[r._id];
     return {
       ...r,
-      ratingAvg:
-        agg && agg.count > 0 ? Math.round(agg.average * 2) / 2 : null,
+      // Store the precise average (display rounds via roundHalf); sort stays accurate.
+      ratingAvg: agg && agg.count > 0 ? agg.average : null,
       ratingApproved: agg?.approved ?? false,
     };
   });

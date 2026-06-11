@@ -1,13 +1,14 @@
 import Link from "next/link";
 import type { RecipeCardData } from "@/sanity/types";
 import { totalTime } from "@/lib/format";
+import { roundHalf } from "@/lib/rating-format";
 import { StarRating } from "@/components/star-rating";
 import { RecipeCover } from "@/components/recipe-cover";
 import { coverTransitionName } from "@/lib/view-transition";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
 
 export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
-  const avg = recipe.ratingAvg;
+  const avg = roundHalf(recipe.ratingAvg);
   const time = totalTime(recipe.prepTime, recipe.cookTime);
   const meta = [time, recipe.servings ? `serves ${recipe.servings}` : null]
     .filter(Boolean)

@@ -42,6 +42,14 @@ test("rate rejects out-of-range values", async () => {
   ).rejects.toThrow(/0.*5/);
 });
 
+test("rate rejects non-half-star values", async () => {
+  const t = convexTest(schema, modules);
+  const a = await member(t, "a@example.com");
+  await expect(
+    a.mutation(api.ratings.rate, { recipeId: "r", value: 3.3 }),
+  ).rejects.toThrow(/half-star/);
+});
+
 test("rate requires a household member", async () => {
   const t = convexTest(schema, modules);
   const userId = await t.run(async (ctx) =>

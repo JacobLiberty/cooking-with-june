@@ -54,6 +54,9 @@ export const rate = mutation({
     if (typeof value !== "number" || value < 0 || value > 5) {
       throw new Error("Rating must be 0–5");
     }
+    if (value * 2 !== Math.round(value * 2)) {
+      throw new Error("Rating must be in half-star steps");
+    }
     const existing = await ctx.db
       .query("ratings")
       .withIndex("by_recipe_user", (q) =>

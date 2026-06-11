@@ -14,10 +14,13 @@ export async function getMembership(
   ctx: QueryCtx | MutationCtx,
   userId: Id<"users">,
 ) {
+  // .first() (not .unique()): "one household per user" is enforced at write
+  // time, but a stray duplicate row should degrade gracefully, not throw on
+  // every read.
   return await ctx.db
     .query("memberships")
     .withIndex("by_user", (q) => q.eq("userId", userId))
-    .unique();
+    .first();
 }
 
 export async function requireMembership(ctx: QueryCtx | MutationCtx) {

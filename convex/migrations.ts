@@ -28,11 +28,19 @@ export const importRatings = internalMutation({
     let imported = 0;
     let skipped = 0;
     for (const row of rows) {
-      const email = row.email.trim().toLowerCase();
-      const user = await ctx.db
+      const raw = row.email.trim();
+      const lower = raw.toLowerCase();
+      // OAuth-stored emails are usually lowercase, but not guaranteed — try both.
+      let user = await ctx.db
         .query("users")
-        .withIndex("email", (q) => q.eq("email", email))
-        .unique();
+        .withIndex("email", (q) => q.eq("email", lower))
+        .first();
+      if (!user && raw !== lower) {
+        user = await ctx.db
+          .query("users")
+          .withIndex("email", (q) => q.eq("email", raw))
+          .first();
+      }
       if (!user) {
         skipped++; // rater hasn't signed in yet
         continue;
