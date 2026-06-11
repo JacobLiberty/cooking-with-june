@@ -56,4 +56,43 @@ export default defineSchema({
     author: v.optional(v.string()),
     text: v.string(),
   }).index("by_household_recipe", ["householdId", "recipeId"]),
+
+  // Per-household planned recipes (recipeId is a Sanity _id string).
+  planRecipes: defineTable({
+    householdId: v.id("households"),
+    recipeId: v.string(),
+    scale: v.number(),
+    addedAt: v.number(),
+  })
+    .index("by_household", ["householdId"])
+    .index("by_household_recipe", ["householdId", "recipeId"]),
+
+  // Per-household pantry stock. quantityG is the ingredient's canonical amount
+  // (grams for mass/volume-kind, item count for count-kind).
+  pantryItems: defineTable({
+    householdId: v.id("households"),
+    ingredientId: v.string(),
+    quantityG: v.number(),
+    restockOverride: v.optional(
+      v.object({ quantity: v.number(), unit: v.string() }),
+    ),
+    updatedAt: v.number(),
+  })
+    .index("by_household", ["householdId"])
+    .index("by_household_ingredient", ["householdId", "ingredientId"]),
+
+  // Per-household grocery rows: manual additions (+) and skip suppressions (-).
+  // Plan-derived needs are computed (not stored).
+  groceryItems: defineTable({
+    householdId: v.id("households"),
+    ingredientId: v.string(),
+    source: v.union(v.literal("manual"), v.literal("skip")),
+    manualQuantity: v.optional(
+      v.object({ quantity: v.number(), unit: v.string() }),
+    ),
+    addedByUserId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_household", ["householdId"])
+    .index("by_household_ingredient", ["householdId", "ingredientId"]),
 });
