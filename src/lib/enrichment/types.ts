@@ -2,6 +2,8 @@ export type CanonicalUnitKind = "mass" | "volume" | "count";
 
 export type RestockQuantity = { quantity: number; unit: string };
 
+// Keep in sync with the category options list in
+// src/sanity/schemaTypes/documents/ingredient.ts
 export type IngredientCategory =
   | "produce"
   | "protein"

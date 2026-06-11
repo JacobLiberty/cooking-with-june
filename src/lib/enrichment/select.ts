@@ -12,6 +12,10 @@ export function ingredientNeedsEnrichment(doc: IngredientDoc): boolean {
   return false;
 }
 
+/**
+ * Filter a catalog to ingredients still missing stock metadata. `force: true`
+ * bypasses the filter and returns every doc (re-enrich everything).
+ */
 export function selectIngredientsNeedingEnrichment(
   docs: IngredientDoc[],
   opts: { force?: boolean } = {},

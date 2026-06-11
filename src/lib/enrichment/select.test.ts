@@ -24,6 +24,14 @@ describe("ingredientNeedsEnrichment", () => {
     expect(ingredientNeedsEnrichment({ ...complete, restockQuantity: { quantity: 5 } })).toBe(true);
   });
 
+  it("true when restockQuantity is entirely missing", () => {
+    expect(ingredientNeedsEnrichment({ ...complete, restockQuantity: undefined })).toBe(true);
+  });
+
+  it("true when restockQuantity is missing quantity", () => {
+    expect(ingredientNeedsEnrichment({ ...complete, restockQuantity: { unit: "lb" } })).toBe(true);
+  });
+
   it("true when category missing", () => {
     expect(ingredientNeedsEnrichment({ ...complete, category: undefined })).toBe(true);
   });
