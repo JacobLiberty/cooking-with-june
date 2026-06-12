@@ -51,6 +51,29 @@ describe("getShopData", () => {
     expect(data.manual.map((m) => m.ingredientId)).toEqual(["salt"]);
     expect(data.skipped).toEqual(["herb"]);
   });
+
+  it("enriches manual rows with catalog name, unit kind, and category", async () => {
+    fetchQuery
+      .mockResolvedValueOnce([]) // plan (no recipes → no needs)
+      .mockResolvedValueOnce([]) // pantry
+      .mockResolvedValueOnce([
+        { ingredientId: "salt", source: "manual", manualQuantity: { quantity: 1, unit: "box" } },
+      ]); // grocery
+    sanityFetch
+      .mockResolvedValueOnce([]) // requirements (no planned recipes)
+      .mockResolvedValueOnce([
+        { _id: "salt", name: "table salt", canonicalUnitKind: "mass", category: "spice", restockQuantity: null },
+      ]); // catalog-by-ids for manual rows
+
+    const data = await getShopData();
+    expect(data.manual[0]).toMatchObject({
+      ingredientId: "salt",
+      name: "table salt",
+      canonicalUnitKind: "mass",
+      category: "spice",
+      manualQuantity: { quantity: 1, unit: "box" },
+    });
+  });
 });
 
 describe("getCookableCoverage", () => {

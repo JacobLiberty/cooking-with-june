@@ -24,7 +24,6 @@ import type { IngredientRequirement } from "@/lib/kitchen/types";
 const reader = () => client.withConfig({ useCdn: false });
 
 async function fetchRequirements(ids: string[]): Promise<RecipeRequirementDoc[]> {
-  if (ids.length === 0) return [];
   return (await reader().fetch(RECIPE_REQUIREMENTS_QUERY, { ids })) ?? [];
 }
 
@@ -114,7 +113,19 @@ export async function getShopData() {
   const skipped = groceryRows.filter((g) => g.source === "skip").map((g) => g.ingredientId);
   const skipSet = new Set(skipped);
   const needs = computeNeeds(all, pantry).filter((n) => !skipSet.has(n.ingredientId));
-  const manual = groceryRows.filter((g) => g.source === "manual");
+  const manualRows = groceryRows.filter((g) => g.source === "manual");
+  const manualInfo = await catalogInfoByIds(manualRows.map((m) => m.ingredientId));
+  const manual = manualRows.map((m) => {
+    const c = manualInfo.get(m.ingredientId);
+    return {
+      ingredientId: m.ingredientId,
+      source: m.source,
+      manualQuantity: m.manualQuantity,
+      name: c?.name ?? m.ingredientId,
+      canonicalUnitKind: c?.canonicalUnitKind ?? null,
+      category: c?.category ?? null,
+    };
+  });
   return { needs, manual, skipped };
 }
 
