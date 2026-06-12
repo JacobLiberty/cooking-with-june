@@ -7,7 +7,9 @@ import { client } from "@/sanity/lib/client";
 import { requireMember } from "@/lib/viewer";
 import {
   RECIPE_REQUIREMENTS_QUERY,
+  INGREDIENTS_BY_IDS_QUERY,
   type RecipeRequirementDoc,
+  type CatalogInfoDoc,
 } from "@/sanity/lib/kitchen-queries";
 import {
   buildMetaFor,
@@ -26,12 +28,37 @@ async function fetchRequirements(ids: string[]): Promise<RecipeRequirementDoc[]>
   return (await reader().fetch(RECIPE_REQUIREMENTS_QUERY, { ids })) ?? [];
 }
 
-type PantryRow = { ingredientId: string; quantityG: number };
+async function catalogInfoByIds(ids: string[]): Promise<Map<string, CatalogInfoDoc>> {
+  if (ids.length === 0) return new Map();
+  const docs = (await reader().fetch<CatalogInfoDoc[]>(INGREDIENTS_BY_IDS_QUERY, { ids })) ?? [];
+  return new Map(docs.map((d) => [d._id, d]));
+}
+
+type PantryRow = {
+  ingredientId: string;
+  quantityG: number;
+  restockOverride: { quantity: number; unit: string } | null;
+  updatedAt: number;
+};
 
 export async function getPantryData() {
   await requireMember();
   const token = await convexAuthNextjsToken();
-  return await fetchQuery(api.pantry.pantry, {}, token ? { token } : {});
+  const rows = (await fetchQuery(api.pantry.pantry, {}, token ? { token } : {})) as PantryRow[];
+  const info = await catalogInfoByIds(rows.map((r) => r.ingredientId));
+  return rows.map((r) => {
+    const c = info.get(r.ingredientId);
+    return {
+      ingredientId: r.ingredientId,
+      quantityG: r.quantityG,
+      restockOverride: r.restockOverride,
+      updatedAt: r.updatedAt,
+      name: c?.name ?? r.ingredientId,
+      canonicalUnitKind: c?.canonicalUnitKind ?? null,
+      category: c?.category ?? null,
+      restockDefault: c?.restockQuantity ?? null,
+    };
+  });
 }
 
 export async function getCookableCoverage(

@@ -44,3 +44,25 @@ export type RecipeRequirementDoc = {
 };
 
 export type IngredientRestockDoc = RawLine & { _id: string };
+
+/**
+ * Display + unit metadata for a set of catalog ingredients, keyed lookups for
+ * pantry rows and manual grocery rows (which only carry an ingredientId).
+ */
+export const INGREDIENTS_BY_IDS_QUERY = defineQuery(`
+  *[_type == "ingredient" && _id in $ids]{
+    _id,
+    name,
+    canonicalUnitKind,
+    category,
+    restockQuantity
+  }
+`);
+
+export type CatalogInfoDoc = {
+  _id: string;
+  name: string;
+  canonicalUnitKind: "mass" | "volume" | "count" | null;
+  category: string | null;
+  restockQuantity: { quantity: number; unit: string } | null;
+};

@@ -12,7 +12,7 @@ vi.mock("@/sanity/lib/client", () => ({
 }));
 
 import { requireMember } from "@/lib/viewer";
-import { getShopData, getCookableCoverage, getPlanData } from "@/app/actions/kitchen-data";
+import { getShopData, getCookableCoverage, getPlanData, getPantryData } from "@/app/actions/kitchen-data";
 
 const REQS = [
   {
@@ -82,5 +82,39 @@ describe("auth", () => {
   it("getShopData rejects when not a member", async () => {
     vi.mocked(requireMember).mockRejectedValueOnce(new Error("Not authorized"));
     await expect(getShopData()).rejects.toThrow(/authorized/i);
+  });
+});
+
+describe("getPantryData", () => {
+  it("joins catalog name, unit kind, and restock default onto each pantry row", async () => {
+    fetchQuery.mockResolvedValueOnce([
+      { ingredientId: "beef", quantityG: 200, restockOverride: null, updatedAt: 1 },
+      { ingredientId: "egg", quantityG: 4.8, restockOverride: { quantity: 1, unit: "dozen" }, updatedAt: 2 },
+    ]); // pantry
+    sanityFetch.mockResolvedValueOnce([
+      { _id: "beef", name: "ground beef", canonicalUnitKind: "mass", category: "protein", restockQuantity: { quantity: 1, unit: "lb" } },
+      { _id: "egg", name: "egg", canonicalUnitKind: "count", category: "protein", restockQuantity: { quantity: 12, unit: "" } },
+    ]); // catalog
+
+    const rows = await getPantryData();
+    const beef = rows.find((r) => r.ingredientId === "beef");
+    expect(beef).toMatchObject({
+      quantityG: 200,
+      name: "ground beef",
+      canonicalUnitKind: "mass",
+      restockDefault: { quantity: 1, unit: "lb" },
+    });
+    const egg = rows.find((r) => r.ingredientId === "egg");
+    expect(egg?.name).toBe("egg");
+    expect(egg?.canonicalUnitKind).toBe("count");
+  });
+
+  it("falls back to the id as name when the catalog has no match", async () => {
+    fetchQuery.mockResolvedValueOnce([
+      { ingredientId: "ghost", quantityG: 50, restockOverride: null, updatedAt: 1 },
+    ]);
+    sanityFetch.mockResolvedValueOnce([]);
+    const rows = await getPantryData();
+    expect(rows[0]).toMatchObject({ ingredientId: "ghost", name: "ghost", canonicalUnitKind: null });
   });
 });
