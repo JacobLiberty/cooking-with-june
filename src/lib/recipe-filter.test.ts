@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest";
 import {
   matchesQuery,
   matchesIngredients,
-  ingredientCoverage,
-  MOST_THRESHOLD,
+  matchesCookable,
   matchesTags,
   matchesCollection,
   countByTag,
   countByIngredientId,
   applyRecipeFilters,
   type RecipeFilters,
+  type CoverageMap,
 } from "@/lib/recipe-filter";
 import type { RecipeCardData } from "@/sanity/types";
 
@@ -32,7 +32,7 @@ function recipe(partial: Partial<RecipeCardData>): RecipeCardData {
 const EMPTY: RecipeFilters = {
   query: "",
   ingredientIds: [],
-  mode: "any",
+  cookable: "off",
   tags: [],
   collection: "all",
   sort: "name",
@@ -45,76 +45,6 @@ describe("matchesQuery", () => {
     expect(matchesQuery(r, "beef")).toBe(true);
     expect(matchesQuery(r, "BEEF")).toBe(true);
     expect(matchesQuery(r, "soup")).toBe(false);
-  });
-});
-
-describe("ingredientCoverage", () => {
-  it("returns the fraction of required ingredients you have on hand", () => {
-    const r = recipe({ ingredientIds: ["beef", "onion", "garlic", "salt"] });
-    expect(ingredientCoverage(r, ["beef"])).toBe(0.25);
-    expect(ingredientCoverage(r, ["beef", "onion", "garlic"])).toBe(0.75);
-    expect(ingredientCoverage(r, ["beef", "onion", "garlic", "salt"])).toBe(1);
-    expect(ingredientCoverage(r, ["tofu"])).toBe(0);
-  });
-  it("measures against required ingredients only, ignoring optional ones", () => {
-    // recipe needs beef + onion; garnish is optional (excluded from required)
-    const r = recipe({
-      ingredientIds: ["beef", "onion", "garnish"],
-      requiredIngredientIds: ["beef", "onion"],
-    });
-    expect(ingredientCoverage(r, ["beef", "onion"])).toBe(1);
-    expect(ingredientCoverage(r, ["beef"])).toBe(0.5);
-  });
-  it("returns null when the recipe lists no required ingredients", () => {
-    expect(ingredientCoverage(recipe({ ingredientIds: null }), ["beef"])).toBeNull();
-    expect(
-      ingredientCoverage(
-        recipe({ ingredientIds: ["garnish"], requiredIngredientIds: [] }),
-        ["beef"],
-      ),
-    ).toBeNull();
-  });
-});
-
-describe("matchesIngredients (coverage-based)", () => {
-  const r = recipe({ ingredientIds: ["beef", "onion", "garlic", "salt"] });
-  it("passes when nothing selected, in every mode", () => {
-    expect(matchesIngredients(r, [], "any")).toBe(true);
-    expect(matchesIngredients(r, [], "most")).toBe(true);
-    expect(matchesIngredients(r, [], "all")).toBe(true);
-  });
-  it("ANY: matches when you have at least one of the recipe's ingredients", () => {
-    expect(matchesIngredients(r, ["beef", "tofu"], "any")).toBe(true);
-    expect(matchesIngredients(r, ["tofu"], "any")).toBe(false);
-  });
-  it("MOST: matches when you have at least the threshold share", () => {
-    // 3/4 = 0.75 meets the 0.75 threshold; 2/4 = 0.5 does not
-    expect(matchesIngredients(r, ["beef", "onion", "garlic"], "most")).toBe(true);
-    expect(matchesIngredients(r, ["beef", "onion"], "most")).toBe(false);
-  });
-  it("ALL: matches only when you have every required ingredient", () => {
-    expect(
-      matchesIngredients(r, ["beef", "onion", "garlic", "salt"], "all"),
-    ).toBe(true);
-    expect(matchesIngredients(r, ["beef", "onion", "garlic"], "all")).toBe(false);
-  });
-  it("ignores optional ingredients for MOST and ALL", () => {
-    const withOptional = recipe({
-      ingredientIds: ["beef", "onion", "garnish"],
-      requiredIngredientIds: ["beef", "onion"],
-    });
-    // having both required ingredients is a full match despite the missing garnish
-    expect(matchesIngredients(withOptional, ["beef", "onion"], "all")).toBe(true);
-  });
-  it("uses a 0.75 threshold for 'most'", () => {
-    expect(MOST_THRESHOLD).toBe(0.75);
-  });
-  it("treats a recipe with no required ingredients as no match when filtering", () => {
-    const noIds = recipe({ ingredientIds: null });
-    expect(matchesIngredients(noIds, [], "any")).toBe(true);
-    expect(matchesIngredients(noIds, ["beef"], "any")).toBe(false);
-    expect(matchesIngredients(noIds, ["beef"], "most")).toBe(false);
-    expect(matchesIngredients(noIds, ["beef"], "all")).toBe(false);
   });
 });
 
@@ -183,5 +113,57 @@ describe("applyRecipeFilters", () => {
   it("combines query + sort", () => {
     const out = applyRecipeFilters(all, { ...EMPTY, query: "e" }); // Apple cakE, BEef stew, carrot... "e": Apple Cake(e), Beef Stew(e) -> both; Carrot Soup no 'e'
     expect(out.map((r) => r._id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("matchesIngredients (AND-contains)", () => {
+  it("passes when no ingredients are selected", () => {
+    expect(matchesIngredients(recipe({ ingredientIds: ["a"] }), [])).toBe(true);
+  });
+  it("requires the recipe to contain every selected ingredient", () => {
+    const r = recipe({ ingredientIds: ["a", "b", "c"] });
+    expect(matchesIngredients(r, ["a", "b"])).toBe(true);
+    expect(matchesIngredients(r, ["a", "z"])).toBe(false);
+  });
+});
+
+describe("matchesCookable", () => {
+  const cov: CoverageMap = {
+    ready: { cookable: true, missingRequired: 0 },
+    one: { cookable: false, missingRequired: 1 },
+    three: { cookable: false, missingRequired: 3 },
+  };
+  it("passes everything when off", () => {
+    expect(matchesCookable(recipe({ _id: "x" }), "off", cov)).toBe(true);
+  });
+  it("'now' keeps only fully-cookable recipes", () => {
+    expect(matchesCookable(recipe({ _id: "ready" }), "now", cov)).toBe(true);
+    expect(matchesCookable(recipe({ _id: "one" }), "now", cov)).toBe(false);
+  });
+  it("'2' keeps recipes missing two or fewer", () => {
+    expect(matchesCookable(recipe({ _id: "one" }), "2", cov)).toBe(true);
+    expect(matchesCookable(recipe({ _id: "three" }), "2", cov)).toBe(false);
+  });
+  it("excludes recipes with no coverage entry when active", () => {
+    expect(matchesCookable(recipe({ _id: "missing" }), "now", cov)).toBe(false);
+    expect(matchesCookable(recipe({ _id: "missing" }), "now", undefined)).toBe(false);
+  });
+});
+
+describe("applyRecipeFilters with coverage", () => {
+  it("applies the cookable filter against the coverage map", () => {
+    const recipes = [
+      recipe({ _id: "ready", title: "Ready" }),
+      recipe({ _id: "one", title: "One short" }),
+    ];
+    const cov: CoverageMap = {
+      ready: { cookable: true, missingRequired: 0 },
+      one: { cookable: false, missingRequired: 1 },
+    };
+    const filters: RecipeFilters = {
+      query: "", ingredientIds: [], cookable: "now", tags: [], collection: "all", sort: "name",
+    };
+    const out = applyRecipeFilters(recipes, filters, cov);
+    expect(out.map((r) => r._id)).toEqual(["ready"]);
   });
 });

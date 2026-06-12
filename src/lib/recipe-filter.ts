@@ -1,16 +1,25 @@
 import type { RecipeCardData } from "@/sanity/types";
 
 export type SortKey = "name" | "rating" | "newest";
-export type FilterMode = "any" | "most" | "all";
 export type CollectionKey = "all" | "totry" | "made" | "approved";
 
-/** "Most" matches recipes you have at least this share of the ingredients for. */
-export const MOST_THRESHOLD = 0.75;
+/** Pantry-aware "what can I cook" filter: off, exactly cookable, or ≤N missing. */
+export type CookableFilter = "off" | "now" | "1" | "2" | "3";
+
+/** Per-recipe coverage from getCookableCoverage (base scale 1). */
+export type CoverageMap = Record<string, { cookable: boolean; missingRequired: number }>;
+
+const COOKABLE_MAX: Record<Exclude<CookableFilter, "off">, number> = {
+  now: 0,
+  "1": 1,
+  "2": 2,
+  "3": 3,
+};
 
 export type RecipeFilters = {
   query: string;
   ingredientIds: string[];
-  mode: FilterMode;
+  cookable: CookableFilter;
   tags: string[];
   collection: CollectionKey;
   sort: SortKey;
@@ -24,7 +33,7 @@ export function countByTag(recipes: RecipeCardData[]): Record<string, number> {
   return counts;
 }
 
-/** How many recipes use each ingredient id (for facet counts). */
+/** How many recipes use each ingredient id (for typeahead counts). */
 export function countByIngredientId(
   recipes: RecipeCardData[],
 ): Record<string, number> {
@@ -50,44 +59,18 @@ export function matchesQuery(recipe: RecipeCardData, query: string): boolean {
   return recipe.title.toLowerCase().includes(q);
 }
 
-/** A recipe's ingredients that count toward pantry coverage (optional excluded). */
-export function requiredIngredientIds(recipe: RecipeCardData): string[] {
-  return recipe.requiredIngredientIds ?? recipe.ingredientIds ?? [];
-}
-
 /**
- * What share of a recipe's required ingredients you have on hand (0–1), or
- * null when the recipe lists no required ingredients (nothing to measure).
- */
-export function ingredientCoverage(
-  recipe: RecipeCardData,
-  haveIds: string[],
-): number | null {
-  const required = requiredIngredientIds(recipe);
-  if (required.length === 0) return null;
-  const have = new Set(haveIds);
-  const present = required.filter((id) => have.has(id)).length;
-  return present / required.length;
-}
-
-/**
- * Pantry filter, by how much of the recipe you can already make:
- * - "any":  you have at least one of its ingredients
- * - "most": you have at least MOST_THRESHOLD of its required ingredients
- * - "all":  you have every required ingredient
- * Optional ingredients never count against "most"/"all".
+ * Ingredient filter: keep recipes that use EVERY selected ingredient (narrowing
+ * "show me recipes with X and Y"). Matches against all of a recipe's ingredients
+ * (optional included) since this is about the recipe's content, not the pantry.
  */
 export function matchesIngredients(
   recipe: RecipeCardData,
   ingredientIds: string[],
-  mode: FilterMode,
 ): boolean {
   if (ingredientIds.length === 0) return true;
-  const coverage = ingredientCoverage(recipe, ingredientIds);
-  if (coverage === null) return false;
-  if (mode === "any") return coverage > 0;
-  if (mode === "most") return coverage >= MOST_THRESHOLD;
-  return coverage >= 1;
+  const have = new Set(recipe.ingredientIds ?? []);
+  return ingredientIds.every((id) => have.has(id));
 }
 
 export function matchesTags(recipe: RecipeCardData, tags: string[]): boolean {
@@ -96,10 +79,26 @@ export function matchesTags(recipe: RecipeCardData, tags: string[]): boolean {
   return tags.some((t) => have.has(t));
 }
 
+/**
+ * Pantry-aware cookability filter. "off" passes everything. Otherwise keep
+ * recipes whose coverage exists and whose missing-required count is within the
+ * threshold ("now" = 0 missing = fully cookable). Recipes with no coverage entry
+ * (not computed, e.g. signed-out) are excluded when the filter is active.
+ */
+export function matchesCookable(
+  recipe: RecipeCardData,
+  cookable: CookableFilter,
+  coverage: CoverageMap | undefined,
+): boolean {
+  if (cookable === "off") return true;
+  const cov = coverage?.[recipe._id];
+  if (!cov) return false;
+  return cov.missingRequired <= COOKABLE_MAX[cookable];
+}
+
 function compare(a: RecipeCardData, b: RecipeCardData, sort: SortKey): number {
   if (sort === "name") return a.title.localeCompare(b.title);
   if (sort === "newest") return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
-  // rating: high → low, unrated (null) last
   const ra = a.ratingAvg;
   const rb = b.ratingAvg;
   if (ra == null && rb == null) return a.title.localeCompare(b.title);
@@ -111,14 +110,16 @@ function compare(a: RecipeCardData, b: RecipeCardData, sort: SortKey): number {
 export function applyRecipeFilters(
   recipes: RecipeCardData[],
   filters: RecipeFilters,
+  coverage?: CoverageMap,
 ): RecipeCardData[] {
   return recipes
     .filter(
       (r) =>
         matchesQuery(r, filters.query) &&
-        matchesIngredients(r, filters.ingredientIds, filters.mode) &&
+        matchesIngredients(r, filters.ingredientIds) &&
         matchesTags(r, filters.tags) &&
-        matchesCollection(r, filters.collection),
+        matchesCollection(r, filters.collection) &&
+        matchesCookable(r, filters.cookable, coverage),
     )
     .sort((a, b) => compare(a, b, filters.sort));
 }
