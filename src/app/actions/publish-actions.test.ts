@@ -91,4 +91,24 @@ describe("publishRecipe", () => {
     const res = await publishRecipe({ ...DRAFT, title: "  " });
     expect(res.ok).toBe(false);
   });
+
+  it("republishes over an existing recipe id (patch, keeps slug, no cover regen)", async () => {
+    // republish path: fetch existing {_type, slug} then patch
+    sanityFetch
+      .mockResolvedValueOnce(["dinner-id"]) // tag ids
+      .mockResolvedValueOnce({ _type: "recipe", slug: "weeknight-chili" }); // existing doc
+    const res = await publishRecipe(DRAFT, { recipeId: "rec-1" });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.slug).toBe("weeknight-chili");
+    expect(create).not.toHaveBeenCalled(); // patched, not created
+    expect(generateRecipeCover).not.toHaveBeenCalled(); // keep existing cover
+  });
+
+  it("errors when the republish target is not a recipe", async () => {
+    sanityFetch
+      .mockResolvedValueOnce([]) // tags
+      .mockResolvedValueOnce(null); // no such recipe
+    const res = await publishRecipe(DRAFT, { recipeId: "ghost" });
+    expect(res.ok).toBe(false);
+  });
 });
