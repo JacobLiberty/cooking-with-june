@@ -1,13 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
 import { client } from "@/sanity/lib/client";
-import {
-  RECIPE_EDIT_QUERY,
-  INGREDIENTS_QUERY,
-  TAGS_QUERY,
-} from "@/sanity/lib/queries";
-import type { RecipeEditData, IngredientOption, TagOption } from "@/sanity/types";
-import { RecipeForm } from "@/components/recipe-form";
+import { RECIPE_EDIT_QUERY, TAGS_QUERY } from "@/sanity/lib/queries";
+import type { RecipeEditData, TagOption } from "@/sanity/types";
+import { RecipeEditForm } from "@/components/recipe-edit-form";
 
 export default async function EditRecipePage({
   params,
@@ -18,9 +14,8 @@ export default async function EditRecipePage({
   if (!viewer.isAuthenticated) redirect("/");
   if (!viewer.isMember) redirect("/household/setup");
   const { slug } = await params;
-  const [recipe, ingredients, tags] = await Promise.all([
+  const [recipe, tags] = await Promise.all([
     client.withConfig({ useCdn: false }).fetch<RecipeEditData | null>(RECIPE_EDIT_QUERY, { slug }),
-    client.fetch<IngredientOption[]>(INGREDIENTS_QUERY),
     client.fetch<TagOption[]>(TAGS_QUERY),
   ]);
   if (!recipe) notFound();
@@ -28,7 +23,7 @@ export default async function EditRecipePage({
     <section className="mx-auto max-w-2xl">
       <h1 className="editorial-display text-4xl text-ink">Edit recipe</h1>
       <div className="mt-6">
-        <RecipeForm recipeId={recipe._id} initial={recipe} ingredients={ingredients} tags={tags} />
+        <RecipeEditForm recipe={recipe} tags={tags} />
       </div>
     </section>
   );
