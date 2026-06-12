@@ -15,9 +15,7 @@ describe("schema content model", () => {
         "recipe",
         "ingredient",
         "tag",
-        "mealPlan",
         "ingredientLine",
-        "manualGroceryItem",
       ]),
     );
   });
