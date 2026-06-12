@@ -59,7 +59,9 @@ export async function publishRecipe(draft: RecipeDraft): Promise<PublishResult> 
   const taken = await reader().fetch<string[]>(
     `*[_type == "recipe" && defined(slug.current)].slug.current`,
   );
-  const slug = uniqueSlug(slugify(title), taken);
+  // Fall back when a title slugifies to nothing (all punctuation/emoji) so the
+  // recipe never lands at a bare "/recipe/".
+  const slug = uniqueSlug(slugify(title) || "recipe", taken);
 
   const created = await write.create({
     _type: "recipe",

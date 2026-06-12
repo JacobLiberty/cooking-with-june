@@ -74,6 +74,14 @@ describe("publishRecipe", () => {
     if (res.ok) expect(res.slug).toBe("weeknight-chili");
   });
 
+  it("falls back to a 'recipe' slug when the title slugifies to nothing", async () => {
+    sanityFetch.mockResolvedValueOnce(["dinner-id"]).mockResolvedValueOnce([]); // tags, taken slugs
+    const res = await publishRecipe({ ...DRAFT, title: "🌮🌮" });
+    expect(res.ok).toBe(true);
+    const doc = create.mock.calls[0][0] as { slug: { current: string } };
+    expect(doc.slug.current).toBe("recipe");
+  });
+
   it("rejects a non-member", async () => {
     vi.mocked(requireMember).mockRejectedValueOnce(new Error("Not authorized"));
     await expect(publishRecipe(DRAFT)).rejects.toThrow(/authorized/i);
