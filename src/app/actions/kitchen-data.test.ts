@@ -107,6 +107,8 @@ describe("getPantryData", () => {
     const egg = rows.find((r) => r.ingredientId === "egg");
     expect(egg?.name).toBe("egg");
     expect(egg?.canonicalUnitKind).toBe("count");
+    expect(egg?.restockOverride).toEqual({ quantity: 1, unit: "dozen" });
+    expect(egg?.restockDefault).toEqual({ quantity: 12, unit: "" });
   });
 
   it("falls back to the id as name when the catalog has no match", async () => {
