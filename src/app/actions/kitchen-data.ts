@@ -134,7 +134,7 @@ export async function getShopData() {
     const c = info.get(m.ingredientId);
     return {
       ingredientId: m.ingredientId,
-      source: m.source,
+      source: "manual" as const,
       manualQuantity: m.manualQuantity,
       name: c?.name ?? m.ingredientId,
       canonicalUnitKind: c?.canonicalUnitKind ?? null,
