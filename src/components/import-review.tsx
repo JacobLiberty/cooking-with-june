@@ -9,9 +9,17 @@ import { importRecipe } from "@/app/actions/import-actions";
 import { publishRecipe } from "@/app/actions/publish-actions";
 import { CheckBox } from "@/components/check-box";
 
-export function ImportReview({ tags }: { tags: TagOption[] }) {
+export function ImportReview({
+  tags,
+  initialBlurb = "",
+  recipeId,
+}: {
+  tags: TagOption[];
+  initialBlurb?: string;
+  recipeId?: string;
+}) {
   const router = useRouter();
-  const [blurb, setBlurb] = useState("");
+  const [blurb, setBlurb] = useState(initialBlurb);
   const [draft, setDraft] = useState<RecipeDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -39,7 +47,7 @@ export function ImportReview({ tags }: { tags: TagOption[] }) {
     if (!draft) return;
     setError(null);
     start(async () => {
-      const res = await publishRecipe(draft);
+      const res = await publishRecipe(draft, recipeId ? { recipeId } : undefined);
       if (res.ok) router.push(`/recipe/${res.slug}`);
       else setError(res.error);
     });

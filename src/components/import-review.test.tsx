@@ -69,4 +69,15 @@ describe("ImportReview", () => {
     await user.click(screen.getByRole("button", { name: "Generate draft" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't read/i);
   });
+
+  it("prefills the blurb and republishes the same id when re-importing", async () => {
+    const user = userEvent.setup();
+    actions.importRecipe.mockResolvedValue({ ok: true, draft: DRAFT });
+    render(<ImportReview tags={TAGS} initialBlurb="Existing recipe text" recipeId="rec-1" />);
+    expect(screen.getByLabelText("Recipe text")).toHaveValue("Existing recipe text");
+    await user.click(screen.getByRole("button", { name: "Generate draft" }));
+    await screen.findByDisplayValue("Chili");
+    await user.click(screen.getByRole("button", { name: "Publish recipe" }));
+    expect(actions.publishRecipe).toHaveBeenCalledWith(expect.anything(), { recipeId: "rec-1" });
+  });
 });
