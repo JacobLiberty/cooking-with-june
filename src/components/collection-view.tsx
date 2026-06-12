@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type {
   RecipeCardData,
@@ -12,8 +12,8 @@ import {
   countByTag,
   countByIngredientId,
   type RecipeFilters,
+  type CoverageMap,
 } from "@/lib/recipe-filter";
-import { filterCookable } from "@/lib/pantry";
 import { parseFilters, serializeFilters } from "@/lib/recipe-query-state";
 import { FilterControls } from "@/components/filter-controls";
 import { RecipeGrid } from "@/components/recipe-grid";
@@ -23,17 +23,16 @@ export function CollectionView({
   recipes,
   ingredients,
   tags,
-  pantryIds,
+  coverage,
 }: {
   recipes: RecipeCardData[];
   ingredients: IngredientOption[];
   tags: TagOption[];
-  pantryIds?: string[];
+  coverage?: CoverageMap;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [pantryOnly, setPantryOnly] = useState(false);
 
   const filters = useMemo(
     () => parseFilters(new URLSearchParams(searchParams.toString())),
@@ -41,12 +40,7 @@ export function CollectionView({
   );
 
   const tagCounts = useMemo(() => countByTag(recipes), [recipes]);
-  const ingredientCounts = useMemo(
-    () => countByIngredientId(recipes),
-    [recipes],
-  );
-  const pantrySet = useMemo(() => new Set(pantryIds ?? []), [pantryIds]);
-  const canCookFromPantry = (pantryIds?.length ?? 0) > 0;
+  const ingredientCounts = useMemo(() => countByIngredientId(recipes), [recipes]);
 
   const setFilters = useCallback(
     (next: RecipeFilters) => {
@@ -56,13 +50,10 @@ export function CollectionView({
     [router, pathname],
   );
 
-  const filtered = useMemo(() => {
-    const base = applyRecipeFilters(recipes, filters);
-    if (!pantryOnly || !canCookFromPantry) return base;
-    // "Cook from pantry" respects the match toggle: "all" = have everything,
-    // "most" = have ≥75%, "any" = at least one. Ranked by fewest missing.
-    return filterCookable(base, pantrySet, filters.mode);
-  }, [recipes, filters, pantryOnly, canCookFromPantry, pantrySet]);
+  const filtered = useMemo(
+    () => applyRecipeFilters(recipes, filters, coverage),
+    [recipes, filters, coverage],
+  );
 
   const surprise = useCallback(() => {
     if (filtered.length === 0) return;
@@ -78,34 +69,9 @@ export function CollectionView({
         tags={tags}
         tagCounts={tagCounts}
         ingredientCounts={ingredientCounts}
+        showCookable={Boolean(coverage)}
         onChange={setFilters}
       />
-
-      {canCookFromPantry ? (
-        <div className="space-y-2">
-          <button
-            type="button"
-            aria-pressed={pantryOnly}
-            onClick={() => setPantryOnly((v) => !v)}
-            className={`kicker rounded-full border px-4 py-2 transition-colors ${
-              pantryOnly
-                ? "border-terracotta bg-terracotta text-paper"
-                : "border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
-            }`}
-          >
-            {pantryOnly ? "Cooking from pantry — on" : "Cook from pantry"}
-          </button>
-          {pantryOnly ? (
-            <p className="text-sm text-ink-soft">
-              {filters.mode === "all"
-                ? "Recipes you have every ingredient for. Set the ingredient match above to “most” or “any” to include ones you’re only missing a few of."
-                : filters.mode === "most"
-                  ? "Recipes you have most of the ingredients for — closest matches first. Worst case, a quick substitution or store run."
-                  : "Recipes that use anything in your pantry — closest matches first."}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
 
       <div className="flex items-center justify-between border-t border-terracotta/25 pt-4">
         <span className="kicker text-ink-soft" aria-live="polite">
@@ -126,9 +92,7 @@ export function CollectionView({
           <JuneArt pose="sleeping" className="h-28 w-auto opacity-90" />
           {recipes.length === 0 ? (
             <>
-              <p className="editorial-display text-2xl text-ink">
-                No recipes yet
-              </p>
+              <p className="editorial-display text-2xl text-ink">No recipes yet</p>
               <p className="text-ink-soft">
                 June&rsquo;s kitchen is empty for now. Add the first recipe and
                 it&rsquo;ll show up here.
@@ -138,8 +102,8 @@ export function CollectionView({
             <>
               <p className="editorial-display text-2xl text-ink">Nothing here</p>
               <p className="text-ink-soft">
-                Try a different search, fewer filters, or loosen the pantry match
-                to &ldquo;most&rdquo; or &ldquo;any.&rdquo;
+                Try a different search, fewer filters, or widen &ldquo;What can I
+                cook?&rdquo; to allow a few missing ingredients.
               </p>
             </>
           )}

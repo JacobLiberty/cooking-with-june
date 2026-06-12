@@ -6,7 +6,7 @@ import {
   INGREDIENTS_QUERY,
   TAGS_QUERY,
 } from "@/sanity/lib/queries";
-import { PLAN_PANTRY_QUERY } from "@/sanity/lib/plan-queries";
+import { getCookableCoverage } from "@/app/actions/kitchen-data";
 import type {
   RecipeCardData,
   IngredientOption,
@@ -68,11 +68,10 @@ export default async function HomePage() {
     };
   });
 
-  // Editors get "Cook from pantry" — fetch what's currently in the pantry.
-  const pantryIds = viewer.isMember
-    ? ((await client
-        .withConfig({ useCdn: false })
-        .fetch<string[] | null>(PLAN_PANTRY_QUERY)) ?? [])
+  // Members get the pantry-aware "What can I cook?" filter — precompute coverage
+  // (base scale 1) for every recipe once; the client filters against it instantly.
+  const coverage = viewer.isMember
+    ? await getCookableCoverage(recipes.map((r) => r._id)).catch(() => undefined)
     : undefined;
 
   return (
@@ -112,7 +111,7 @@ export default async function HomePage() {
             recipes={recipes}
             ingredients={ingredients}
             tags={tags}
-            pantryIds={pantryIds}
+            coverage={coverage}
           />
         </Suspense>
       </div>
