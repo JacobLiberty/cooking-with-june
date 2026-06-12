@@ -9,6 +9,9 @@ vi.mock("@/sanity/lib/client", () => ({
   client: { withConfig: () => ({ fetch: vi.fn().mockResolvedValue(null) }) },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/lib/ingredients/get-or-create", () => ({
+  getOrCreateEnrichedIngredient: vi.fn().mockResolvedValue("ing-id"),
+}));
 
 const mockRequireMember = vi.mocked(requireMember);
 

@@ -5,6 +5,7 @@ import { getWriteClient } from "@/sanity/lib/write-client";
 import { client } from "@/sanity/lib/client";
 import { requireMember } from "@/lib/viewer";
 import { slugify } from "@/lib/slug";
+import { getOrCreateEnrichedIngredient } from "@/lib/ingredients/get-or-create";
 
 const reader = () => client.withConfig({ useCdn: false });
 
@@ -18,20 +19,6 @@ async function assertRecipe(recipeId: string): Promise<void> {
   if (doc?._type !== "recipe") {
     throw new Error("Target document is not a recipe");
   }
-}
-
-async function resolveIngredientId(
-  write: ReturnType<typeof getWriteClient>,
-  name: string,
-): Promise<string> {
-  const clean = name.trim();
-  const existing = await reader().fetch<{ _id: string } | null>(
-    `*[_type == "ingredient" && lower(name) == lower($name)][0]{ _id }`,
-    { name: clean },
-  );
-  if (existing?._id) return existing._id;
-  const created = await write.create({ _type: "ingredient", name: clean });
-  return created._id;
 }
 
 // Find a slug not already in use, appending -2, -3, … on collision.
@@ -131,7 +118,7 @@ export async function saveRecipe(
   }[] = [];
   for (let i = 0; i < names.length; i++) {
     if (!names[i]) continue;
-    const id = await resolveIngredientId(write, names[i]);
+    const id = await getOrCreateEnrichedIngredient(names[i]);
     ingredients.push({
       _key: `ing-${i}-${id.slice(0, 6)}`,
       _type: "ingredientLine",
