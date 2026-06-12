@@ -17,8 +17,6 @@ export type RecipeCardData = {
   ratingAvg: number | null;
   ratingApproved: boolean;
   ingredientIds: string[] | null;
-  /** Recipe ingredients excluding any marked optional — used for pantry coverage. */
-  requiredIngredientIds?: string[] | null;
   createdAt: string;
 };
 

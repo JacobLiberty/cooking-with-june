@@ -51,7 +51,14 @@ export function CollectionView({
   );
 
   const filtered = useMemo(
-    () => applyRecipeFilters(recipes, filters, coverage),
+    // Without coverage (e.g. signed out, or a shared ?cook= link) the cookable
+    // control is hidden, so ignore any cook= param rather than empty the grid.
+    () =>
+      applyRecipeFilters(
+        recipes,
+        coverage ? filters : { ...filters, cookable: "off" },
+        coverage,
+      ),
     [recipes, filters, coverage],
   );
 

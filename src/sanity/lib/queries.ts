@@ -12,7 +12,6 @@ export const RECIPES_QUERY = defineQuery(`
     servings,
     "tags": tags[]->name,
     "ingredientIds": ingredients[].ingredient._ref,
-    "requiredIngredientIds": ingredients[optional != true].ingredient._ref,
     "createdAt": _createdAt
   }
 `);
