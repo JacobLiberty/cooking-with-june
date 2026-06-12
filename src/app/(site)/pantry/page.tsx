@@ -1,17 +1,34 @@
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
+import { getPantryData } from "@/app/actions/kitchen-data";
 import { KitchenSubnav } from "@/components/kitchen-subnav";
+import { PantryView } from "@/components/pantry-view";
 
 export default async function PantryPage() {
   const viewer = await getViewer();
   if (!viewer.isAuthenticated) redirect("/");
   if (!viewer.isMember) redirect("/household/setup");
 
+  const rows = await getPantryData();
+
   return (
     <section className="mx-auto max-w-2xl">
       <KitchenSubnav />
-      <h1 className="editorial-display mt-6 text-4xl text-ink">Pantry</h1>
-      <p className="mt-3 text-ink-soft">Coming soon.</p>
+      <header className="set set-1 mt-6">
+        <p className="kicker text-terracotta">Your kitchen</p>
+        <h1 className="editorial-display mt-2 text-4xl text-ink md:text-5xl">Pantry</h1>
+        <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
+      </header>
+      <PantryView
+        rows={rows.map(({ ingredientId, name, quantityG, canonicalUnitKind, restockOverride, restockDefault }) => ({
+          ingredientId,
+          name,
+          quantityG,
+          canonicalUnitKind,
+          restockOverride,
+          restockDefault,
+        }))}
+      />
     </section>
   );
 }
