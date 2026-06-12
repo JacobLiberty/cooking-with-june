@@ -137,6 +137,7 @@ export function ShopView({
             onClick={() => {
               setShopping((v) => !v);
               setBought(new Set());
+              buyingRef.current = new Set();
             }}
             className={`kicker rounded-full border px-4 py-2 transition-colors ${
               shopping

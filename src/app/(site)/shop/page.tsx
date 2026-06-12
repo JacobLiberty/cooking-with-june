@@ -14,7 +14,9 @@ export default async function ShopPage() {
 
   const [{ needs, manual }, catalog] = await Promise.all([
     getShopData(),
-    client.fetch<IngredientOption[]>(INGREDIENTS_QUERY),
+    // Fresh (not CDN-cached) so a just-created catalog ingredient is selectable;
+    // matches the other kitchen pages.
+    client.withConfig({ useCdn: false }).fetch<IngredientOption[]>(INGREDIENTS_QUERY),
   ]);
 
   return (
