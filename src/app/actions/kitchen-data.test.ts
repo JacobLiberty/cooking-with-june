@@ -52,6 +52,25 @@ describe("getShopData", () => {
     expect(data.skipped).toEqual(["herb"]);
   });
 
+  it("folds catalog category and unit kind onto computed needs", async () => {
+    fetchQuery
+      .mockResolvedValueOnce([{ recipeId: "r1", scale: 1 }]) // plan
+      .mockResolvedValueOnce([]) // pantry (empty → everything is a need)
+      .mockResolvedValueOnce([]); // grocery
+    sanityFetch
+      .mockResolvedValueOnce(REQS) // requirements
+      .mockResolvedValueOnce([
+        { _id: "beef", name: "beef", canonicalUnitKind: "mass", category: "protein", restockQuantity: null },
+        { _id: "herb", name: "herb", canonicalUnitKind: "mass", category: "spice", restockQuantity: null },
+      ]); // catalog-by-ids for need (+manual) ids
+
+    const data = await getShopData();
+    const beef = data.needs.find((n) => n.ingredientId === "beef");
+    expect(beef).toMatchObject({ category: "protein", canonicalUnitKind: "mass" });
+    const herb = data.needs.find((n) => n.ingredientId === "herb");
+    expect(herb).toMatchObject({ optional: true, category: "spice" });
+  });
+
   it("enriches manual rows with catalog name, unit kind, and category", async () => {
     fetchQuery
       .mockResolvedValueOnce([]) // plan (no recipes → no needs)

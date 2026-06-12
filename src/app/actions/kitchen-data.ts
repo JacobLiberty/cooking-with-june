@@ -113,11 +113,25 @@ export async function getShopData() {
   const pantry = buildPantryMap(pantryRows);
   const skipped = groceryRows.filter((g) => g.source === "skip").map((g) => g.ingredientId);
   const skipSet = new Set(skipped);
-  const needs = computeNeeds(all, pantry).filter((n) => !skipSet.has(n.ingredientId));
+  const needsRaw = computeNeeds(all, pantry).filter((n) => !skipSet.has(n.ingredientId));
   const manualRows = groceryRows.filter((g) => g.source === "manual");
-  const manualInfo = await catalogInfoByIds(manualRows.map((m) => m.ingredientId));
+
+  // One catalog lookup covers both need + manual ids (display category + unit kind).
+  const info = await catalogInfoByIds([
+    ...needsRaw.map((n) => n.ingredientId),
+    ...manualRows.map((m) => m.ingredientId),
+  ]);
+
+  const needs = needsRaw.map((n) => {
+    const c = info.get(n.ingredientId);
+    return {
+      ...n,
+      category: c?.category ?? null,
+      canonicalUnitKind: c?.canonicalUnitKind ?? null,
+    };
+  });
   const manual = manualRows.map((m) => {
-    const c = manualInfo.get(m.ingredientId);
+    const c = info.get(m.ingredientId);
     return {
       ingredientId: m.ingredientId,
       source: m.source,
