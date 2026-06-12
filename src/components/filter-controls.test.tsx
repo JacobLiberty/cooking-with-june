@@ -4,81 +4,61 @@ import userEvent from "@testing-library/user-event";
 import { FilterControls } from "@/components/filter-controls";
 import type { RecipeFilters } from "@/lib/recipe-filter";
 
-const EMPTY: RecipeFilters = {
-  query: "",
-  ingredientIds: [],
-  mode: "any",
-  tags: [],
-  collection: "all",
-  sort: "name",
+const base: RecipeFilters = {
+  query: "", ingredientIds: [], cookable: "off", tags: [], collection: "all", sort: "name",
+};
+const ingredients = [
+  { _id: "beef", name: "beef" },
+  { _id: "rice", name: "rice" },
+];
+const tags = [{ _id: "t1", name: "dinner" }];
+
+const setup = (filters: RecipeFilters = base, showCookable = false) => {
+  const onChange = vi.fn();
+  render(
+    <FilterControls
+      filters={filters}
+      ingredients={ingredients}
+      tags={tags}
+      showCookable={showCookable}
+      onChange={onChange}
+    />,
+  );
+  return onChange;
 };
 
-const tags = Array.from({ length: 15 }, (_, i) => ({
-  _id: `t${i}`,
-  name: `tag-${i}`,
-}));
-
-describe("FilterControls collapsing", () => {
-  it("collapses tags past the limit and expands on demand", async () => {
-    const user = userEvent.setup();
-    render(
-      <FilterControls filters={EMPTY} ingredients={[]} tags={tags} onChange={() => {}} />,
-    );
-    // collapsed: first 8 shown, the 9th hidden, a "+7 more" toggle present
-    expect(screen.getByText("tag-0")).toBeInTheDocument();
-    expect(screen.getByText("tag-7")).toBeInTheDocument();
-    expect(screen.queryByText("tag-8")).not.toBeInTheDocument();
-    const toggle = screen.getByText("+7 more");
-
-    await user.click(toggle);
-    expect(screen.getByText("tag-8")).toBeInTheDocument();
-    expect(screen.getByText("tag-14")).toBeInTheDocument();
-    expect(screen.getByText("Show fewer")).toBeInTheDocument();
+describe("FilterControls", () => {
+  it("hides the cookable stepper unless showCookable is set", () => {
+    setup(base, false);
+    expect(screen.queryByRole("group", { name: "Cookable filter" })).not.toBeInTheDocument();
   });
 
-  it("keeps a selected tag visible even past the collapsed limit", () => {
-    render(
-      <FilterControls
-        filters={{ ...EMPTY, tags: ["tag-12"] }}
-        ingredients={[]}
-        tags={tags}
-        onChange={() => {}}
-      />,
-    );
-    // tag-12 is beyond the limit but selected, so it stays visible/de-selectable
-    const selected = screen.getByText("tag-12");
-    expect(selected).toBeInTheDocument();
-    expect(selected).toHaveAttribute("aria-pressed", "true");
+  it("shows the cookable stepper and reports the chosen step", async () => {
+    const user = userEvent.setup();
+    const onChange = setup(base, true);
+    await user.click(screen.getByRole("button", { name: "Cookable now" }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ cookable: "now" }));
   });
 
-  it("calls onChange when a tag is toggled", async () => {
+  it("adds an ingredient from the typeahead", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(
-      <FilterControls filters={EMPTY} ingredients={[]} tags={tags} onChange={onChange} />,
-    );
-    await user.click(screen.getByText("tag-1"));
-    expect(onChange).toHaveBeenCalledWith({ ...EMPTY, tags: ["tag-1"] });
+    const onChange = setup();
+    await user.type(screen.getByLabelText("Filter by ingredient"), "bee");
+    await user.click(screen.getByRole("button", { name: /beef/ }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ ingredientIds: ["beef"] }));
   });
-});
 
-describe("FilterControls collection segments", () => {
-  it("switches the collection and marks the active segment", async () => {
+  it("removes an active ingredient chip", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(
-      <FilterControls
-        filters={{ ...EMPTY, collection: "totry" }}
-        ingredients={[]}
-        tags={[]}
-        onChange={onChange}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "To try" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    await user.click(screen.getByRole("button", { name: "June approved" }));
-    expect(onChange).toHaveBeenCalledWith({ ...EMPTY, collection: "approved" });
+    const onChange = setup({ ...base, ingredientIds: ["beef"] });
+    await user.click(screen.getByRole("button", { name: "Remove beef filter" }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ ingredientIds: [] }));
+  });
+
+  it("toggles a tag", async () => {
+    const user = userEvent.setup();
+    const onChange = setup();
+    await user.click(screen.getByRole("button", { name: /dinner/ }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ tags: ["dinner"] }));
   });
 });

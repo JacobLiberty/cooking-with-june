@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { IngredientOption, TagOption } from "@/sanity/types";
 import type {
   RecipeFilters,
   SortKey,
-  FilterMode,
+  CookableFilter,
   CollectionKey,
 } from "@/lib/recipe-filter";
 
@@ -15,18 +15,13 @@ const SORT_LABELS: Record<SortKey, string> = {
   newest: "Newest",
 };
 
-const MODE_LABELS: Record<FilterMode, string> = {
-  any: "Any",
-  most: "Most",
-  all: "All",
-};
-
-// Plain-language hint for the active match mode (no thresholds — keep it human).
-const MODE_HINTS: Record<FilterMode, string> = {
-  any: "Recipes using anything you have.",
-  most: "Recipes you have most of the ingredients for.",
-  all: "Recipes you have every ingredient for.",
-};
+const COOKABLE_STEPS: { key: CookableFilter; label: string }[] = [
+  { key: "off", label: "All" },
+  { key: "now", label: "Cookable now" },
+  { key: "1", label: "Missing ≤1" },
+  { key: "2", label: "≤2" },
+  { key: "3", label: "≤3" },
+];
 
 const COLLECTIONS: { key: CollectionKey; label: string }[] = [
   { key: "all", label: "All" },
@@ -36,7 +31,6 @@ const COLLECTIONS: { key: CollectionKey; label: string }[] = [
 ];
 
 const TAG_LIMIT = 8;
-const ING_LIMIT = 12;
 
 export function FilterControls({
   filters,
@@ -44,6 +38,7 @@ export function FilterControls({
   tags,
   tagCounts = {},
   ingredientCounts = {},
+  showCookable = false,
   onChange,
 }: {
   filters: RecipeFilters;
@@ -51,38 +46,44 @@ export function FilterControls({
   tags: TagOption[];
   tagCounts?: Record<string, number>;
   ingredientCounts?: Record<string, number>;
+  showCookable?: boolean;
   onChange: (next: RecipeFilters) => void;
 }) {
   const [showAllTags, setShowAllTags] = useState(false);
-  const [showAllIngredients, setShowAllIngredients] = useState(false);
-  // The pantry block is the tallest part of the panel, so it starts collapsed
-  // (recipes stay near the top of the page), but opens if a filter is already
-  // applied so an active selection is never hidden.
-  const [showPantry, setShowPantry] = useState(
-    filters.ingredientIds.length > 0,
-  );
+  const [ingQuery, setIngQuery] = useState("");
 
   const toggle = (arr: string[], v: string) =>
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 
-  // Collapsed view always keeps any *selected* chips visible so they stay
-  // de-selectable, even past the limit.
+  const nameById = useMemo(
+    () => new Map(ingredients.map((i) => [i._id, i.name])),
+    [ingredients],
+  );
+
+  const iq = ingQuery.trim().toLowerCase();
+  const suggestions = useMemo(() => {
+    if (!iq) return [];
+    return ingredients
+      .filter(
+        (i) =>
+          i.name.toLowerCase().includes(iq) &&
+          !filters.ingredientIds.includes(i._id),
+      )
+      .slice(0, 6);
+  }, [ingredients, iq, filters.ingredientIds]);
+
   const visibleTags = showAllTags
     ? tags
     : tags.filter((t, i) => i < TAG_LIMIT || filters.tags.includes(t.name));
-  const visibleIngredients = showAllIngredients
-    ? ingredients
-    : ingredients.filter(
-        (ing, i) => i < ING_LIMIT || filters.ingredientIds.includes(ing._id),
-      );
+
+  const addIngredient = (id: string) => {
+    onChange({ ...filters, ingredientIds: toggle(filters.ingredientIds, id) });
+    setIngQuery("");
+  };
 
   return (
     <div className="space-y-6">
-      <div
-        className="flex flex-wrap gap-2"
-        role="group"
-        aria-label="Collection"
-      >
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Collection">
         {COLLECTIONS.map((c) => {
           const active = filters.collection === c.key;
           return (
@@ -130,12 +131,31 @@ export function FilterControls({
         </label>
       </div>
 
+      {showCookable ? (
+        <div role="group" aria-label="Cookable filter" className="space-y-2">
+          <span className="kicker text-ink-soft">What can I cook?</span>
+          <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-ink/20 p-0.5">
+            {COOKABLE_STEPS.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                aria-pressed={filters.cookable === s.key}
+                onClick={() => onChange({ ...filters, cookable: s.key })}
+                className={`kicker rounded-full px-3 py-1 transition-colors ${
+                  filters.cookable === s.key
+                    ? "bg-terracotta text-paper"
+                    : "text-ink-soft hover:text-terracotta"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {tags.length > 0 && (
-        <div
-          className="flex flex-wrap items-center gap-2"
-          role="group"
-          aria-labelledby="tag-filter-label"
-        >
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-labelledby="tag-filter-label">
           <span id="tag-filter-label" className="kicker text-ink-soft">
             Tags
           </span>
@@ -171,100 +191,56 @@ export function FilterControls({
 
       {ingredients.length > 0 && (
         <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => setShowPantry((v) => !v)}
-            aria-expanded={showPantry}
-            aria-controls="pantry-panel"
-            className="kicker flex items-center gap-1.5 text-ink-soft transition-colors hover:text-terracotta"
-          >
-            <span
-              aria-hidden
-              className={`text-base leading-none transition-transform ${showPantry ? "rotate-90" : ""}`}
-            >
-              ›
-            </span>
-            Filter by what&rsquo;s in your kitchen
-            {filters.ingredientIds.length > 0 ? (
-              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-clay-wash px-1.5 text-ink">
-                {filters.ingredientIds.length}
-              </span>
-            ) : null}
-          </button>
-
-          <div
-            id="pantry-panel"
-            hidden={!showPantry}
-            className="space-y-2 pt-1"
-          >
-            <div className="flex items-center justify-between">
-              <span id="pantry-match-label" className="kicker text-ink-soft">
-                Ingredient match
-              </span>
-              <div
-                className="inline-flex items-center rounded-full border border-ink/20 p-0.5"
-                role="group"
-                aria-labelledby="pantry-match-label"
-              >
-                {(["any", "most", "all"] as FilterMode[]).map((m) => (
+          <label className="kicker block text-ink-soft" htmlFor="ingredient-filter">
+            Has ingredients
+          </label>
+          {filters.ingredientIds.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {filters.ingredientIds.map((id) => (
+                <li key={id}>
                   <button
-                    key={m}
                     type="button"
-                    aria-pressed={filters.mode === m}
-                    onClick={() => onChange({ ...filters, mode: m })}
-                    className={`kicker rounded-full px-3 py-1 transition-colors ${filters.mode === m ? "bg-ink text-paper" : "text-ink-soft hover:text-terracotta"}`}
+                    onClick={() => addIngredient(id)}
+                    aria-label={`Remove ${nameById.get(id) ?? id} filter`}
+                    className="kicker inline-flex items-center gap-1 rounded-full border border-clay bg-clay-wash px-2.5 py-1 text-ink hover:border-terracotta"
                   >
-                    {MODE_LABELS[m]}
+                    {nameById.get(id) ?? id}
+                    <span aria-hidden>×</span>
                   </button>
-                ))}
-              </div>
-            </div>
-            <p className="text-sm text-ink-soft" aria-live="polite">
-              {MODE_HINTS[filters.mode]}
-            </p>
-            <div
-              className="flex flex-wrap items-center gap-2"
-              role="group"
-              aria-labelledby="pantry-filter-label"
-            >
-              <span id="pantry-filter-label" className="sr-only">
-                Ingredients you have on hand
-              </span>
-              {visibleIngredients.map((ing) => {
-              const active = filters.ingredientIds.includes(ing._id);
-              return (
-                <button
-                  key={ing._id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() =>
-                    onChange({ ...filters, ingredientIds: toggle(filters.ingredientIds, ing._id) })
-                  }
-                  className={`border px-2.5 py-1 text-sm ${active ? "border-clay bg-clay-wash text-ink" : "border-ink/20 text-ink-soft hover:border-clay"}`}
-                >
-                  {ing.name}
-                  {ingredientCounts[ing._id] ? (
-                    <span className="ml-1.5 tabular-nums">
-                      {ingredientCounts[ing._id]}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-            {ingredients.length > ING_LIMIT && (
-              <button
-                type="button"
-                onClick={() => setShowAllIngredients((v) => !v)}
-                aria-expanded={showAllIngredients}
-                className="kicker px-2 py-1 text-terracotta hover:text-terracotta-deep"
-              >
-                {showAllIngredients
-                  ? "Show fewer"
-                  : `+${ingredients.length - ING_LIMIT} more`}
-              </button>
-            )}
-            </div>
-          </div>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <input
+            id="ingredient-filter"
+            type="search"
+            value={ingQuery}
+            onChange={(e) => setIngQuery(e.target.value)}
+            placeholder="Add an ingredient…"
+            aria-label="Filter by ingredient"
+            className="w-full max-w-sm border-b border-ink/25 bg-transparent pb-1 text-ink placeholder:text-ink-soft focus:border-terracotta"
+          />
+          {iq ? (
+            <ul className="flex flex-wrap gap-2">
+              {suggestions.map((ing) => (
+                <li key={ing._id}>
+                  <button
+                    type="button"
+                    onClick={() => addIngredient(ing._id)}
+                    className="kicker border border-ink/20 px-2.5 py-1 text-sm text-ink-soft hover:border-clay hover:text-ink"
+                  >
+                    {ing.name}
+                    {ingredientCounts[ing._id] ? (
+                      <span className="ml-1.5 tabular-nums">{ingredientCounts[ing._id]}</span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+              {suggestions.length === 0 ? (
+                <li className="text-sm text-ink-soft">No matching ingredient.</li>
+              ) : null}
+            </ul>
+          ) : null}
         </div>
       )}
     </div>
