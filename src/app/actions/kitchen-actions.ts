@@ -35,7 +35,9 @@ const tokenOpts = async () => {
 type PantryRow = { ingredientId: string; quantityG: number; restockOverride: { quantity: number; unit: string } | null };
 
 function revalidate() {
-  revalidatePath("/plan");
+  revalidatePath("/menu");
+  revalidatePath("/shop");
+  revalidatePath("/pantry");
   revalidatePath("/", "layout");
 }
 
