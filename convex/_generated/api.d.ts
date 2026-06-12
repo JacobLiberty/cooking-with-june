@@ -13,6 +13,7 @@ import type * as cook from "../cook.js";
 import type * as grocery from "../grocery.js";
 import type * as households from "../households.js";
 import type * as http from "../http.js";
+import type * as imports from "../imports.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as migrations from "../migrations.js";
 import type * as notes from "../notes.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   grocery: typeof grocery;
   households: typeof households;
   http: typeof http;
+  imports: typeof imports;
   "lib/auth": typeof lib_auth;
   migrations: typeof migrations;
   notes: typeof notes;
