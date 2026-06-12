@@ -3,7 +3,6 @@ import {
   buildShopItems,
   groupShopItems,
   shopItemAmountLabel,
-  type ShopItem,
 } from "@/lib/kitchen/shop-grouping";
 
 const NEEDS = [
