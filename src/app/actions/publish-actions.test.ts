@@ -52,7 +52,14 @@ describe("publishRecipe", () => {
     expect(res.ok).toBe(true);
     expect(getOrCreate).toHaveBeenCalledWith("ground beef");
     expect(getOrCreate).toHaveBeenCalledWith("cilantro");
-    const doc = create.mock.calls[0][0] as Record<string, any>;
+    type RecipeDoc = {
+      _type: string;
+      ingredients: { ingredient: { _ref: string }; optional?: boolean }[];
+      tags: { _ref: string }[];
+      macros: { full: { calories: number }; estimated: boolean };
+      slug: { current: string };
+    };
+    const doc = create.mock.calls[0][0] as RecipeDoc;
     expect(doc._type).toBe("recipe");
     expect(doc.ingredients).toHaveLength(2);
     expect(doc.ingredients[0].ingredient._ref).toBe("ground beef-id");
