@@ -5,6 +5,7 @@ import { fetchMutation, fetchQuery } from "convex/nextjs";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "@cvx/_generated/api";
 import { client } from "@/sanity/lib/client";
+import { getOrCreateEnrichedIngredient } from "@/lib/ingredients/get-or-create";
 import { requireMember } from "@/lib/viewer";
 import {
   RECIPE_REQUIREMENTS_QUERY,
@@ -101,6 +102,14 @@ export async function cook(recipeId: string, usedOptionalIds: string[] = []) {
 }
 
 // ── Manual grocery + pantry corrections ───────────────────────────────────────
+
+export async function addShopItemByName(name: string) {
+  await requireMember();
+  const ingredientId = await getOrCreateEnrichedIngredient(name);
+  await fetchMutation(api.grocery.addManualItem, { ingredientId }, await tokenOpts());
+  revalidate();
+  return { ingredientId };
+}
 
 export async function addManualItem(
   ingredientId: string,

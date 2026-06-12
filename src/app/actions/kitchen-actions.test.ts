@@ -15,10 +15,14 @@ vi.mock("@/sanity/lib/client", () => ({
   client: { withConfig: () => ({ fetch: (...a: unknown[]) => sanityFetch(...a) }) },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/lib/ingredients/get-or-create", () => ({
+  getOrCreateEnrichedIngredient: vi.fn().mockResolvedValue("ing-id"),
+}));
 
 import { requireMember } from "@/lib/viewer";
 import { api } from "@cvx/_generated/api";
-import { addToPlan, cook, markBought } from "@/app/actions/kitchen-actions";
+import { getOrCreateEnrichedIngredient } from "@/lib/ingredients/get-or-create";
+import { addToPlan, cook, markBought, addShopItemByName } from "@/app/actions/kitchen-actions";
 
 beforeEach(() => {
   vi.mocked(requireMember).mockResolvedValue({ userId: "u1", householdId: "h1" });
@@ -80,6 +84,20 @@ describe("cook", () => {
     const egg = args.deltas.find((d) => d.ingredientId === "egg");
     expect(beef?.subtract).toBeCloseTo(2 * 453.6);
     expect(egg?.subtract).toBe(4);
+  });
+});
+
+describe("addShopItemByName", () => {
+  it("resolves the name to a catalog id then adds a manual grocery row", async () => {
+    vi.mocked(getOrCreateEnrichedIngredient).mockResolvedValueOnce("salt-id");
+    const res = await addShopItemByName("Sea Salt");
+    expect(getOrCreateEnrichedIngredient).toHaveBeenCalledWith("Sea Salt");
+    expect(fetchMutation).toHaveBeenCalledWith(
+      api.grocery.addManualItem,
+      { ingredientId: "salt-id" },
+      { token: "tok" },
+    );
+    expect(res).toEqual({ ingredientId: "salt-id" });
   });
 });
 
