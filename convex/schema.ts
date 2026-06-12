@@ -97,7 +97,7 @@ export default defineSchema({
     .index("by_household_ingredient", ["householdId", "ingredientId"]),
 
   importCounters: defineTable({
-    userId: v.string(),
+    userId: v.id("users"),
     dayKey: v.string(), // UTC YYYY-MM-DD, supplied by the caller
     count: v.number(),
   }).index("by_user_day", ["userId", "dayKey"]),

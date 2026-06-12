@@ -15,7 +15,7 @@ export const recordImport = mutation({
     const existing = await ctx.db
       .query("importCounters")
       .withIndex("by_user_day", (q) =>
-        q.eq("userId", userId as string).eq("dayKey", dayKey),
+        q.eq("userId", userId).eq("dayKey", dayKey),
       )
       .first();
     const count = existing?.count ?? 0;
@@ -25,7 +25,7 @@ export const recordImport = mutation({
     if (existing) {
       await ctx.db.patch(existing._id, { count: count + 1 });
     } else {
-      await ctx.db.insert("importCounters", { userId: userId as string, dayKey, count: 1 });
+      await ctx.db.insert("importCounters", { userId, dayKey, count: 1 });
     }
   },
 });
