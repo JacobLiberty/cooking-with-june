@@ -18,10 +18,10 @@ export function AuthControls() {
       <span className="flex items-center gap-3">
         {viewer.householdId ? (
           <Link
-            href="/plan"
+            href="/menu"
             className="kicker text-ink-soft transition-colors hover:text-terracotta"
           >
-            Plan
+            Kitchen
           </Link>
         ) : (
           <Link

@@ -33,10 +33,11 @@ describe("AuthControls", () => {
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 
-  it("renders the Plan link, name, and Sign out for a household member", () => {
+  it("renders the Kitchen link, name, and Sign out for a household member", () => {
     mockUseQuery.mockReturnValue({ name: "Jacob", householdId: "h1" });
     render(<AuthControls />);
-    expect(screen.getByRole("link", { name: "Plan" })).toBeInTheDocument();
+    const kitchen = screen.getByRole("link", { name: "Kitchen" });
+    expect(kitchen).toHaveAttribute("href", "/menu");
     expect(screen.getByText("Jacob")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
@@ -45,6 +46,6 @@ describe("AuthControls", () => {
     mockUseQuery.mockReturnValue({ name: "Jacob", householdId: null });
     render(<AuthControls />);
     expect(screen.getByRole("link", { name: "Finish setup" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Plan" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Kitchen" })).not.toBeInTheDocument();
   });
 });
