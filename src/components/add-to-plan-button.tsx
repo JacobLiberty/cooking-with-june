@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, m } from "motion/react";
-import { addToPlan, removeFromPlan } from "@/app/actions/plan-actions";
+import { addToPlan, removeFromPlan } from "@/app/actions/kitchen-actions";
 import { PawMark } from "@/components/paw-mark";
 
 export function AddToPlanButton({

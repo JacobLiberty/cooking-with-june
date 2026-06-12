@@ -6,7 +6,6 @@ import {
   RECIPE_QUERY,
   RECIPE_SLUGS_QUERY,
 } from "@/sanity/lib/queries";
-import { PLAN_RECIPE_IDS_QUERY } from "@/sanity/lib/plan-queries";
 import type { RecipeDetailData } from "@/sanity/types";
 import { fetchQuery } from "convex/nextjs";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
@@ -21,6 +20,7 @@ import { urlForImage } from "@/sanity/lib/image";
 import { SITE_URL } from "@/lib/site";
 import { JuneArt } from "@/components/june";
 import { getViewer } from "@/lib/viewer";
+import { getPlannedRecipeIds } from "@/app/actions/kitchen-data";
 import { EditorActions } from "@/components/editor-actions";
 import { JuneApprovedBadge } from "@/components/june-approved-badge";
 import { ShareButton } from "@/components/share-button";
@@ -77,9 +77,7 @@ export default async function RecipePage({
   ]);
   if (!recipe) notFound();
 
-  const plannedIds = viewer.isMember
-    ? await client.withConfig({ useCdn: false }).fetch<string[] | null>(PLAN_RECIPE_IDS_QUERY)
-    : null;
+  const plannedIds = viewer.isMember ? await getPlannedRecipeIds() : null;
 
   const token = await convexAuthNextjsToken();
   const opts = token ? { token } : {};
