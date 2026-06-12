@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useToast } from "@/components/toast";
 import {
   markBought,
@@ -33,10 +33,16 @@ export function ShopView({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const toast = useToast();
+  // Ref-based guard prevents double-buy from rapid clicks before React flushes the
+  // bought-Set state update. The ref is checked synchronously; state is the source
+  // of truth for rendering.
+  const buyingRef = useRef<Set<string>>(new Set());
 
   const groups = useMemo(() => groupShopItems(items), [items]);
   const total = items.length;
-  const doneCount = bought.size;
+  // In shopping mode, items that have been dismissed after being bought would make
+  // doneCount exceed total. Cap doneCount at total so the counter stays coherent.
+  const doneCount = shopping ? Math.min(bought.size, total) : bought.size;
 
   const act = (action: () => Promise<unknown>, revert: () => void) => {
     setError(null);
@@ -57,11 +63,17 @@ export function ShopView({
   // marks them done; normal mode removes the item from the list once bought.
   const buy = (id: string) => {
     if (shopping) {
-      if (bought.has(id)) return;
+      // Guard with both state and ref to prevent double-buy from rapid clicks
+      // before the setBought state update has been flushed by React.
+      if (bought.has(id) || buyingRef.current.has(id)) return;
+      buyingRef.current = new Set(buyingRef.current).add(id);
       setBought((b) => new Set(b).add(id));
       act(
         () => markBought(id),
-        () => setBought((b) => { const n = new Set(b); n.delete(id); return n; }),
+        () => {
+          buyingRef.current = (() => { const n = new Set(buyingRef.current); n.delete(id); return n; })();
+          setBought((b) => { const n = new Set(b); n.delete(id); return n; });
+        },
       );
       return;
     }
@@ -102,10 +114,12 @@ export function ShopView({
                 },
               ],
         );
+        // Toast only after the server action succeeds; avoids a success message
+        // paired with an error banner when addShopItemByName throws.
+        toast({ message: `Added ${name}` });
       },
       () => {},
     );
-    toast({ message: `Added ${name}` });
   };
 
   const empty = total === 0;
