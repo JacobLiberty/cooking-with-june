@@ -23,8 +23,8 @@ export default async function SubmitPage({
   if (reimport) {
     const recipe = await client
       .withConfig({ useCdn: false })
-      .fetch<{ _id: string; title: string; description?: string; servings?: number; ingredients?: { quantity?: string; unit?: string; optional?: boolean; name?: string | null }[] | null; steps?: string[] | null } | null>(
-        `*[_type == "recipe" && _id == $id][0]{ _id, title, description, servings, "ingredients": ingredients[]{ quantity, unit, optional, "name": ingredient->name }, steps }`,
+      .fetch<{ _id: string; title: string; description?: string; story?: string; servings?: number; ingredients?: { quantity?: string; unit?: string; optional?: boolean; name?: string | null }[] | null; steps?: string[] | null } | null>(
+        `*[_type == "recipe" && _id == $id][0]{ _id, title, description, story, servings, "ingredients": ingredients[]{ quantity, unit, optional, "name": ingredient->name }, steps }`,
         { id: reimport },
       );
     if (recipe) {

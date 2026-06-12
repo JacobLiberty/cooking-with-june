@@ -7,6 +7,7 @@ type BlurbIngredient = {
 type BlurbRecipe = {
   title: string;
   description?: string | null;
+  story?: string | null;
   servings?: number | null;
   ingredients?: BlurbIngredient[] | null;
   steps?: string[] | null;
@@ -16,6 +17,8 @@ type BlurbRecipe = {
 export function recipeToBlurb(recipe: BlurbRecipe): string {
   const lines: string[] = [recipe.title];
   if (recipe.description) lines.push("", recipe.description);
+  // Carry the story so re-import preserves it rather than silently clearing it.
+  if (recipe.story) lines.push("", recipe.story);
   if (recipe.servings) lines.push("", `Serves ${recipe.servings}`);
 
   lines.push("", "Ingredients:");

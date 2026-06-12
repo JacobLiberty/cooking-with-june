@@ -21,6 +21,17 @@ describe("recipeToBlurb", () => {
     expect(blurb).toMatch(/2\. Simmer\./);
   });
 
+  it("carries the story so re-import doesn't blank it", () => {
+    const blurb = recipeToBlurb({
+      title: "Chili",
+      description: "A pot of chili.",
+      story: "My grandmother made this every fall.",
+      ingredients: null,
+      steps: null,
+    });
+    expect(blurb).toContain("My grandmother made this every fall.");
+  });
+
   it("tolerates missing fields", () => {
     const blurb = recipeToBlurb({ title: "Toast", ingredients: null, steps: null });
     expect(blurb).toContain("Toast");
