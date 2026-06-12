@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getWriteClient } from "@/sanity/lib/write-client";
 import { client } from "@/sanity/lib/client";
 import { requireMember } from "@/lib/viewer";
-import { slugify } from "@/lib/slug";
+import { slugify, uniqueSlug } from "@/lib/slug";
 import { getOrCreateEnrichedIngredient } from "@/lib/ingredients/get-or-create";
 
 const reader = () => client.withConfig({ useCdn: false });
@@ -19,18 +19,6 @@ async function assertRecipe(recipeId: string): Promise<void> {
   if (doc?._type !== "recipe") {
     throw new Error("Target document is not a recipe");
   }
-}
-
-// Find a slug not already in use, appending -2, -3, … on collision.
-async function uniqueSlug(base: string): Promise<string> {
-  const taken = await reader().fetch<string[]>(
-    `*[_type == "recipe" && defined(slug.current)].slug.current`,
-  );
-  const used = new Set(taken);
-  if (!used.has(base)) return base;
-  let n = 2;
-  while (used.has(`${base}-${n}`)) n++;
-  return `${base}-${n}`;
 }
 
 const PLAN_ID = "mealPlan";
@@ -180,7 +168,10 @@ export async function saveRecipe(
     if (!existing) return { ok: false, error: "Recipe not found" };
     slug = existing;
   } else {
-    slug = await uniqueSlug(slugify(title));
+    const takenSlugs = await reader().fetch<string[]>(
+      `*[_type == "recipe" && defined(slug.current)].slug.current`,
+    );
+    slug = uniqueSlug(slugify(title), takenSlugs);
     await write.create({
       ...doc,
       slug: { _type: "slug", current: slug },
