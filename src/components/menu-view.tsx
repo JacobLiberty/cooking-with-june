@@ -14,11 +14,16 @@ export function MenuView({ rows }: { rows: MenuRow[] }) {
   const router = useRouter();
   const toast = useToast();
 
-  const act = (action: () => Promise<unknown>, revert: () => void) => {
+  const act = (
+    action: () => Promise<unknown>,
+    revert: () => void,
+    onSuccess?: () => void,
+  ) => {
     setError(null);
     start(async () => {
       try {
         await action();
+        onSuccess?.();
         router.refresh();
       } catch {
         revert();
@@ -53,8 +58,8 @@ export function MenuView({ rows }: { rows: MenuRow[] }) {
     act(
       () => cook(row.recipeId, usedOptionalIds),
       () => setRemoved((s) => { const n = new Set(s); n.delete(row.recipeId); return n; }),
+      () => toast({ message: `Cooked ${row.title}` }),
     );
-    toast({ message: `Cooked ${row.title}` });
   };
 
   const visible = rows.filter((r) => !removed.has(r.recipeId));

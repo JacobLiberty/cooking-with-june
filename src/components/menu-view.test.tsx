@@ -8,7 +8,8 @@ const actions = vi.hoisted(() => ({
   cook: vi.fn(),
 }));
 vi.mock("@/app/actions/kitchen-actions", () => actions);
-vi.mock("@/components/toast", () => ({ useToast: () => vi.fn() }));
+const toast = vi.fn();
+vi.mock("@/components/toast", () => ({ useToast: () => toast }));
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refresh }) }));
 
@@ -42,6 +43,7 @@ const rowFor = (title: string) => screen.getByText(title).closest("li") as HTMLE
 beforeEach(() => {
   Object.values(actions).forEach((m) => m.mockReset().mockResolvedValue(undefined));
   refresh.mockReset();
+  toast.mockReset();
 });
 
 describe("MenuView", () => {
@@ -91,9 +93,22 @@ describe("MenuView", () => {
   it("Made it with no optionals cooks with an empty list", async () => {
     const user = userEvent.setup();
     render(<MenuView rows={ROWS} />);
-    const toast = rowFor("Toast");
-    await user.click(within(toast).getByRole("button", { name: "Made it" }));
-    await user.click(within(toast).getByRole("button", { name: "Confirm — made it" }));
+    const toastRow = rowFor("Toast");
+    await user.click(within(toastRow).getByRole("button", { name: "Made it" }));
+    await user.click(within(toastRow).getByRole("button", { name: "Confirm — made it" }));
     expect(actions.cook).toHaveBeenCalledWith("r2", []);
+  });
+
+  it("does not toast and reverts the row when cook fails", async () => {
+    const user = userEvent.setup();
+    actions.cook.mockRejectedValueOnce(new Error("boom"));
+    render(<MenuView rows={ROWS} />);
+    const stew = rowFor("Beef Stew");
+    await user.click(within(stew).getByRole("button", { name: "Made it" }));
+    await user.click(within(stew).getByRole("button", { name: "Confirm — made it" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't save/i);
+    expect(toast).not.toHaveBeenCalled();
+    // optimistic removal rolled back — the row is visible again
+    expect(screen.getByText("Beef Stew")).toBeInTheDocument();
   });
 });
