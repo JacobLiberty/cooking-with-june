@@ -59,11 +59,11 @@ describe("getShopData", () => {
       .mockResolvedValueOnce([
         { ingredientId: "salt", source: "manual", manualQuantity: { quantity: 1, unit: "box" } },
       ]); // grocery
-    sanityFetch
-      .mockResolvedValueOnce([]) // requirements (no planned recipes)
-      .mockResolvedValueOnce([
-        { _id: "salt", name: "table salt", canonicalUnitKind: "mass", category: "spice", restockQuantity: null },
-      ]); // catalog-by-ids for manual rows
+    // Empty plan → fetchRequirements short-circuits without a Sanity call, so the
+    // only sanityFetch is the catalog lookup for the manual row.
+    sanityFetch.mockResolvedValueOnce([
+      { _id: "salt", name: "table salt", canonicalUnitKind: "mass", category: "spice", restockQuantity: null },
+    ]); // catalog-by-ids for manual rows
 
     const data = await getShopData();
     expect(data.manual[0]).toMatchObject({
