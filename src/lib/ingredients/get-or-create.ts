@@ -31,7 +31,9 @@ export async function getOrCreateEnrichedIngredient(name: string): Promise<strin
   return created._id;
 }
 
-async function buildNewIngredientDoc(name: string): Promise<Record<string, unknown>> {
+async function buildNewIngredientDoc(
+  name: string,
+): Promise<{ _type: "ingredient"; [key: string]: unknown }> {
   try {
     const [raw] = await enrichBatch([name]);
     const result = validateEnrichmentResult(raw);
