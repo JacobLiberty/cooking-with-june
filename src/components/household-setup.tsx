@@ -19,7 +19,7 @@ export function HouseholdSetup({ canCreate = true }: { canCreate?: boolean }) {
     setBusy(true);
     try {
       await action();
-      router.push("/plan");
+      router.push("/menu");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setBusy(false);

@@ -41,7 +41,7 @@ describe("HouseholdSetup", () => {
     await waitFor(() =>
       expect(mocks.createHousehold).toHaveBeenCalledWith({ name: "Jacob & Lily" }),
     );
-    expect(mocks.push).toHaveBeenCalledWith("/plan");
+    expect(mocks.push).toHaveBeenCalledWith("/menu");
   });
 
   it("joins with a code and routes to the plan", async () => {
@@ -53,7 +53,7 @@ describe("HouseholdSetup", () => {
     await waitFor(() =>
       expect(mocks.acceptInvite).toHaveBeenCalledWith({ code: "ABCD2345" }),
     );
-    expect(mocks.push).toHaveBeenCalledWith("/plan");
+    expect(mocks.push).toHaveBeenCalledWith("/menu");
   });
 
   it("hides the create form for non-founders (invite-only)", () => {

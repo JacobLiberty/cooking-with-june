@@ -6,6 +6,6 @@ import { HouseholdSetup } from "@/components/household-setup";
 export default async function HouseholdSetupPage() {
   const viewer = await getViewer();
   if (!viewer.isAuthenticated) redirect("/");
-  if (viewer.isMember) redirect("/plan");
+  if (viewer.isMember) redirect("/menu");
   return <HouseholdSetup canCreate={viewer.canCreateHousehold} />;
 }
