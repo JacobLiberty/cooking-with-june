@@ -93,4 +93,16 @@ describe("PantryView", () => {
     await user.click(within(rowFor("egg")).getByRole("button", { name: "Reset" }));
     expect(actions.setRestockOverride).toHaveBeenCalledWith("egg", undefined);
   });
+
+  it("reverts the optimistic quantity and surfaces an error when the save fails", async () => {
+    const user = userEvent.setup();
+    actions.setPantryQuantity.mockRejectedValueOnce(new Error("network"));
+    render(<PantryView rows={ROWS} />);
+    const beef = rowFor("ground beef");
+    const input = within(beef).getByLabelText("ground beef quantity in g") as HTMLInputElement;
+    await user.click(within(beef).getByLabelText("Increase ground beef")); // 200 -> 210, then rejects
+    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't save/i);
+    // optimistic 210 rolled back to the original 200
+    expect(input.value).toBe("200");
+  });
 });

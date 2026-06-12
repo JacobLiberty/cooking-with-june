@@ -13,11 +13,16 @@ export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
   const [pending, start] = useTransition();
   const toast = useToast();
 
-  const act = (action: () => Promise<unknown>, revert: () => void) => {
+  const act = (
+    action: () => Promise<unknown>,
+    revert: () => void,
+    onSuccess?: () => void,
+  ) => {
     setError(null);
     start(async () => {
       try {
         await action();
+        onSuccess?.();
       } catch {
         revert();
         setError("Couldn't save that — please try again.");
@@ -43,8 +48,8 @@ export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
     act(
       () => setRestockOverride(row.ingredientId, restock),
       () => patch(row.ingredientId, { restockOverride: prev }),
+      () => toast({ message: `Updated restock for ${row.name}` }),
     );
-    toast({ message: `Updated restock for ${row.name}` });
   };
 
   const clearRestock = (row: PantryRowData) => {
@@ -53,6 +58,7 @@ export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
     act(
       () => setRestockOverride(row.ingredientId, undefined),
       () => patch(row.ingredientId, { restockOverride: prev }),
+      () => toast({ message: `Reset restock for ${row.name}` }),
     );
   };
 
