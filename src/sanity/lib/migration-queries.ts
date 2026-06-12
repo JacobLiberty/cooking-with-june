@@ -7,7 +7,7 @@ export const MIGRATION_SOURCE_QUERY = defineQuery(`
     "recipeIds": recipes[]._ref,
     "recipeScales": recipeScales[]{ "recipeId": _key, scale },
     pantryIngredients,
-    "manualItems": manualItems[]{ name }
+    "manualItems": manualItems[]{ name, location }
   }
 `);
 
@@ -33,7 +33,7 @@ export type MigrationSource = {
   recipeIds: string[] | null;
   recipeScales: { recipeId: string; scale: number | null }[] | null;
   pantryIngredients: string[] | null;
-  manualItems: { name: string }[] | null;
+  manualItems: { name: string; location?: string | null }[] | null;
 };
 
 export type IngredientMetaDoc = RawLine;

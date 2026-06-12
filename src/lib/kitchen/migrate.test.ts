@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planSeed, pantrySeed, matchManualItems } from "@/lib/kitchen/migrate";
+import { planSeed, pantrySeed, resolveManualItems } from "@/lib/kitchen/migrate";
 import type { RawLine } from "@/lib/kitchen/assemble";
 
 describe("planSeed", () => {
@@ -54,17 +54,33 @@ describe("pantrySeed", () => {
   });
 });
 
-describe("matchManualItems", () => {
-  it("matches free-text names to the catalog case-insensitively", () => {
-    const catalog = [
-      { ingredientId: "i1", name: "Paper Towels" },
-      { ingredientId: "i2", name: "Olive Oil" },
-    ];
-    const { matched, unmapped } = matchManualItems(
-      [{ name: "paper towels" }, { name: "grandma's sauce" }],
+describe("resolveManualItems", () => {
+  const catalog = [
+    { ingredientId: "i1", name: "Tomato" },
+    { ingredientId: "i2", name: "Orange" },
+    { ingredientId: "i3", name: "havarti" },
+  ];
+
+  it("matches case-insensitively and via simple plurals, carrying location", () => {
+    const res = resolveManualItems(
+      [
+        { name: "tomatoes", location: "pantry" },
+        { name: "Oranges", location: "pantry" },
+        { name: "HAVARTI", location: "grocery" },
+        { name: "bagels", location: "pantry" },
+      ],
       catalog,
     );
-    expect(matched).toEqual([{ name: "paper towels", ingredientId: "i1" }]);
-    expect(unmapped).toEqual(["grandma's sauce"]);
+    expect(res).toEqual([
+      { sourceName: "tomatoes", location: "pantry", ingredientId: "i1", catalogName: "Tomato" },
+      { sourceName: "Oranges", location: "pantry", ingredientId: "i2", catalogName: "Orange" },
+      { sourceName: "HAVARTI", location: "grocery", ingredientId: "i3", catalogName: "havarti" },
+      { sourceName: "bagels", location: "pantry", ingredientId: null, catalogName: null },
+    ]);
+  });
+
+  it("defaults a missing location to grocery", () => {
+    const res = resolveManualItems([{ name: "havarti" }], catalog);
+    expect(res[0].location).toBe("grocery");
   });
 });

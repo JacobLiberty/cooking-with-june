@@ -9,8 +9,6 @@ export type PantrySeedRow = {
   canonicalUnitKind: CanonicalUnitKind;
 };
 export type SkippedIngredient = { ingredientId: string; name: string; reason: string };
-export type ManualMatch = { name: string; ingredientId: string };
-
 /** Pair each planned recipe id with its scale (default 1). */
 export function planSeed(
   recipeIds: string[] | null | undefined,
@@ -55,18 +53,39 @@ export function pantrySeed(docs: RawLine[]): {
   return { seed, skipped };
 }
 
-/** Match free-text manual items to the catalog by lowercased name. */
-export function matchManualItems(
-  items: { name: string }[],
+export type ManualResolution = {
+  sourceName: string;
+  location: string;
+  ingredientId: string | null;
+  catalogName: string | null;
+};
+
+/** Lowercased candidate keys for matching, incl. simple plural strips. */
+function nameCandidates(name: string): string[] {
+  const n = name.trim().toLowerCase();
+  const out = [n];
+  if (n.endsWith("es")) out.push(n.slice(0, -2));
+  if (n.endsWith("s")) out.push(n.slice(0, -1));
+  return out;
+}
+
+/** Resolve free-text manual items to catalog ingredients (case-insensitive + simple plurals). */
+export function resolveManualItems(
+  items: { name: string; location?: string | null }[],
   catalog: { ingredientId: string; name: string }[],
-): { matched: ManualMatch[]; unmapped: string[] } {
-  const byName = new Map(catalog.map((c) => [c.name.trim().toLowerCase(), c.ingredientId]));
-  const matched: ManualMatch[] = [];
-  const unmapped: string[] = [];
-  for (const item of items) {
-    const id = byName.get(item.name.trim().toLowerCase());
-    if (id) matched.push({ name: item.name, ingredientId: id });
-    else unmapped.push(item.name);
-  }
-  return { matched, unmapped };
+): ManualResolution[] {
+  const byName = new Map(catalog.map((c) => [c.name.trim().toLowerCase(), c]));
+  return items.map((item) => {
+    let match: { ingredientId: string; name: string } | undefined;
+    for (const key of nameCandidates(item.name)) {
+      match = byName.get(key);
+      if (match) break;
+    }
+    return {
+      sourceName: item.name,
+      location: item.location ?? "grocery",
+      ingredientId: match?.ingredientId ?? null,
+      catalogName: match?.name ?? null,
+    };
+  });
 }

@@ -27,10 +27,12 @@ function mockSanity() {
   sanityFetch.mockImplementation((q: unknown, params: unknown) => {
     const p = params as { ids?: string[] } | undefined;
     if (p?.ids) {
-      // INGREDIENTS_BY_IDS_QUERY
+      // INGREDIENTS_BY_IDS_QUERY — metadata for the pantry id set
       return Promise.resolve([
         { ingredientId: "beef", name: "ground beef", canonicalUnitKind: "mass",
           density: null, avgUnitGrams: null, category: "protein", restockQuantity: { quantity: 1, unit: "kg" } },
+        { ingredientId: "egg", name: "egg", canonicalUnitKind: "count",
+          density: null, avgUnitGrams: 50, category: "produce", restockQuantity: { quantity: 12, unit: "" } },
       ]);
     }
     if (q && String(q).includes("mealPlan")) {
@@ -38,11 +40,14 @@ function mockSanity() {
         recipeIds: ["r1"],
         recipeScales: [{ recipeId: "r1", scale: 2 }],
         pantryIngredients: ["beef"],
-        manualItems: [{ name: "paper towels" }, { name: "grandma sauce" }],
+        manualItems: [
+          { name: "eggs", location: "pantry" },
+          { name: "grandma sauce", location: "pantry" },
+        ],
       });
     }
     // INGREDIENT_NAMES_QUERY
-    return Promise.resolve([{ ingredientId: "pt", name: "Paper Towels" }]);
+    return Promise.resolve([{ ingredientId: "egg", name: "egg" }]);
   });
 }
 
@@ -52,20 +57,19 @@ describe("runPantryMigration", () => {
     await expect(runPantryMigration()).rejects.toThrow(/owner/i);
   });
 
-  it("seeds plan + pantry + matched manual and returns a review list", async () => {
+  it("seeds plan + pantry (old set + pantry-location manual), reports unmapped", async () => {
     mockSanity();
     const review = await runPantryMigration();
 
     expect(fetchMutation).toHaveBeenCalledWith(api.plan.addToPlan, { recipeId: "r1", scale: 2 }, { token: "tok" });
+    // pantry seeded from BOTH the old id-set (beef) and the matched pantry-location manual (eggs→egg)
     expect(fetchMutation).toHaveBeenCalledWith(api.pantry.setPantryQuantity, { ingredientId: "beef", quantityG: 1000 }, { token: "tok" });
-    expect(fetchMutation).toHaveBeenCalledWith(api.grocery.addManualItem, { ingredientId: "pt" }, { token: "tok" });
+    expect(fetchMutation).toHaveBeenCalledWith(api.pantry.setPantryQuantity, { ingredientId: "egg", quantityG: 12 }, { token: "tok" });
 
     expect(review.seededPlan).toEqual([{ recipeId: "r1", scale: 2 }]);
-    expect(review.seededPantry).toEqual([
-      { ingredientId: "beef", name: "ground beef", quantityG: 1000, canonicalUnitKind: "mass" },
-    ]);
+    expect(review.seededPantry.map((p) => p.ingredientId).sort()).toEqual(["beef", "egg"]);
     expect(review.unmappedManual).toEqual(["grandma sauce"]);
-    expect(review.skippedPantry).toEqual([]);
+    expect(review.groceryAdded).toEqual([]);
   });
 });
 
