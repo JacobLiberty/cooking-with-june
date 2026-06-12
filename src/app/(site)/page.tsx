@@ -96,7 +96,7 @@ export default async function HomePage() {
         {viewer.isMember ? (
           <div className="mt-4">
             <Link
-              href="/recipe/new"
+              href="/submit"
               className="kicker inline-flex items-center gap-1.5 rounded-full border border-terracotta px-4 py-2 text-terracotta transition-colors hover:bg-terracotta hover:text-paper"
             >
               <span aria-hidden>+</span> New recipe
