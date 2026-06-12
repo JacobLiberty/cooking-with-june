@@ -66,3 +66,23 @@ export type CatalogInfoDoc = {
   category: string | null;
   restockQuantity: { quantity: number; unit: string } | null;
 };
+
+/** Title + slug + optional-ingredient list for the planned recipes (Menu view). */
+export const MENU_RECIPES_QUERY = defineQuery(`
+  *[_type == "recipe" && _id in $ids]{
+    _id,
+    title,
+    "slug": slug.current,
+    "optionalIngredients": ingredients[optional == true]{
+      "id": ingredient._ref,
+      "name": ingredient->name
+    }
+  }
+`);
+
+export type MenuRecipeDoc = {
+  _id: string;
+  title: string | null;
+  slug: string | null;
+  optionalIngredients: { id: string; name: string | null }[] | null;
+};

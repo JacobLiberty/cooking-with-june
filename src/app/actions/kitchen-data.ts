@@ -8,8 +8,10 @@ import { requireMember } from "@/lib/viewer";
 import {
   RECIPE_REQUIREMENTS_QUERY,
   INGREDIENTS_BY_IDS_QUERY,
+  MENU_RECIPES_QUERY,
   type RecipeRequirementDoc,
   type CatalogInfoDoc,
+  type MenuRecipeDoc,
 } from "@/sanity/lib/kitchen-queries";
 import {
   buildMetaFor,
@@ -161,5 +163,38 @@ export async function getPlanData() {
     const metaFor = buildMetaFor(lines);
     const { requirements } = recipeRequirements(toRecipeLines(lines), p.scale, metaFor);
     return { recipeId: p.recipeId, scale: p.scale, coverage: recipeCoverage(requirements, pantry) };
+  });
+}
+
+export async function getPlannedRecipeIds(): Promise<string[]> {
+  await requireMember();
+  const token = await convexAuthNextjsToken();
+  const rows = (await fetchQuery(api.plan.plan, {}, token ? { token } : {})) as {
+    recipeId: string;
+  }[];
+  return rows.map((r) => r.recipeId);
+}
+
+export async function getMenuData() {
+  const plan = await getPlanData();
+  if (plan.length === 0) return [];
+  const docs =
+    (await reader().fetch<MenuRecipeDoc[]>(MENU_RECIPES_QUERY, {
+      ids: plan.map((p) => p.recipeId),
+    })) ?? [];
+  const byId = new Map(docs.map((d) => [d._id, d]));
+  return plan.map((p) => {
+    const d = byId.get(p.recipeId);
+    return {
+      recipeId: p.recipeId,
+      scale: p.scale,
+      coverage: p.coverage,
+      title: d?.title ?? "Untitled recipe",
+      slug: d?.slug ?? null,
+      optionalIngredients: (d?.optionalIngredients ?? []).map((o) => ({
+        id: o.id,
+        name: o.name ?? o.id,
+      })),
+    };
   });
 }

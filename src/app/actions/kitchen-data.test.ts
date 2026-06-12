@@ -12,7 +12,7 @@ vi.mock("@/sanity/lib/client", () => ({
 }));
 
 import { requireMember } from "@/lib/viewer";
-import { getShopData, getCookableCoverage, getPlanData, getPantryData } from "@/app/actions/kitchen-data";
+import { getShopData, getCookableCoverage, getPlanData, getPantryData, getMenuData, getPlannedRecipeIds } from "@/app/actions/kitchen-data";
 
 const REQS = [
   {
@@ -160,5 +160,41 @@ describe("getPantryData", () => {
     sanityFetch.mockResolvedValueOnce([]);
     const rows = await getPantryData();
     expect(rows[0]).toMatchObject({ ingredientId: "ghost", name: "ghost", canonicalUnitKind: null });
+  });
+});
+
+describe("getPlannedRecipeIds", () => {
+  it("returns the planned recipe ids from Convex", async () => {
+    fetchQuery.mockResolvedValueOnce([{ recipeId: "r1", scale: 1 }, { recipeId: "r2", scale: 2 }]);
+    expect(await getPlannedRecipeIds()).toEqual(["r1", "r2"]);
+  });
+});
+
+describe("getMenuData", () => {
+  it("merges plan scale + coverage with each recipe's title and optional ingredients", async () => {
+    fetchQuery
+      .mockResolvedValueOnce([{ recipeId: "r1", scale: 2 }]) // plan (getPlanData)
+      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 500, restockOverride: null, updatedAt: 1 }]); // pantry
+    sanityFetch
+      .mockResolvedValueOnce(REQS) // requirements (coverage)
+      .mockResolvedValueOnce([
+        { _id: "r1", title: "Beef Stew", slug: "beef-stew", optionalIngredients: [{ id: "herb", name: "herb" }] },
+      ]); // MENU_RECIPES_QUERY
+
+    const data = await getMenuData();
+    expect(data).toHaveLength(1);
+    expect(data[0]).toMatchObject({
+      recipeId: "r1",
+      scale: 2,
+      title: "Beef Stew",
+      slug: "beef-stew",
+      optionalIngredients: [{ id: "herb", name: "herb" }],
+    });
+    expect(data[0].coverage).toHaveProperty("missingRequired");
+  });
+
+  it("returns an empty array when nothing is planned", async () => {
+    fetchQuery.mockResolvedValueOnce([]).mockResolvedValueOnce([]); // plan, pantry
+    expect(await getMenuData()).toEqual([]);
   });
 });
