@@ -6,7 +6,7 @@ describe("parseFilters", () => {
     expect(parseFilters(new URLSearchParams())).toEqual({
       query: "",
       ingredientIds: [],
-      mode: "any",
+      cookable: "off",
       tags: [],
       collection: "all",
       sort: "name",
@@ -14,26 +14,40 @@ describe("parseFilters", () => {
   });
   it("parses all params", () => {
     const p = new URLSearchParams(
-      "q=beef&ing=a,b&mode=all&tag=Dinner,Quick&col=totry&sort=rating",
+      "q=beef&ing=a,b&cook=now&tag=Dinner,Quick&col=totry&sort=rating",
     );
     expect(parseFilters(p)).toEqual({
       query: "beef",
       ingredientIds: ["a", "b"],
-      mode: "all",
+      cookable: "now",
       tags: ["Dinner", "Quick"],
       collection: "totry",
       sort: "rating",
     });
   });
-  it("accepts the 'most' match mode", () => {
-    expect(parseFilters(new URLSearchParams("mode=most")).mode).toBe("most");
+  it("accepts cook=2", () => {
+    expect(parseFilters(new URLSearchParams("cook=2")).cookable).toBe("2");
   });
-  it("ignores invalid mode/sort/collection, falling back to defaults", () => {
-    const p = new URLSearchParams("mode=weird&sort=bogus&col=nope");
+  it("ignores invalid cookable/sort/collection, falling back to defaults", () => {
+    const p = new URLSearchParams("cook=bogus&sort=bogus&col=nope");
     const f = parseFilters(p);
-    expect(f.mode).toBe("any");
+    expect(f.cookable).toBe("off");
     expect(f.sort).toBe("name");
     expect(f.collection).toBe("all");
+  });
+
+  it("round-trips the cookable filter", () => {
+    const f = parseFilters(new URLSearchParams("cook=2"));
+    expect(f.cookable).toBe("2");
+    expect(serializeFilters(f)).toContain("cook=2");
+  });
+  it("defaults cookable to off and omits it when off", () => {
+    const f = parseFilters(new URLSearchParams(""));
+    expect(f.cookable).toBe("off");
+    expect(serializeFilters({ ...f })).not.toContain("cook");
+  });
+  it("falls back to off for an unknown cookable value", () => {
+    expect(parseFilters(new URLSearchParams("cook=bogus")).cookable).toBe("off");
   });
 });
 
@@ -43,7 +57,7 @@ describe("serializeFilters", () => {
       serializeFilters({
         query: "",
         ingredientIds: [],
-        mode: "any",
+        cookable: "off",
         tags: [],
         collection: "all",
         sort: "name",
@@ -52,7 +66,7 @@ describe("serializeFilters", () => {
     const s = serializeFilters({
       query: "beef",
       ingredientIds: ["a", "b"],
-      mode: "all",
+      cookable: "now",
       tags: ["Dinner"],
       collection: "approved",
       sort: "rating",
@@ -60,7 +74,7 @@ describe("serializeFilters", () => {
     const p = new URLSearchParams(s);
     expect(p.get("q")).toBe("beef");
     expect(p.get("ing")).toBe("a,b");
-    expect(p.get("mode")).toBe("all");
+    expect(p.get("cook")).toBe("now");
     expect(p.get("tag")).toBe("Dinner");
     expect(p.get("col")).toBe("approved");
     expect(p.get("sort")).toBe("rating");
