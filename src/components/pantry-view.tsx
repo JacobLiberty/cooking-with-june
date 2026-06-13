@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useToast } from "@/components/toast";
-import { setPantryQuantity, setRestockOverride } from "@/app/actions/kitchen-actions";
+import {
+  setPantryQuantity,
+  addManualItem,
+  depletePantryItem,
+} from "@/app/actions/kitchen-actions";
+import { groupPantryRows } from "@/lib/kitchen/pantry-grouping";
 import { PantryRow, type PantryRowData } from "@/components/pantry-row";
 
-const byName = (a: PantryRowData, b: PantryRowData) => a.name.localeCompare(b.name);
-
 export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
-  const [rows, setRows] = useState(() => [...initialRows].sort(byName));
+  const [rows, setRows] = useState(initialRows);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const toast = useToast();
+
+  const groups = useMemo(() => groupPantryRows(rows), [rows]);
 
   const act = (
     action: () => Promise<unknown>,
@@ -42,23 +47,40 @@ export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
     );
   };
 
-  const setRestock = (row: PantryRowData, restock: { quantity: number; unit: string }) => {
-    const prev = row.restockOverride;
-    patch(row.ingredientId, { restockOverride: restock });
+  const addToList = (row: PantryRowData) => {
+    if (row.onList) return;
+    patch(row.ingredientId, { onList: true });
     act(
-      () => setRestockOverride(row.ingredientId, restock),
-      () => patch(row.ingredientId, { restockOverride: prev }),
-      () => toast({ message: `Updated restock for ${row.name}` }),
+      () => addManualItem(row.ingredientId),
+      () => patch(row.ingredientId, { onList: false }),
+      () => toast({ message: `${row.name} added to your list` }),
     );
   };
 
-  const clearRestock = (row: PantryRowData) => {
-    const prev = row.restockOverride;
-    patch(row.ingredientId, { restockOverride: null });
+  const restore = (row: PantryRowData) => {
+    setRows((rs) =>
+      rs.some((r) => r.ingredientId === row.ingredientId) ? rs : [...rs, row],
+    );
     act(
-      () => setRestockOverride(row.ingredientId, undefined),
-      () => patch(row.ingredientId, { restockOverride: prev }),
-      () => toast({ message: `Reset restock for ${row.name}` }),
+      () => setPantryQuantity(row.ingredientId, row.quantityG),
+      () => setRows((rs) => rs.filter((r) => r.ingredientId !== row.ingredientId)),
+    );
+  };
+
+  const deplete = (row: PantryRowData) => {
+    const snapshot = rows;
+    setRows((rs) => rs.filter((r) => r.ingredientId !== row.ingredientId));
+    act(
+      () => depletePantryItem(row.ingredientId),
+      () => setRows(snapshot),
+      () =>
+        toast({
+          message: `${row.name} removed`,
+          actions: [
+            { label: "Undo", onAction: () => restore(row) },
+            { label: "Add to list", onAction: () => addToList({ ...row, onList: false }) },
+          ],
+        }),
     );
   };
 
@@ -77,17 +99,26 @@ export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
           {error}
         </p>
       ) : null}
-      <ul className="mt-4">
-        {rows.map((row) => (
-          <PantryRow
-            key={row.ingredientId}
-            row={row}
-            onSetQuantity={(next) => setQuantity(row, next)}
-            onSetRestock={(restock) => setRestock(row, restock)}
-            onClearRestock={() => clearRestock(row)}
-          />
+      <div className="mt-4 space-y-6">
+        {groups.map((group) => (
+          <section key={group.key} aria-labelledby={`pantry-${group.key}`}>
+            <h2 id={`pantry-${group.key}`} className="kicker text-terracotta">
+              {group.label}
+            </h2>
+            <ul className="mt-1">
+              {group.rows.map((row) => (
+                <PantryRow
+                  key={row.ingredientId}
+                  row={row}
+                  onSetQuantity={(next) => setQuantity(row, next)}
+                  onAddToList={() => addToList(row)}
+                  onDeplete={() => deplete(row)}
+                />
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

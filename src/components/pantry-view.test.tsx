@@ -1,108 +1,81 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const actions = vi.hoisted(() => ({
   setPantryQuantity: vi.fn(),
-  setRestockOverride: vi.fn(),
+  addManualItem: vi.fn(),
+  depletePantryItem: vi.fn(),
 }));
+const toastSpy = vi.hoisted(() => vi.fn());
 vi.mock("@/app/actions/kitchen-actions", () => actions);
-vi.mock("@/components/toast", () => ({ useToast: () => vi.fn() }));
+vi.mock("@/components/toast", () => ({ useToast: () => toastSpy }));
 
 import { PantryView } from "@/components/pantry-view";
 import type { PantryRowData } from "@/components/pantry-row";
 
 const ROWS: PantryRowData[] = [
-  {
-    ingredientId: "beef",
-    name: "ground beef",
-    quantityG: 200,
-    canonicalUnitKind: "mass",
-    restockOverride: null,
-    restockDefault: { quantity: 1, unit: "lb" },
-  },
-  {
-    ingredientId: "egg",
-    name: "egg",
-    quantityG: 4,
-    canonicalUnitKind: "count",
-    restockOverride: { quantity: 12, unit: "" },
-    restockDefault: { quantity: 12, unit: "" },
-  },
+  { ingredientId: "oil", name: "olive oil", quantityG: 740, canonicalUnitKind: "mass", category: "pantry", onList: false },
+  { ingredientId: "garlic", name: "garlic", quantityG: 3, canonicalUnitKind: "count", category: "produce", onList: false },
+  { ingredientId: "milk", name: "milk", quantityG: 500, canonicalUnitKind: "mass", category: "dairy", onList: true },
 ];
 
 beforeEach(() => {
-  actions.setPantryQuantity.mockReset().mockResolvedValue(undefined);
-  actions.setRestockOverride.mockReset().mockResolvedValue(undefined);
+  Object.values(actions).forEach((m) => m.mockReset().mockResolvedValue(undefined));
+  toastSpy.mockReset();
 });
 
-const rowFor = (name: string) => screen.getByText(name).closest("li") as HTMLElement;
-
 describe("PantryView", () => {
-  it("shows the empty state when there is no stock", () => {
-    render(<PantryView rows={[]} />);
-    expect(screen.getByText(/pantry is empty/i)).toBeInTheDocument();
-  });
-
-  it("renders each row with the correct unit label (g vs count)", () => {
+  it("groups rows by category in aisle order", () => {
     render(<PantryView rows={ROWS} />);
-    expect(within(rowFor("ground beef")).getByText("g")).toBeInTheDocument();
-    expect(within(rowFor("egg")).getByText("count")).toBeInTheDocument();
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(headings).toEqual(["Produce", "Dairy", "Pantry"]);
   });
 
-  it("nudging mass up by + steps by 10 grams and calls setPantryQuantity", async () => {
+  it("nudging commits a whole-number quantity", async () => {
     const user = userEvent.setup();
     render(<PantryView rows={ROWS} />);
-    await user.click(within(rowFor("ground beef")).getByLabelText("Increase ground beef"));
-    expect(actions.setPantryQuantity).toHaveBeenCalledWith("beef", 210);
+    await user.click(screen.getByLabelText("Increase garlic"));
+    expect(actions.setPantryQuantity).toHaveBeenCalledWith("garlic", 4);
   });
 
-  it("nudging count down by − steps by 1 and never goes below 0", async () => {
-    const user = userEvent.setup();
-    render(<PantryView rows={[{ ...ROWS[1], quantityG: 0 }]} />);
-    await user.click(within(rowFor("egg")).getByLabelText("Decrease egg"));
-    expect(actions.setPantryQuantity).toHaveBeenCalledWith("egg", 0);
-  });
-
-  it("typing a new quantity commits it on blur", async () => {
+  it("cart adds a manual grocery item and flips to added state", async () => {
     const user = userEvent.setup();
     render(<PantryView rows={ROWS} />);
-    const input = within(rowFor("ground beef")).getByLabelText("ground beef quantity in g");
-    await user.clear(input);
-    await user.type(input, "350");
-    await user.tab();
-    expect(actions.setPantryQuantity).toHaveBeenCalledWith("beef", 350);
+    await user.click(screen.getByLabelText("Add garlic to grocery list"));
+    expect(actions.addManualItem).toHaveBeenCalledWith("garlic");
+    expect(screen.getByLabelText("garlic is already on your grocery list")).toBeDisabled();
   });
 
-  it("editing the restock override saves it via setRestockOverride", async () => {
-    const user = userEvent.setup();
+  it("cart is disabled for items already on the list", () => {
     render(<PantryView rows={ROWS} />);
-    await user.click(within(rowFor("ground beef")).getByRole("button", { name: "Edit" }));
-    const beef = rowFor("ground beef");
-    await user.clear(within(beef).getByLabelText("Restock quantity"));
-    await user.type(within(beef).getByLabelText("Restock quantity"), "2");
-    await user.clear(within(beef).getByLabelText("Restock unit"));
-    await user.type(within(beef).getByLabelText("Restock unit"), "lb");
-    await user.click(within(beef).getByRole("button", { name: "Save" }));
-    expect(actions.setRestockOverride).toHaveBeenCalledWith("beef", { quantity: 2, unit: "lb" });
+    expect(screen.getByLabelText("milk is already on your grocery list")).toBeDisabled();
   });
 
-  it("resetting a custom restock clears the override", async () => {
+  it("X depletes: row disappears and a toast offers Undo and Add to list", async () => {
     const user = userEvent.setup();
     render(<PantryView rows={ROWS} />);
-    await user.click(within(rowFor("egg")).getByRole("button", { name: "Reset" }));
-    expect(actions.setRestockOverride).toHaveBeenCalledWith("egg", undefined);
+    await user.click(screen.getByLabelText("Out of garlic — remove from pantry"));
+    expect(actions.depletePantryItem).toHaveBeenCalledWith("garlic");
+    expect(screen.queryByText("garlic")).not.toBeInTheDocument();
+    expect(toastSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "garlic removed",
+        actions: [
+          expect.objectContaining({ label: "Undo" }),
+          expect.objectContaining({ label: "Add to list" }),
+        ],
+      }),
+    );
   });
 
-  it("reverts the optimistic quantity and surfaces an error when the save fails", async () => {
+  it("Undo restores the row at its prior quantity", async () => {
     const user = userEvent.setup();
-    actions.setPantryQuantity.mockRejectedValueOnce(new Error("network"));
     render(<PantryView rows={ROWS} />);
-    const beef = rowFor("ground beef");
-    const input = within(beef).getByLabelText("ground beef quantity in g") as HTMLInputElement;
-    await user.click(within(beef).getByLabelText("Increase ground beef")); // 200 -> 210, then rejects
-    expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't save/i);
-    // optimistic 210 rolled back to the original 200
-    expect(input.value).toBe("200");
+    await user.click(screen.getByLabelText("Out of garlic — remove from pantry"));
+    const { actions: toastActions } = toastSpy.mock.calls[0][0];
+    toastActions.find((a: { label: string }) => a.label === "Undo").onAction();
+    expect(actions.setPantryQuantity).toHaveBeenCalledWith("garlic", 3);
+    expect(await screen.findByText("garlic")).toBeInTheDocument();
   });
 });

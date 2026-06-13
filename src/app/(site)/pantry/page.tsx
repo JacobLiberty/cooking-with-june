@@ -15,18 +15,20 @@ export default async function PantryPage() {
     <section className="mx-auto max-w-2xl">
       <KitchenSubnav />
       <header className="set set-1 mt-6">
-        <p className="kicker text-terracotta">Your kitchen</p>
+        <p className="kicker text-terracotta">
+          Your kitchen{rows.length ? ` · ${rows.length} ingredient${rows.length === 1 ? "" : "s"}` : ""}
+        </p>
         <h1 className="editorial-display mt-2 text-4xl text-ink md:text-5xl">Pantry</h1>
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
       </header>
       <PantryView
-        rows={rows.map(({ ingredientId, name, quantityG, canonicalUnitKind, restockOverride, restockDefault }) => ({
+        rows={rows.map(({ ingredientId, name, quantityG, canonicalUnitKind, category, onList }) => ({
           ingredientId,
           name,
           quantityG,
           canonicalUnitKind,
-          restockOverride,
-          restockDefault,
+          category,
+          onList,
         }))}
       />
     </section>
