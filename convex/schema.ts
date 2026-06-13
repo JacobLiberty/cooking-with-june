@@ -73,6 +73,8 @@ export default defineSchema({
     householdId: v.id("households"),
     ingredientId: v.string(),
     quantityG: v.number(),
+    // DEPRECATED (2026-06): no longer read or written; buy quantities live on
+    // groceryItems.buyQuantityG. Kept so historical rows still validate.
     restockOverride: v.optional(
       v.object({ quantity: v.number(), unit: v.string() }),
     ),
@@ -81,15 +83,18 @@ export default defineSchema({
     .index("by_household", ["householdId"])
     .index("by_household_ingredient", ["householdId", "ingredientId"]),
 
-  // Per-household grocery rows: manual additions (+) and skip suppressions (-).
-  // Plan-derived needs are computed (not stored).
+  // Per-household grocery rows: manual additions (+), skip suppressions (-),
+  // and buy-quantity overrides for plan-derived needs. Plan-derived needs are
+  // computed (not stored). buyQuantityG is the canonical whole-number amount
+  // the shopper intends to buy (added to the pantry on check-off).
   groceryItems: defineTable({
     householdId: v.id("households"),
     ingredientId: v.string(),
-    source: v.union(v.literal("manual"), v.literal("skip")),
+    source: v.union(v.literal("manual"), v.literal("skip"), v.literal("override")),
     manualQuantity: v.optional(
       v.object({ quantity: v.number(), unit: v.string() }),
     ),
+    buyQuantityG: v.optional(v.number()),
     addedByUserId: v.id("users"),
     createdAt: v.number(),
   })
