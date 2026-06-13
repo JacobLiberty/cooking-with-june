@@ -28,8 +28,20 @@ beforeEach(() => {
 describe("PantryView", () => {
   it("groups rows by category in aisle order", () => {
     render(<PantryView rows={ROWS} />);
-    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    // Each heading is "<label><count>"; strip the trailing count to read the label.
+    const headings = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((h) => h.textContent?.replace(/\d+$/, ""));
     expect(headings).toEqual(["Produce", "Dairy", "Pantry"]);
+  });
+
+  it("filters rows by the search query", async () => {
+    const user = userEvent.setup();
+    render(<PantryView rows={ROWS} />);
+    await user.type(screen.getByLabelText("Search the pantry"), "garlic");
+    expect(screen.getByText("garlic")).toBeInTheDocument();
+    expect(screen.queryByText("olive oil")).not.toBeInTheDocument();
+    expect(screen.queryByText("milk")).not.toBeInTheDocument();
   });
 
   it("nudging commits a whole-number quantity", async () => {

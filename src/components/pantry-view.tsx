@@ -12,11 +12,17 @@ import { PantryRow, type PantryRowData } from "@/components/pantry-row";
 
 export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
   const [rows, setRows] = useState(initialRows);
+  const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const toast = useToast();
 
-  const groups = useMemo(() => groupPantryRows(rows), [rows]);
+  const q = query.trim().toLowerCase();
+  const filtered = useMemo(
+    () => (q ? rows.filter((r) => r.name.toLowerCase().includes(q)) : rows),
+    [rows, q],
+  );
+  const groups = useMemo(() => groupPantryRows(filtered), [filtered]);
 
   const act = (
     action: () => Promise<unknown>,
@@ -94,31 +100,71 @@ export function PantryView({ rows: initialRows }: { rows: PantryRowData[] }) {
 
   return (
     <div aria-busy={pending}>
+      <div className="mt-5">
+        <label className="flex items-center gap-2 border-b border-ink/20 pb-1 focus-within:border-terracotta">
+          <span className="sr-only">Search the pantry</span>
+          <SearchIcon />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search the pantry…"
+            aria-label="Search the pantry"
+            className="w-full bg-transparent text-ink placeholder:text-ink-soft focus:outline-none"
+          />
+        </label>
+      </div>
+
       {error ? (
         <p role="alert" className="mt-4 text-sm text-terracotta-deep">
           {error}
         </p>
       ) : null}
-      <div className="mt-4 space-y-6">
-        {groups.map((group) => (
-          <section key={group.key} aria-labelledby={`pantry-${group.key}`}>
-            <h2 id={`pantry-${group.key}`} className="kicker text-terracotta">
-              {group.label}
-            </h2>
-            <ul className="mt-1">
-              {group.rows.map((row) => (
-                <PantryRow
-                  key={row.ingredientId}
-                  row={row}
-                  onSetQuantity={(next) => setQuantity(row, next)}
-                  onAddToList={() => addToList(row)}
-                  onDeplete={() => deplete(row)}
-                />
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+
+      {groups.length === 0 ? (
+        <p className="mt-6 text-ink-soft">No ingredients match &ldquo;{query.trim()}&rdquo;.</p>
+      ) : (
+        <div className="mt-5 space-y-7">
+          {groups.map((group) => (
+            <section key={group.key} aria-labelledby={`pantry-${group.key}`}>
+              <h2
+                id={`pantry-${group.key}`}
+                className="flex items-baseline justify-between border-b-2 border-terracotta/30 pb-1 font-display text-lg text-terracotta"
+              >
+                {group.label}
+                <span className="kicker text-ink-soft">{group.rows.length}</span>
+              </h2>
+              <ul className="mt-1.5">
+                {group.rows.map((row) => (
+                  <PantryRow
+                    key={row.ingredientId}
+                    row={row}
+                    onSetQuantity={(next) => setQuantity(row, next)}
+                    onAddToList={() => addToList(row)}
+                    onDeplete={() => deplete(row)}
+                  />
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4 shrink-0 text-ink-soft"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+    </svg>
   );
 }
