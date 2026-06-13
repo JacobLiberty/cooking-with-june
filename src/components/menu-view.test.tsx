@@ -2,10 +2,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+vi.mock("@/sanity/lib/image", () => ({
+  urlForImage: () => ({
+    width: () => ({ height: () => ({ fit: () => ({ auto: () => ({ url: () => "" }) }) }) }),
+  }),
+}));
+
 const actions = vi.hoisted(() => ({
   setScale: vi.fn(),
   removeFromPlan: vi.fn(),
   cook: vi.fn(),
+  addManualItem: vi.fn(),
 }));
 vi.mock("@/app/actions/kitchen-actions", () => actions);
 const toast = vi.fn();
@@ -21,8 +28,16 @@ const ROWS: MenuRow[] = [
     recipeId: "r1",
     title: "Beef Stew",
     slug: "beef-stew",
+    coverImage: null,
+    prepTime: 30,
+    cookTime: 15,
+    servings: 4,
     scale: 1,
-    coverage: { cookable: false, missingRequired: 2 },
+    coverage: {
+      cookable: false,
+      missingRequired: 1,
+      missing: [{ ingredientId: "i1", name: "butter" }],
+    },
     optionalIngredients: [
       { id: "herb", name: "fresh herbs" },
       { id: "cream", name: "cream" },
@@ -32,13 +47,18 @@ const ROWS: MenuRow[] = [
     recipeId: "r2",
     title: "Toast",
     slug: "toast",
+    coverImage: null,
+    prepTime: 30,
+    cookTime: 15,
+    servings: 4,
     scale: 1,
-    coverage: { cookable: true, missingRequired: 0 },
+    coverage: { cookable: true, missingRequired: 0, missing: [] },
     optionalIngredients: [],
   },
 ];
 
-const rowFor = (title: string) => screen.getByText(title).closest("li") as HTMLElement;
+const rowFor = (title: string) =>
+  screen.getByRole("heading", { name: title }).closest("li") as HTMLElement;
 
 beforeEach(() => {
   Object.values(actions).forEach((m) => m.mockReset().mockResolvedValue(undefined));
@@ -49,13 +69,34 @@ beforeEach(() => {
 describe("MenuView", () => {
   it("shows the empty state when nothing is planned", () => {
     render(<MenuView rows={[]} />);
-    expect(screen.getByText(/nothing planned yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/nothing on the menu yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "browse the collection" })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("renders the required-only missing badge", () => {
     render(<MenuView rows={ROWS} />);
-    expect(within(rowFor("Beef Stew")).getByText("Missing 2")).toBeInTheDocument();
+    expect(
+      within(rowFor("Beef Stew")).getByRole("button", { name: /Missing 1 — view/ }),
+    ).toBeInTheDocument();
     expect(within(rowFor("Toast")).getByText("Ready to cook")).toBeInTheDocument();
+  });
+
+  it("shows time and servings meta on the card", () => {
+    render(<MenuView rows={ROWS} />);
+    expect(screen.getAllByText(/serves 4/)[0]).toBeInTheDocument();
+  });
+
+  it("expands the missing list and adds an ingredient to the grocery list", async () => {
+    const user = userEvent.setup();
+    render(<MenuView rows={ROWS} />);
+    const stew = rowFor("Beef Stew");
+    await user.click(within(stew).getByRole("button", { name: /Missing 1 — view/ }));
+    await user.click(within(stew).getByRole("button", { name: "Add to list" }));
+    expect(actions.addManualItem).toHaveBeenCalledWith("i1");
+    expect(within(stew).getByText("On the list ✓")).toBeInTheDocument();
   });
 
   it("increasing the scale calls setScale", async () => {
@@ -109,6 +150,6 @@ describe("MenuView", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't save/i);
     expect(toast).not.toHaveBeenCalled();
     // optimistic removal rolled back — the row is visible again
-    expect(screen.getByText("Beef Stew")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Beef Stew" })).toBeInTheDocument();
   });
 });

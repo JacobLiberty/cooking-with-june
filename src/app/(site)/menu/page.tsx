@@ -15,7 +15,9 @@ export default async function MenuPage() {
     <section className="mx-auto max-w-2xl">
       <KitchenSubnav />
       <header className="set set-1 mt-6">
-        <p className="kicker text-terracotta">Cooking soon</p>
+        <p className="kicker text-terracotta">
+          Cooking soon{rows.length ? ` · ${rows.length} recipe${rows.length === 1 ? "" : "s"}` : ""}
+        </p>
         <h1 className="editorial-display mt-2 text-4xl text-ink md:text-5xl">Menu</h1>
         <div className="rule-draw mt-5 h-px w-full bg-terracotta/40" />
       </header>

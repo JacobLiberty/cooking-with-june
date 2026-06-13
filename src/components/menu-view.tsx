@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
-import { setScale, removeFromPlan, cook } from "@/app/actions/kitchen-actions";
+import { setScale, removeFromPlan, cook, addManualItem } from "@/app/actions/kitchen-actions";
 import { MenuRecipeRow, type MenuRow } from "@/components/menu-recipe-row";
 
 export function MenuView({ rows }: { rows: MenuRow[] }) {
@@ -62,12 +63,27 @@ export function MenuView({ rows }: { rows: MenuRow[] }) {
     );
   };
 
+  const [addedMissing, setAddedMissing] = useState<Set<string>>(() => new Set());
+
+  const addMissing = (ingredientId: string, name: string) => {
+    setAddedMissing((s) => new Set(s).add(ingredientId));
+    act(
+      () => addManualItem(ingredientId),
+      () => setAddedMissing((s) => { const n = new Set(s); n.delete(ingredientId); return n; }),
+      () => toast({ message: `${name} added to your list` }),
+    );
+  };
+
   const visible = rows.filter((r) => !removed.has(r.recipeId));
 
   if (visible.length === 0) {
     return (
       <p className="mt-6 text-ink-soft">
-        Nothing planned yet — add recipes from their pages and they&rsquo;ll show up here.
+        Nothing on the menu yet —{" "}
+        <Link href="/" className="text-terracotta hover:text-terracotta-deep">
+          browse the collection
+        </Link>{" "}
+        and add a few recipes.
       </p>
     );
   }
@@ -88,6 +104,8 @@ export function MenuView({ rows }: { rows: MenuRow[] }) {
             onScale={(next) => changeScale(row, next)}
             onRemove={() => remove(row)}
             onMadeIt={(ids) => madeIt(row, ids)}
+            onAddMissing={addMissing}
+            addedMissing={addedMissing}
           />
         ))}
       </ul>
