@@ -37,10 +37,10 @@ describe("getShopData", () => {
   it("computes plan needs minus pantry, excludes skipped, includes manual", async () => {
     fetchQuery
       .mockResolvedValueOnce([{ recipeId: "r1", scale: 1, addedAt: 1 }]) // plan
-      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 100, restockOverride: null, updatedAt: 1 }]) // pantry
+      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 100, updatedAt: 1 }]) // pantry
       .mockResolvedValueOnce([
-        { ingredientId: "herb", source: "skip", manualQuantity: null },
-        { ingredientId: "salt", source: "manual", manualQuantity: { quantity: 1, unit: "box" } },
+        { ingredientId: "herb", source: "skip", manualQuantity: null, buyQuantityG: null },
+        { ingredientId: "salt", source: "manual", manualQuantity: { quantity: 1, unit: "box" }, buyQuantityG: null },
       ]); // grocery
     sanityFetch.mockResolvedValueOnce(REQS);
 
@@ -60,8 +60,8 @@ describe("getShopData", () => {
     sanityFetch
       .mockResolvedValueOnce(REQS) // requirements
       .mockResolvedValueOnce([
-        { _id: "beef", name: "beef", canonicalUnitKind: "mass", category: "protein", restockQuantity: null },
-        { _id: "herb", name: "herb", canonicalUnitKind: "mass", category: "spice", restockQuantity: null },
+        { _id: "beef", name: "beef", canonicalUnitKind: "mass", category: "protein", restockQuantity: null, density: null, avgUnitGrams: null },
+        { _id: "herb", name: "herb", canonicalUnitKind: "mass", category: "spice", restockQuantity: null, density: null, avgUnitGrams: null },
       ]); // catalog-by-ids for need (+manual) ids
 
     const data = await getShopData();
@@ -76,12 +76,12 @@ describe("getShopData", () => {
       .mockResolvedValueOnce([]) // plan (no recipes → no needs)
       .mockResolvedValueOnce([]) // pantry
       .mockResolvedValueOnce([
-        { ingredientId: "salt", source: "manual", manualQuantity: { quantity: 1, unit: "box" } },
+        { ingredientId: "salt", source: "manual", manualQuantity: { quantity: 1, unit: "box" }, buyQuantityG: null },
       ]); // grocery
     // Empty plan → fetchRequirements short-circuits without a Sanity call, so the
     // only sanityFetch is the catalog lookup for the manual row.
     sanityFetch.mockResolvedValueOnce([
-      { _id: "salt", name: "table salt", canonicalUnitKind: "mass", category: "spice", restockQuantity: null },
+      { _id: "salt", name: "table salt", canonicalUnitKind: "mass", category: "spice", restockQuantity: null, density: null, avgUnitGrams: null },
     ]); // catalog-by-ids for manual rows
 
     const data = await getShopData();
@@ -93,16 +93,52 @@ describe("getShopData", () => {
       manualQuantity: { quantity: 1, unit: "box" },
     });
   });
+
+  it("getShopData resolves a buy quantity from override, then restock, then need", async () => {
+    const BUY_REQS = [
+      {
+        _id: "r1",
+        servings: 1,
+        lines: [
+          { ingredientId: "a", name: "a", quantity: "240", unit: "g", optional: false,
+            canonicalUnitKind: "mass", density: null, avgUnitGrams: null, category: "protein", restockQuantity: null },
+          { ingredientId: "b", name: "b", quantity: "240", unit: "g", optional: false,
+            canonicalUnitKind: "mass", density: null, avgUnitGrams: null, category: "protein", restockQuantity: null },
+          { ingredientId: "c", name: "c", quantity: "239.2", unit: "g", optional: false,
+            canonicalUnitKind: "mass", density: null, avgUnitGrams: null, category: "protein", restockQuantity: null },
+        ],
+      },
+    ];
+    fetchQuery
+      .mockResolvedValueOnce([{ recipeId: "r1", scale: 1 }]) // plan
+      .mockResolvedValueOnce([]) // pantry (empty → all needs)
+      .mockResolvedValueOnce([
+        { ingredientId: "a", source: "override", manualQuantity: null, buyQuantityG: 500 },
+      ]); // grocery
+    sanityFetch
+      .mockResolvedValueOnce(BUY_REQS) // requirements
+      .mockResolvedValueOnce([
+        { _id: "a", name: "a", canonicalUnitKind: "mass", category: "protein", restockQuantity: null, density: null, avgUnitGrams: null },
+        { _id: "b", name: "b", canonicalUnitKind: "mass", category: "protein", restockQuantity: { quantity: 1, unit: "lb" }, density: null, avgUnitGrams: null },
+        { _id: "c", name: "c", canonicalUnitKind: "mass", category: "protein", restockQuantity: null, density: null, avgUnitGrams: null },
+      ]); // catalog
+
+    const { needs } = await getShopData();
+    const byId = new Map(needs.map((n) => [n.ingredientId, n.buyQuantityG]));
+    expect(byId.get("a")).toBe(500); // override wins
+    expect(byId.get("b")).toBe(454); // 1 lb → 453.6 g → ceil
+    expect(byId.get("c")).toBe(240); // need 239.2 → ceil
+  });
 });
 
 describe("getCookableCoverage", () => {
   it("returns per-recipe coverage against the pantry", async () => {
     fetchQuery.mockResolvedValueOnce([
-      { ingredientId: "beef", quantityG: 500, restockOverride: null, updatedAt: 1 },
+      { ingredientId: "beef", quantityG: 500, updatedAt: 1 },
     ]); // pantry
     sanityFetch.mockResolvedValueOnce(REQS);
     const cov = await getCookableCoverage(["r1"]);
-    expect(cov.r1).toEqual({ cookable: true, missingRequired: 0 });
+    expect(cov.r1).toMatchObject({ cookable: true, missingRequired: 0 });
   });
 });
 
@@ -110,13 +146,13 @@ describe("getPlanData", () => {
   it("returns each planned recipe with its scale and scaled coverage", async () => {
     fetchQuery
       .mockResolvedValueOnce([{ recipeId: "r1", scale: 2 }]) // plan
-      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 500, restockOverride: null, updatedAt: 1 }]); // pantry
+      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 500, updatedAt: 1 }]); // pantry
     sanityFetch.mockResolvedValueOnce(REQS);
     const data = await getPlanData();
     expect(data).toHaveLength(1);
     expect(data[0]).toMatchObject({ recipeId: "r1", scale: 2 });
     // beef required at 2x = 907.2g, pantry 500 -> short -> not cookable
-    expect(data[0].coverage).toEqual({ cookable: false, missingRequired: 1 });
+    expect(data[0].coverage).toMatchObject({ cookable: false, missingRequired: 1 });
   });
 });
 
@@ -128,14 +164,16 @@ describe("auth", () => {
 });
 
 describe("getPantryData", () => {
-  it("joins catalog name, unit kind, and restock default onto each pantry row", async () => {
-    fetchQuery.mockResolvedValueOnce([
-      { ingredientId: "beef", quantityG: 200, restockOverride: null, updatedAt: 1 },
-      { ingredientId: "egg", quantityG: 4.8, restockOverride: { quantity: 1, unit: "dozen" }, updatedAt: 2 },
-    ]); // pantry
+  it("joins catalog name, unit kind, and category onto each pantry row", async () => {
+    fetchQuery
+      .mockResolvedValueOnce([
+        { ingredientId: "beef", quantityG: 200, updatedAt: 1 },
+        { ingredientId: "egg", quantityG: 4.8, updatedAt: 2 },
+      ]) // pantry
+      .mockResolvedValueOnce([]); // grocery
     sanityFetch.mockResolvedValueOnce([
-      { _id: "beef", name: "ground beef", canonicalUnitKind: "mass", category: "protein", restockQuantity: { quantity: 1, unit: "lb" } },
-      { _id: "egg", name: "egg", canonicalUnitKind: "count", category: "protein", restockQuantity: { quantity: 12, unit: "" } },
+      { _id: "beef", name: "ground beef", canonicalUnitKind: "mass", category: "protein", restockQuantity: { quantity: 1, unit: "lb" }, density: null, avgUnitGrams: null },
+      { _id: "egg", name: "egg", canonicalUnitKind: "count", category: "protein", restockQuantity: { quantity: 12, unit: "" }, density: null, avgUnitGrams: null },
     ]); // catalog
 
     const rows = await getPantryData();
@@ -144,22 +182,39 @@ describe("getPantryData", () => {
       quantityG: 200,
       name: "ground beef",
       canonicalUnitKind: "mass",
-      restockDefault: { quantity: 1, unit: "lb" },
+      category: "protein",
+      onList: false,
     });
     const egg = rows.find((r) => r.ingredientId === "egg");
     expect(egg?.name).toBe("egg");
     expect(egg?.canonicalUnitKind).toBe("count");
-    expect(egg?.restockOverride).toEqual({ quantity: 1, unit: "dozen" });
-    expect(egg?.restockDefault).toEqual({ quantity: 12, unit: "" });
+    expect(egg?.onList).toBe(false);
   });
 
   it("falls back to the id as name when the catalog has no match", async () => {
-    fetchQuery.mockResolvedValueOnce([
-      { ingredientId: "ghost", quantityG: 50, restockOverride: null, updatedAt: 1 },
-    ]);
+    fetchQuery
+      .mockResolvedValueOnce([
+        { ingredientId: "ghost", quantityG: 50, updatedAt: 1 },
+      ]) // pantry
+      .mockResolvedValueOnce([]); // grocery
     sanityFetch.mockResolvedValueOnce([]);
     const rows = await getPantryData();
     expect(rows[0]).toMatchObject({ ingredientId: "ghost", name: "ghost", canonicalUnitKind: null });
+  });
+
+  it("getPantryData flags items that already have a manual grocery row", async () => {
+    fetchQuery
+      .mockResolvedValueOnce([
+        { ingredientId: "a", quantityG: 100, updatedAt: 1 },
+        { ingredientId: "b", quantityG: 100, updatedAt: 1 },
+      ]) // pantry
+      .mockResolvedValueOnce([
+        { ingredientId: "a", source: "manual", manualQuantity: null, buyQuantityG: null },
+      ]); // grocery
+    sanityFetch.mockResolvedValueOnce([]); // catalog
+    const rows = await getPantryData();
+    expect(rows.find((r) => r.ingredientId === "a")?.onList).toBe(true);
+    expect(rows.find((r) => r.ingredientId === "b")?.onList).toBe(false);
   });
 });
 
@@ -174,11 +229,11 @@ describe("getMenuData", () => {
   it("merges plan scale + coverage with each recipe's title and optional ingredients", async () => {
     fetchQuery
       .mockResolvedValueOnce([{ recipeId: "r1", scale: 2 }]) // plan (getPlanData)
-      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 500, restockOverride: null, updatedAt: 1 }]); // pantry
+      .mockResolvedValueOnce([{ ingredientId: "beef", quantityG: 500, updatedAt: 1 }]); // pantry
     sanityFetch
       .mockResolvedValueOnce(REQS) // requirements (coverage)
       .mockResolvedValueOnce([
-        { _id: "r1", title: "Beef Stew", slug: "beef-stew", optionalIngredients: [{ id: "herb", name: "herb" }] },
+        { _id: "r1", title: "Beef Stew", slug: "beef-stew", coverImage: { asset: { _ref: "image-x" } }, prepTime: 10, cookTime: 25, servings: 4, optionalIngredients: [{ id: "herb", name: "herb" }] },
       ]); // MENU_RECIPES_QUERY
 
     const data = await getMenuData();
@@ -188,6 +243,10 @@ describe("getMenuData", () => {
       scale: 2,
       title: "Beef Stew",
       slug: "beef-stew",
+      coverImage: { asset: { _ref: "image-x" } },
+      prepTime: 10,
+      cookTime: 25,
+      servings: 4,
       optionalIngredients: [{ id: "herb", name: "herb" }],
     });
     expect(data[0].coverage).toHaveProperty("missingRequired");

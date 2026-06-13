@@ -1,4 +1,5 @@
 import { defineQuery } from "next-sanity";
+import type { SanityImageSource } from "@sanity/image-url";
 import type { RawLine } from "@/lib/kitchen/assemble";
 
 /**
@@ -24,26 +25,11 @@ export const RECIPE_REQUIREMENTS_QUERY = defineQuery(`
   }
 `);
 
-/** Restock metadata for a single ingredient (for the buy flow). */
-export const INGREDIENT_RESTOCK_QUERY = defineQuery(`
-  *[_type == "ingredient" && _id == $id][0]{
-    _id,
-    name,
-    canonicalUnitKind,
-    density,
-    avgUnitGrams,
-    category,
-    restockQuantity
-  }
-`);
-
 export type RecipeRequirementDoc = {
   _id: string;
   servings?: number | null;
   lines: RawLine[] | null;
 };
-
-export type IngredientRestockDoc = RawLine & { _id: string };
 
 /**
  * Display + unit metadata for a set of catalog ingredients, keyed lookups for
@@ -55,7 +41,9 @@ export const INGREDIENTS_BY_IDS_QUERY = defineQuery(`
     name,
     canonicalUnitKind,
     category,
-    restockQuantity
+    restockQuantity,
+    density,
+    avgUnitGrams
   }
 `);
 
@@ -65,14 +53,20 @@ export type CatalogInfoDoc = {
   canonicalUnitKind: "mass" | "volume" | "count" | null;
   category: string | null;
   restockQuantity: { quantity: number; unit: string } | null;
+  density: number | null;
+  avgUnitGrams: number | null;
 };
 
-/** Title + slug + optional-ingredient list for the planned recipes (Menu view). */
+/** Title + slug + cover + meta + optional-ingredient list for the Menu view. */
 export const MENU_RECIPES_QUERY = defineQuery(`
   *[_type == "recipe" && _id in $ids]{
     _id,
     title,
     "slug": slug.current,
+    "coverImage": images[0],
+    prepTime,
+    cookTime,
+    servings,
     "optionalIngredients": ingredients[optional == true]{
       "id": ingredient._ref,
       "name": ingredient->name
@@ -84,5 +78,9 @@ export type MenuRecipeDoc = {
   _id: string;
   title: string | null;
   slug: string | null;
+  coverImage: SanityImageSource | null;
+  prepTime: number | null;
+  cookTime: number | null;
+  servings: number | null;
   optionalIngredients: { id: string; name: string | null }[] | null;
 };
