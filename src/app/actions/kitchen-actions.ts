@@ -9,17 +9,13 @@ import { getOrCreateEnrichedIngredient } from "@/lib/ingredients/get-or-create";
 import { requireMember } from "@/lib/viewer";
 import {
   RECIPE_REQUIREMENTS_QUERY,
-  INGREDIENT_RESTOCK_QUERY,
   type RecipeRequirementDoc,
-  type IngredientRestockDoc,
 } from "@/sanity/lib/kitchen-queries";
 import {
   buildMetaFor,
   buildPantryMap,
   deltasToArray,
-  toIngredientInfo,
   toRecipeLines,
-  restockToCanonical,
 } from "@/lib/kitchen/assemble";
 import { recipeRequirements } from "@/lib/kitchen/requirements";
 import { depletionDeltas } from "@/lib/kitchen/deplete";
@@ -32,7 +28,7 @@ const tokenOpts = async () => {
   return token ? { token } : {};
 };
 
-type PantryRow = { ingredientId: string; quantityG: number; restockOverride: { quantity: number; unit: string } | null };
+type PantryRow = { ingredientId: string; quantityG: number };
 
 function revalidate() {
   revalidatePath("/menu");
@@ -53,7 +49,7 @@ export async function removeFromPlan(recipeId: string) {
   await requireMember();
   const opts = await tokenOpts();
   await fetchMutation(api.plan.removeFromPlan, { recipeId }, opts);
-  await reconcileSkips(opts);
+  await reconcileStale(opts);
   revalidate();
 }
 
@@ -65,24 +61,23 @@ export async function setScale(recipeId: string, scale: number) {
 
 // ── Buy / Cook ────────────────────────────────────────────────────────────────
 
-export async function markBought(ingredientId: string) {
+/**
+ * Check an item off the list: add the resolved buy quantity (canonical, whole
+ * number) to the pantry and drop the item's manual/override row. A null
+ * quantity means nothing resolvable was known — the row clears with no pantry
+ * write.
+ */
+export async function markBought(ingredientId: string, buyQuantityG: number | null) {
   await requireMember();
-  const opts = await tokenOpts();
-  const [pantryRows, ing] = await Promise.all([
-    fetchQuery(api.pantry.pantry, {}, opts) as Promise<PantryRow[]>,
-    reader().fetch<IngredientRestockDoc | null>(INGREDIENT_RESTOCK_QUERY, { id: ingredientId }),
-  ]);
-  if (ing) {
-    const info = toIngredientInfo(ing);
-    const override = pantryRows.find((p) => p.ingredientId === ingredientId)?.restockOverride ?? null;
-    const restock = override ?? ing.restockQuantity ?? null;
-    const amount = info ? restockToCanonical(restock, info, ing.name) : null;
-    if (amount != null && amount > 0) {
-      await fetchMutation(api.pantry.adjustPantry, { ingredientId, deltaG: amount }, opts);
-    }
+  if (buyQuantityG != null && (!Number.isInteger(buyQuantityG) || buyQuantityG <= 0)) {
+    throw new Error("Buy quantity must be a positive whole number");
   }
-  await fetchMutation(api.grocery.removeManualItem, { ingredientId }, opts);
-  await reconcileSkips(opts);
+  const opts = await tokenOpts();
+  if (buyQuantityG != null) {
+    await fetchMutation(api.pantry.adjustPantry, { ingredientId, deltaG: buyQuantityG }, opts);
+  }
+  await fetchMutation(api.grocery.removeBought, { ingredientId }, opts);
+  await reconcileStale(opts);
   revalidate();
 }
 
@@ -99,7 +94,7 @@ export async function cook(recipeId: string, usedOptionalIds: string[] = []) {
   const { requirements } = recipeRequirements(toRecipeLines(lines), scale, metaFor);
   const deltas = deltasToArray(depletionDeltas(requirements, new Set(usedOptionalIds)));
   await fetchMutation(api.cook.cook, { recipeId, at: Date.now(), deltas }, opts);
-  await reconcileSkips(opts);
+  await reconcileStale(opts);
   revalidate();
 }
 
@@ -144,33 +139,42 @@ export async function setPantryQuantity(ingredientId: string, quantityG: number)
   await requireMember();
   const opts = await tokenOpts();
   await fetchMutation(api.pantry.setPantryQuantity, { ingredientId, quantityG }, opts);
-  await reconcileSkips(opts);
+  await reconcileStale(opts);
   revalidate();
 }
 
-export async function setRestockOverride(
-  ingredientId: string,
-  restock?: { quantity: number; unit: string },
-) {
+export async function setBuyQuantity(ingredientId: string, buyQuantityG: number) {
   await requireMember();
-  await fetchMutation(api.pantry.setRestockOverride, { ingredientId, restock }, await tokenOpts());
+  await fetchMutation(api.grocery.setBuyQuantity, { ingredientId, buyQuantityG }, await tokenOpts());
   revalidate();
 }
 
-// ── Skip reconciliation ───────────────────────────────────────────────────────
+/** "Out of it" — remove the pantry row. Undo is a client-side re-set. */
+export async function depletePantryItem(ingredientId: string) {
+  await requireMember();
+  await fetchMutation(api.pantry.depleteItem, { ingredientId }, await tokenOpts());
+  revalidate();
+}
+
+// ── Stale reconciliation ──────────────────────────────────────────────────────
 
 /**
- * Clear `skip` rows whose ingredient no longer has a positive plan need (e.g. the
- * recipe was unplanned or the pantry was stocked). Recomputes needs server-side.
+ * Clear `skip` and `override` rows whose ingredient no longer has a positive
+ * plan need (e.g. the recipe was unplanned or the pantry was stocked).
+ * Recomputes needs server-side.
  */
-async function reconcileSkips(opts: { token?: string }) {
+async function reconcileStale(opts: { token?: string }) {
   const [planRows, pantryRows, groceryRows] = await Promise.all([
     fetchQuery(api.plan.plan, {}, opts) as Promise<{ recipeId: string; scale: number }[]>,
     fetchQuery(api.pantry.pantry, {}, opts) as Promise<PantryRow[]>,
-    fetchQuery(api.grocery.grocery, {}, opts) as Promise<{ ingredientId: string; source: "manual" | "skip" }[]>,
+    fetchQuery(api.grocery.grocery, {}, opts) as Promise<
+      { ingredientId: string; source: "manual" | "skip" | "override" }[]
+    >,
   ]);
-  const skipIds = groceryRows.filter((g) => g.source === "skip").map((g) => g.ingredientId);
-  if (skipIds.length === 0) return;
+  const staleCandidates = groceryRows
+    .filter((g) => g.source === "skip" || g.source === "override")
+    .map((g) => g.ingredientId);
+  if (staleCandidates.length === 0) return;
 
   const docs = (await reader().fetch<RecipeRequirementDoc[]>(RECIPE_REQUIREMENTS_QUERY, {
     ids: planRows.map((p) => p.recipeId),
@@ -184,8 +188,8 @@ async function reconcileSkips(opts: { token?: string }) {
   }
   const needs = computeNeeds(all, buildPantryMap(pantryRows));
   const neededIds = new Set(needs.map((n) => n.ingredientId));
-  const stale = skipIds.filter((id) => !neededIds.has(id));
+  const stale = staleCandidates.filter((id) => !neededIds.has(id));
   if (stale.length > 0) {
-    await fetchMutation(api.grocery.clearSkips, { ingredientIds: stale }, opts);
+    await fetchMutation(api.grocery.clearStale, { ingredientIds: stale }, opts);
   }
 }

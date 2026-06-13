@@ -22,7 +22,14 @@ vi.mock("@/lib/ingredients/get-or-create", () => ({
 import { requireMember } from "@/lib/viewer";
 import { api } from "@cvx/_generated/api";
 import { getOrCreateEnrichedIngredient } from "@/lib/ingredients/get-or-create";
-import { addToPlan, cook, markBought, addShopItemByName } from "@/app/actions/kitchen-actions";
+import {
+  addToPlan,
+  cook,
+  markBought,
+  addShopItemByName,
+  setBuyQuantity,
+  depletePantryItem,
+} from "@/app/actions/kitchen-actions";
 
 beforeEach(() => {
   vi.mocked(requireMember).mockResolvedValue({ userId: "u1", householdId: "h1" });
@@ -102,31 +109,50 @@ describe("addShopItemByName", () => {
 });
 
 describe("markBought", () => {
-  it("adds the catalog restock amount to the pantry and removes the manual row", async () => {
-    fetchQuery.mockResolvedValue([]); // pantry (no override) + reconcile fetches
-    sanityFetch.mockImplementation((q: unknown, params: unknown) => {
-      // INGREDIENT_RESTOCK_QUERY returns a single doc; RECIPE_REQUIREMENTS returns []
-      if (params && (params as { id?: string }).id === "beef") {
-        return Promise.resolve({
-          _id: "beef", name: "beef",
-          canonicalUnitKind: "mass", density: null, avgUnitGrams: null, category: "protein",
-          restockQuantity: { quantity: 1, unit: "kg" },
-        });
-      }
-      return Promise.resolve([]);
-    });
-
-    await markBought("beef");
-
+  it("markBought adds the buy quantity and removes the grocery row", async () => {
+    await markBought("ing-1", 500);
     expect(fetchMutation).toHaveBeenCalledWith(
-      api.pantry.adjustPantry,
-      { ingredientId: "beef", deltaG: 1000 },
-      { token: "tok" },
+      api.pantry.adjustPantry, { ingredientId: "ing-1", deltaG: 500 }, expect.anything(),
     );
     expect(fetchMutation).toHaveBeenCalledWith(
-      api.grocery.removeManualItem,
-      { ingredientId: "beef" },
-      { token: "tok" },
+      api.grocery.removeBought, { ingredientId: "ing-1" }, expect.anything(),
+    );
+  });
+
+  it("markBought with null skips the pantry write but still clears the row", async () => {
+    await markBought("ing-1", null);
+    // api function refs are Convex Proxies that throw when pretty-formatted, so we
+    // can't pass api.pantry.adjustPantry into .not.toHaveBeenCalledWith. Assert on
+    // the recorded call args (a pantry-adjust call has a `deltaG` field) instead.
+    const adjustCall = fetchMutation.mock.calls.find(
+      (c) => c[1] != null && typeof c[1] === "object" && "deltaG" in (c[1] as object),
+    );
+    expect(adjustCall).toBeUndefined();
+    expect(fetchMutation).toHaveBeenCalledWith(
+      api.grocery.removeBought, { ingredientId: "ing-1" }, expect.anything(),
+    );
+  });
+
+  it("markBought rejects a non-positive or fractional quantity", async () => {
+    await expect(markBought("ing-1", 0)).rejects.toThrow();
+    await expect(markBought("ing-1", 2.5)).rejects.toThrow();
+  });
+});
+
+describe("setBuyQuantity", () => {
+  it("setBuyQuantity forwards to the grocery mutation", async () => {
+    await setBuyQuantity("ing-1", 473);
+    expect(fetchMutation).toHaveBeenCalledWith(
+      api.grocery.setBuyQuantity, { ingredientId: "ing-1", buyQuantityG: 473 }, expect.anything(),
+    );
+  });
+});
+
+describe("depletePantryItem", () => {
+  it("depletePantryItem forwards to pantry.depleteItem", async () => {
+    await depletePantryItem("ing-1");
+    expect(fetchMutation).toHaveBeenCalledWith(
+      api.pantry.depleteItem, { ingredientId: "ing-1" }, expect.anything(),
     );
   });
 });
