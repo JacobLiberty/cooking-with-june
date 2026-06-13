@@ -1,28 +1,35 @@
 import type { IngredientRequirement } from "@/lib/kitchen/types";
 
-export type Coverage = { cookable: boolean; missingRequired: number };
+export type Coverage = {
+  cookable: boolean;
+  missingRequired: number;
+  missing: { ingredientId: string; name: string }[];
+};
 
 /**
  * Coverage of ONE recipe against the pantry. Only required, non-nonfood
  * ingredients count; duplicate lines for the same ingredient are summed.
  * `cookable` is true only when there is at least one qualifying required
- * ingredient and the pantry covers all of them.
+ * ingredient and the pantry covers all of them. `missing` lists the shortfall
+ * ingredients (id + name) for display.
  */
 export function recipeCoverage(
   requirements: IngredientRequirement[],
   pantry: Map<string, number>,
 ): Coverage {
-  const required = new Map<string, number>();
+  const required = new Map<string, { amount: number; name: string }>();
   for (const r of requirements) {
     if (r.optional || r.category === "nonfood") continue;
-    required.set(r.ingredientId, (required.get(r.ingredientId) ?? 0) + r.amount);
+    const cur = required.get(r.ingredientId);
+    if (cur) cur.amount += r.amount;
+    else required.set(r.ingredientId, { amount: r.amount, name: r.name });
   }
 
-  if (required.size === 0) return { cookable: false, missingRequired: 0 };
+  if (required.size === 0) return { cookable: false, missingRequired: 0, missing: [] };
 
-  let missingRequired = 0;
-  for (const [ingredientId, amount] of required) {
-    if ((pantry.get(ingredientId) ?? 0) < amount) missingRequired++;
+  const missing: { ingredientId: string; name: string }[] = [];
+  for (const [ingredientId, { amount, name }] of required) {
+    if ((pantry.get(ingredientId) ?? 0) < amount) missing.push({ ingredientId, name });
   }
-  return { cookable: missingRequired === 0, missingRequired };
+  return { cookable: missing.length === 0, missingRequired: missing.length, missing };
 }
