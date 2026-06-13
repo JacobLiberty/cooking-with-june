@@ -2,9 +2,9 @@ import type { CanonicalUnitKind } from "@/lib/enrichment/types";
 
 export type DisplayKind = CanonicalUnitKind | null;
 
-/** Round to at most one decimal place (trailing .0 dropped by Number). */
+/** Round to a whole number (half up) — pantry amounts are always integers. */
 export function roundForDisplay(n: number): number {
-  return Math.round(n * 10) / 10;
+  return Math.round(n);
 }
 
 /**
