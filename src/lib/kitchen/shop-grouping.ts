@@ -7,6 +7,7 @@ export type ShopNeed = {
   optional: boolean;
   category: string | null;
   canonicalUnitKind: DisplayKind;
+  buyQuantityG: number | null;
 };
 
 export type ShopManual = {
@@ -16,6 +17,7 @@ export type ShopManual = {
   name: string;
   canonicalUnitKind: DisplayKind;
   category: string | null;
+  buyQuantityG: number | null;
 };
 
 export type ShopItem = {
@@ -27,6 +29,7 @@ export type ShopItem = {
   amount: number | null; // canonical amount for needs
   canonicalUnitKind: DisplayKind;
   manualQuantity: { quantity: number; unit: string } | null;
+  buyQuantityG: number | null;
 };
 
 /** Store-aisle display order; unknown/`other` falls into "other". */
@@ -62,6 +65,7 @@ export function buildShopItems(needs: ShopNeed[], manual: ShopManual[]): ShopIte
       amount: n.amount,
       canonicalUnitKind: n.canonicalUnitKind,
       manualQuantity: null,
+      buyQuantityG: n.buyQuantityG,
     })),
     ...manual.map((m) => ({
       ingredientId: m.ingredientId,
@@ -72,6 +76,7 @@ export function buildShopItems(needs: ShopNeed[], manual: ShopManual[]): ShopIte
       amount: null,
       canonicalUnitKind: m.canonicalUnitKind,
       manualQuantity: m.manualQuantity,
+      buyQuantityG: m.buyQuantityG,
     })),
   ];
 }
@@ -114,13 +119,20 @@ export function groupShopItems(items: ShopItem[]): ShopGroup[] {
 const sortByName = (items: ShopItem[]): ShopItem[] =>
   [...items].sort((a, b) => a.name.localeCompare(b.name));
 
-/** Display amount for a row: a need's canonical amount, or a manual's free-text quantity. */
-export function shopItemAmountLabel(item: ShopItem): string {
-  if (item.source === "need" && item.amount != null) {
-    return formatCanonicalAmount(item.amount, item.canonicalUnitKind);
+/**
+ * One muted meta line per row: "buying 473 g · needs 240 g". Falls back to the
+ * raw manual quantity text when no canonical buy amount could be resolved.
+ */
+export function shopItemMetaLabel(item: ShopItem): string {
+  const parts: string[] = [];
+  if (item.buyQuantityG != null) {
+    parts.push(`buying ${formatCanonicalAmount(item.buyQuantityG, item.canonicalUnitKind)}`);
   }
-  if (item.manualQuantity) {
+  if (item.source === "need" && item.amount != null) {
+    parts.push(`needs ${formatCanonicalAmount(item.amount, item.canonicalUnitKind)}`);
+  }
+  if (parts.length === 0 && item.manualQuantity) {
     return `${item.manualQuantity.quantity} ${item.manualQuantity.unit}`.trim();
   }
-  return "";
+  return parts.join(" · ");
 }

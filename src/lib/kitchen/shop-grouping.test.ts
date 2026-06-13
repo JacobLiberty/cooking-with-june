@@ -2,17 +2,17 @@ import { describe, it, expect } from "vitest";
 import {
   buildShopItems,
   groupShopItems,
-  shopItemAmountLabel,
+  shopItemMetaLabel,
 } from "@/lib/kitchen/shop-grouping";
 
 const NEEDS = [
-  { ingredientId: "beef", name: "beef", amount: 450, optional: false, category: "protein", canonicalUnitKind: "mass" as const },
-  { ingredientId: "milk", name: "milk", amount: 500, optional: false, category: "dairy", canonicalUnitKind: "volume" as const },
-  { ingredientId: "parsley", name: "parsley", amount: 10, optional: true, category: "produce", canonicalUnitKind: "mass" as const },
+  { ingredientId: "beef", name: "beef", amount: 450, optional: false, category: "protein", canonicalUnitKind: "mass" as const, buyQuantityG: 500 },
+  { ingredientId: "milk", name: "milk", amount: 500, optional: false, category: "dairy", canonicalUnitKind: "volume" as const, buyQuantityG: 946 },
+  { ingredientId: "parsley", name: "parsley", amount: 10, optional: true, category: "produce", canonicalUnitKind: "mass" as const, buyQuantityG: null },
 ];
 const MANUAL = [
-  { ingredientId: "napkins", source: "manual" as const, manualQuantity: { quantity: 1, unit: "pack" }, name: "napkins", canonicalUnitKind: null, category: "nonfood" },
-  { ingredientId: "apple", source: "manual" as const, manualQuantity: null, name: "apple", canonicalUnitKind: "count" as const, category: "produce" },
+  { ingredientId: "napkins", source: "manual" as const, manualQuantity: { quantity: 1, unit: "pack" }, name: "napkins", canonicalUnitKind: null, category: "nonfood", buyQuantityG: null },
+  { ingredientId: "apple", source: "manual" as const, manualQuantity: null, name: "apple", canonicalUnitKind: "count" as const, category: "produce", buyQuantityG: null },
 ];
 
 describe("buildShopItems", () => {
@@ -36,7 +36,7 @@ describe("groupShopItems", () => {
 
   it("puts unknown/other categories into the 'other' group", () => {
     const items = buildShopItems(
-      [{ ingredientId: "x", name: "mystery", amount: 1, optional: false, category: null, canonicalUnitKind: null }],
+      [{ ingredientId: "x", name: "mystery", amount: 1, optional: false, category: null, canonicalUnitKind: null, buyQuantityG: null }],
       [],
     );
     expect(groupShopItems(items)[0].key).toBe("other");
@@ -45,8 +45,8 @@ describe("groupShopItems", () => {
   it("sorts items alphabetically within a group", () => {
     const items = buildShopItems(
       [
-        { ingredientId: "b", name: "banana", amount: 1, optional: false, category: "produce", canonicalUnitKind: "count" },
-        { ingredientId: "a", name: "apple", amount: 1, optional: false, category: "produce", canonicalUnitKind: "count" },
+        { ingredientId: "b", name: "banana", amount: 1, optional: false, category: "produce", canonicalUnitKind: "count", buyQuantityG: null },
+        { ingredientId: "a", name: "apple", amount: 1, optional: false, category: "produce", canonicalUnitKind: "count", buyQuantityG: null },
       ],
       [],
     );
@@ -54,14 +54,37 @@ describe("groupShopItems", () => {
   });
 });
 
-describe("shopItemAmountLabel", () => {
-  it("formats a need's canonical amount", () => {
-    const item = buildShopItems([NEEDS[0]], [])[0];
-    expect(shopItemAmountLabel(item)).toBe("450 g");
+describe("shopItemMetaLabel", () => {
+  it("shows buying and needs for a need item", () => {
+    const item = {
+      ingredientId: "i", name: "cream", category: "dairy", optional: false,
+      source: "need" as const, amount: 240, canonicalUnitKind: "mass" as const,
+      manualQuantity: null, buyQuantityG: 473,
+    };
+    expect(shopItemMetaLabel(item)).toBe("buying 473 g · needs 240 g");
   });
-  it("uses the manual quantity when present, blank otherwise", () => {
-    const [napkins, apple] = buildShopItems([], MANUAL);
-    expect(shopItemAmountLabel(napkins)).toBe("1 pack");
-    expect(shopItemAmountLabel(apple)).toBe("");
+  it("shows only buying for a manual item with a resolved quantity", () => {
+    const item = {
+      ingredientId: "i", name: "eggs", category: "dairy", optional: false,
+      source: "manual" as const, amount: null, canonicalUnitKind: "count" as const,
+      manualQuantity: { quantity: 12, unit: "" }, buyQuantityG: 12,
+    };
+    expect(shopItemMetaLabel(item)).toBe("buying 12");
+  });
+  it("falls back to the raw manual quantity text when unresolved", () => {
+    const item = {
+      ingredientId: "i", name: "napkins", category: "nonfood", optional: false,
+      source: "manual" as const, amount: null, canonicalUnitKind: null,
+      manualQuantity: { quantity: 1, unit: "pack" }, buyQuantityG: null,
+    };
+    expect(shopItemMetaLabel(item)).toBe("1 pack");
+  });
+  it("is empty when nothing is known", () => {
+    const item = {
+      ingredientId: "i", name: "x", category: null, optional: false,
+      source: "manual" as const, amount: null, canonicalUnitKind: null,
+      manualQuantity: null, buyQuantityG: null,
+    };
+    expect(shopItemMetaLabel(item)).toBe("");
   });
 });
