@@ -43,6 +43,11 @@ export function ImportReview({
       d ? { ...d, ingredients: d.ingredients.map((l, j) => (j === i ? { ...l, ...next } : l)) } : d,
     );
 
+  const removeLine = (i: number) =>
+    setDraft((d) =>
+      d ? { ...d, ingredients: d.ingredients.filter((_, j) => j !== i) } : d,
+    );
+
   const publish = () => {
     if (!draft) return;
     setError(null);
@@ -145,6 +150,16 @@ export function ImportReview({
                 onChange={() => patchLine(i, { optional: !line.optional })}
                 label={`${line.name} optional`}
               />
+              <button
+                type="button"
+                onClick={() => removeLine(i)}
+                aria-label={`Remove ${line.name || `ingredient ${i + 1}`}`}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-terracotta-wash hover:text-terracotta"
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
             </li>
           ))}
         </ul>

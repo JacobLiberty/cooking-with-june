@@ -61,6 +61,19 @@ describe("ImportReview", () => {
     expect(push).toHaveBeenCalledWith("/recipe/chili");
   });
 
+  it("removes an ingredient row (e.g. a duplicate the import grabbed twice)", async () => {
+    const user = userEvent.setup();
+    actions.importRecipe.mockResolvedValue({ ok: true, draft: DRAFT });
+    render(<ImportReview tags={TAGS} />);
+    await user.type(screen.getByLabelText("Recipe text"), "x");
+    await user.click(screen.getByRole("button", { name: "Generate draft" }));
+    await screen.findByDisplayValue("Chili");
+    expect(screen.getByDisplayValue("ground beef")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Remove ground beef" }));
+    expect(screen.queryByDisplayValue("ground beef")).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("cilantro")).toBeInTheDocument();
+  });
+
   it("surfaces an import error", async () => {
     const user = userEvent.setup();
     actions.importRecipe.mockResolvedValue({ ok: false, error: "Couldn't read that recipe." });
