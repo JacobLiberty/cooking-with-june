@@ -7,10 +7,12 @@ import {
   skipItem,
   removeManualItem,
   addShopItemByName,
+  setBuyQuantity,
 } from "@/app/actions/kitchen-actions";
 import {
   buildShopItems,
   groupShopItems,
+  type ShopItem,
   type ShopNeed,
   type ShopManual,
 } from "@/lib/kitchen/shop-grouping";
@@ -28,21 +30,17 @@ export function ShopView({
   catalog: IngredientOption[];
 }) {
   const [items, setItems] = useState(() => buildShopItems(needs, manual));
-  const [shopping, setShopping] = useState(false);
   const [bought, setBought] = useState<Set<string>>(() => new Set());
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const toast = useToast();
-  // Ref-based guard prevents double-buy from rapid clicks before React flushes the
-  // bought-Set state update. The ref is checked synchronously; state is the source
-  // of truth for rendering.
+  // Ref guard prevents double-buy from rapid clicks before React flushes state.
   const buyingRef = useRef<Set<string>>(new Set());
 
   const groups = useMemo(() => groupShopItems(items), [items]);
   const total = items.length;
-  // In shopping mode, items that have been dismissed after being bought would make
-  // doneCount exceed total. Cap doneCount at total so the counter stays coherent.
-  const doneCount = shopping ? Math.min(bought.size, total) : bought.size;
+  const doneCount = Math.min(bought.size, total);
 
   const act = (action: () => Promise<unknown>, revert: () => void) => {
     setError(null);
@@ -56,47 +54,53 @@ export function ShopView({
     });
   };
 
-  const drop = (id: string) => setItems((xs) => xs.filter((x) => x.ingredientId !== id));
-  const restore = (snapshot: typeof items) => setItems(snapshot);
+  const patchItem = (id: string, next: Partial<ShopItem>) =>
+    setItems((xs) => xs.map((x) => (x.ingredientId === id ? { ...x, ...next } : x)));
 
-  // Shopping mode keeps checked items visible (stable progress denominator) and
-  // marks them done; normal mode removes the item from the list once bought.
-  const buy = (id: string) => {
-    if (shopping) {
-      // Guard with both state and ref to prevent double-buy from rapid clicks
-      // before the setBought state update has been flushed by React.
-      if (bought.has(id) || buyingRef.current.has(id)) return;
-      buyingRef.current = new Set(buyingRef.current).add(id);
-      setBought((b) => new Set(b).add(id));
-      act(
-        () => markBought(id),
-        () => {
-          buyingRef.current = (() => { const n = new Set(buyingRef.current); n.delete(id); return n; })();
-          setBought((b) => { const n = new Set(b); n.delete(id); return n; });
-        },
-      );
-      return;
-    }
-    const snapshot = items;
-    drop(id);
-    act(() => markBought(id), () => restore(snapshot));
+  // One behavior: check → pantry write; row stays, crossed out, until cleared.
+  const buy = (item: ShopItem) => {
+    const id = item.ingredientId;
+    if (bought.has(id) || buyingRef.current.has(id)) return;
+    buyingRef.current = new Set(buyingRef.current).add(id);
+    setBought((b) => new Set(b).add(id));
+    setExpanded((e) => (e === id ? null : e));
+    act(
+      () => markBought(id, item.buyQuantityG),
+      () => {
+        buyingRef.current = (() => { const n = new Set(buyingRef.current); n.delete(id); return n; })();
+        setBought((b) => { const n = new Set(b); n.delete(id); return n; });
+      },
+    );
   };
 
   const dismiss = (id: string, source: "need" | "manual") => {
     const snapshot = items;
-    drop(id);
+    setItems((xs) => xs.filter((x) => x.ingredientId !== id));
     act(
       () => (source === "manual" ? removeManualItem(id) : skipItem(id)),
-      () => restore(snapshot),
+      () => setItems(snapshot),
     );
+  };
+
+  const changeBuyQuantity = (item: ShopItem, next: number) => {
+    const prev = item.buyQuantityG;
+    patchItem(item.ingredientId, { buyQuantityG: next });
+    act(
+      () => setBuyQuantity(item.ingredientId, next),
+      () => patchItem(item.ingredientId, { buyQuantityG: prev }),
+    );
+  };
+
+  const clearChecked = () => {
+    setItems((xs) => xs.filter((x) => !bought.has(x.ingredientId)));
+    setBought(new Set());
+    buyingRef.current = new Set();
   };
 
   const add = (name: string) => {
     act(
       async () => {
         const { ingredientId } = await addShopItemByName(name);
-        // Reflect immediately as a manual row (catalog category unknown client-side
-        // until the next server load; it lands in "Other" meanwhile).
         setItems((xs) =>
           xs.some((x) => x.ingredientId === ingredientId)
             ? xs
@@ -111,11 +115,10 @@ export function ShopView({
                   amount: null,
                   canonicalUnitKind: null,
                   manualQuantity: null,
+                  buyQuantityG: null,
                 },
               ],
         );
-        // Toast only after the server action succeeds; avoids a success message
-        // paired with an error banner when addShopItemByName throws.
         toast({ message: `Added ${name}` });
       },
       () => {},
@@ -126,44 +129,27 @@ export function ShopView({
 
   return (
     <div aria-busy={pending}>
-      <div className="mt-6 flex items-center justify-between gap-3">
+      <div className="mt-6">
         <span className="kicker text-ink-soft" aria-live="polite">
-          {shopping ? `${doneCount} of ${total} done` : `${total} ${total === 1 ? "item" : "items"}`}
+          {doneCount > 0
+            ? `${doneCount} of ${total} in the basket`
+            : `${total} ${total === 1 ? "item" : "items"}`}
         </span>
         {!empty ? (
-          <button
-            type="button"
-            aria-pressed={shopping}
-            onClick={() => {
-              setShopping((v) => !v);
-              setBought(new Set());
-              buyingRef.current = new Set();
-            }}
-            className={`kicker rounded-full border px-4 py-2 transition-colors ${
-              shopping
-                ? "border-terracotta bg-terracotta text-paper"
-                : "border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
-            }`}
+          <div
+            className="mt-3 h-1 w-full overflow-hidden rounded-full bg-clay-wash"
+            role="progressbar"
+            aria-valuenow={doneCount}
+            aria-valuemin={0}
+            aria-valuemax={total}
           >
-            {shopping ? "Done shopping" : "Start shopping"}
-          </button>
+            <div
+              className="h-full bg-terracotta transition-all"
+              style={{ width: total ? `${(doneCount / total) * 100}%` : "0%" }}
+            />
+          </div>
         ) : null}
       </div>
-
-      {shopping ? (
-        <div
-          className="mt-3 h-1 w-full overflow-hidden rounded-full bg-clay-wash"
-          role="progressbar"
-          aria-valuenow={doneCount}
-          aria-valuemin={0}
-          aria-valuemax={total}
-        >
-          <div
-            className="h-full bg-terracotta transition-all"
-            style={{ width: total ? `${(doneCount / total) * 100}%` : "0%" }}
-          />
-        </div>
-      ) : null}
 
       {error ? (
         <p role="alert" className="mt-4 text-sm text-terracotta-deep">
@@ -171,35 +157,52 @@ export function ShopView({
         </p>
       ) : null}
 
+      <AddShopItem catalog={catalog} onAdd={add} />
+
       {empty ? (
         <p className="mt-6 text-ink-soft">
-          Your shopping list is empty — plan some recipes or add an item below.
+          Your shopping list is empty — plan some recipes or add an item above.
         </p>
       ) : (
-        <div className="mt-4 space-y-6">
-          {groups.map((group) => (
-            <section key={group.key} aria-labelledby={`group-${group.key}`}>
-              <h2 id={`group-${group.key}`} className="kicker text-terracotta">
-                {group.label}
-              </h2>
-              <ul className="mt-2">
-                {group.items.map((item) => (
-                  <ShopItemRow
-                    key={item.ingredientId}
-                    item={item}
-                    big={shopping}
-                    checked={bought.has(item.ingredientId)}
-                    onBuy={() => buy(item.ingredientId)}
-                    onDismiss={() => dismiss(item.ingredientId, item.source)}
-                  />
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
+        <>
+          <div className="mt-4 space-y-6">
+            {groups.map((group) => (
+              <section key={group.key} aria-labelledby={`group-${group.key}`}>
+                <h2 id={`group-${group.key}`} className="kicker text-terracotta">
+                  {group.label}
+                </h2>
+                <ul className="mt-2">
+                  {group.items.map((item) => (
+                    <ShopItemRow
+                      key={item.ingredientId}
+                      item={item}
+                      checked={bought.has(item.ingredientId)}
+                      expanded={expanded === item.ingredientId}
+                      onBuy={() => buy(item)}
+                      onDismiss={() => dismiss(item.ingredientId, item.source)}
+                      onToggleExpand={() =>
+                        setExpanded((e) => (e === item.ingredientId ? null : item.ingredientId))
+                      }
+                      onSetBuyQuantity={(next) => changeBuyQuantity(item, next)}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+          {doneCount > 0 ? (
+            <div className="mt-6 text-right">
+              <button
+                type="button"
+                onClick={clearChecked}
+                className="kicker text-ink-soft underline-offset-2 hover:text-terracotta hover:underline"
+              >
+                Clear checked-off items
+              </button>
+            </div>
+          ) : null}
+        </>
       )}
-
-      {!shopping ? <AddShopItem catalog={catalog} onAdd={add} /> : null}
     </div>
   );
 }
