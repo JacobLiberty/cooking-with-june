@@ -93,3 +93,15 @@ test("cook rejects a negative subtract (no partial effect)", async () => {
   expect(await a.query(api.plan.plan, {})).toHaveLength(1);
   expect((await a.query(api.recipeState.forRecipe, { recipeId: "r1" })).madeCount).toBe(0);
 });
+
+test("cook depletion rounds the remaining quantity to a whole number", async () => {
+  const t = convexTest(schema, modules);
+  const a = await member(t, "a@example.com");
+  await a.mutation(api.pantry.adjustPantry, { ingredientId: "i1", deltaG: 500 });
+  await a.mutation(api.cook.cook, {
+    recipeId: "r1",
+    at: Date.now(),
+    deltas: [{ ingredientId: "i1", subtract: 120.4 }],
+  });
+  expect((await a.query(api.pantry.pantry, {}))[0].quantityG).toBe(380);
+});

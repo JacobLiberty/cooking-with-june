@@ -15,7 +15,7 @@ async function depleteOne(
       q.eq("householdId", householdId).eq("ingredientId", ingredientId),
     )
     .unique();
-  const next = Math.max(0, (existing?.quantityG ?? 0) - subtract);
+  const next = Math.max(0, Math.round((existing?.quantityG ?? 0) - subtract));
   if (existing) {
     await ctx.db.patch(existing._id, { quantityG: next, updatedAt: Date.now() });
   } else {
