@@ -9,8 +9,12 @@ import {
 } from "react";
 import { AnimatePresence, m } from "motion/react";
 
+type ToastAction = { label: string; onAction: () => void };
 type ToastInput = {
   message: string;
+  /** One or more actions (e.g. Undo · Add to list). */
+  actions?: ToastAction[];
+  /** Back-compat single action. */
   actionLabel?: string;
   onAction?: () => void;
 };
@@ -92,18 +96,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               className="pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-4 rounded-full border border-terracotta/30 bg-ink px-5 py-2.5 text-paper shadow-lg"
             >
               <span className="text-sm">{t.message}</span>
-              {t.actionLabel ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    t.onAction?.();
-                    dismiss(t.id);
-                  }}
-                  className="kicker text-clay-wash underline-offset-2 hover:underline"
-                >
-                  {t.actionLabel}
-                </button>
-              ) : null}
+              {(t.actions ?? (t.actionLabel ? [{ label: t.actionLabel, onAction: t.onAction ?? (() => {}) }] : [])).map(
+                (a) => (
+                  <button
+                    key={a.label}
+                    type="button"
+                    onClick={() => {
+                      a.onAction();
+                      dismiss(t.id);
+                    }}
+                    className="kicker text-clay-wash underline-offset-2 hover:underline"
+                  >
+                    {a.label}
+                  </button>
+                ),
+              )}
             </m.div>
           ))}
         </AnimatePresence>
