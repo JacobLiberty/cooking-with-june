@@ -34,19 +34,31 @@ test("setPantryQuantity sets an absolute value and rejects negatives", async () 
   ).rejects.toThrow();
 });
 
-test("setRestockOverride stores and clears the override", async () => {
+test("pantry writes round to whole numbers", async () => {
   const t = convexTest(schema, modules);
   const a = await member(t, "a@example.com");
-  await a.mutation(api.pantry.setRestockOverride, {
-    ingredientId: "i1",
-    restock: { quantity: 2, unit: "kg" },
-  });
-  expect((await a.query(api.pantry.pantry, {}))[0].restockOverride).toEqual({
-    quantity: 2,
-    unit: "kg",
-  });
-  await a.mutation(api.pantry.setRestockOverride, { ingredientId: "i1" });
-  expect((await a.query(api.pantry.pantry, {}))[0].restockOverride).toBeNull();
+  await a.mutation(api.pantry.adjustPantry, { ingredientId: "i1", deltaG: 250.4 });
+  expect((await a.query(api.pantry.pantry, {}))[0].quantityG).toBe(250);
+  await a.mutation(api.pantry.setPantryQuantity, { ingredientId: "i1", quantityG: 99.6 });
+  expect((await a.query(api.pantry.pantry, {}))[0].quantityG).toBe(100);
+});
+
+test("depleteItem removes the row and is idempotent", async () => {
+  const t = convexTest(schema, modules);
+  const a = await member(t, "a@example.com");
+  await a.mutation(api.pantry.adjustPantry, { ingredientId: "i1", deltaG: 100 });
+  await a.mutation(api.pantry.depleteItem, { ingredientId: "i1" });
+  expect(await a.query(api.pantry.pantry, {})).toHaveLength(0);
+  // second call is a no-op, not an error
+  await a.mutation(api.pantry.depleteItem, { ingredientId: "i1" });
+  expect(await a.query(api.pantry.pantry, {})).toHaveLength(0);
+});
+
+test("depleteItem requires membership", async () => {
+  const t = convexTest(schema, modules);
+  await expect(
+    t.mutation(api.pantry.depleteItem, { ingredientId: "i1" }),
+  ).rejects.toThrow();
 });
 
 test("pantry is household-scoped and requires membership", async () => {

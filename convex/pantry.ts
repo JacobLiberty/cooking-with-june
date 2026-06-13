@@ -36,7 +36,6 @@ export const pantry = query({
     return rows.map((r) => ({
       ingredientId: r.ingredientId,
       quantityG: r.quantityG,
-      restockOverride: r.restockOverride ?? null,
       updatedAt: r.updatedAt,
     }));
   },
@@ -48,7 +47,7 @@ export const adjustPantry = mutation({
     if (!Number.isFinite(deltaG)) throw new Error("Invalid delta");
     const { householdId } = await requireMembership(ctx);
     const existing = await pantryRow(ctx, householdId, ingredientId);
-    const next = Math.max(0, (existing?.quantityG ?? 0) + deltaG);
+    const next = Math.max(0, Math.round((existing?.quantityG ?? 0) + deltaG));
     if (existing) {
       await ctx.db.patch(existing._id, { quantityG: next, updatedAt: Date.now() });
       return;
@@ -68,45 +67,28 @@ export const setPantryQuantity = mutation({
     if (!Number.isFinite(quantityG) || quantityG < 0) {
       throw new Error("Quantity must be a non-negative number");
     }
+    const rounded = Math.round(quantityG);
     const { householdId } = await requireMembership(ctx);
     const existing = await pantryRow(ctx, householdId, ingredientId);
     if (existing) {
-      await ctx.db.patch(existing._id, { quantityG, updatedAt: Date.now() });
+      await ctx.db.patch(existing._id, { quantityG: rounded, updatedAt: Date.now() });
       return;
     }
     await ctx.db.insert("pantryItems", {
       householdId,
       ingredientId,
-      quantityG,
+      quantityG: rounded,
       updatedAt: Date.now(),
     });
   },
 });
 
-export const setRestockOverride = mutation({
-  args: {
-    ingredientId: v.string(),
-    restock: v.optional(v.object({ quantity: v.number(), unit: v.string() })),
-  },
-  handler: async (ctx, { ingredientId, restock }) => {
-    if (restock && (!Number.isFinite(restock.quantity) || restock.quantity <= 0)) {
-      throw new Error("Restock quantity must be positive");
-    }
+/** "Out of it" — remove the household's pantry row entirely. Idempotent. */
+export const depleteItem = mutation({
+  args: { ingredientId: v.string() },
+  handler: async (ctx, { ingredientId }) => {
     const { householdId } = await requireMembership(ctx);
     const existing = await pantryRow(ctx, householdId, ingredientId);
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        restockOverride: restock,
-        updatedAt: Date.now(),
-      });
-      return;
-    }
-    await ctx.db.insert("pantryItems", {
-      householdId,
-      ingredientId,
-      quantityG: 0,
-      restockOverride: restock,
-      updatedAt: Date.now(),
-    });
+    if (existing) await ctx.db.delete(existing._id);
   },
 });
