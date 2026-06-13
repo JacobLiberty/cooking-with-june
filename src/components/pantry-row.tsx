@@ -47,21 +47,21 @@ export function PantryRow({
   };
 
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 border-b border-terracotta/15 py-2">
+    <li className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 border-b border-terracotta/15 py-2">
       <span className="truncate text-ink" title={row.name}>
         {row.name}
       </span>
 
-      <div className="flex items-center justify-end gap-1.5">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => commit(row.quantityG - step)}
           aria-label={`Decrease ${row.name}`}
-          className="kicker h-7 w-7 rounded-full border border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
+          className="kicker h-7 w-7 shrink-0 rounded-full border border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
         >
           −
         </button>
-        <label className="flex items-center gap-1">
+        <label className="flex items-baseline gap-1.5">
           <span className="sr-only">{row.name} quantity</span>
           <input
             type="number"
@@ -78,46 +78,48 @@ export function PantryRow({
               }
             }}
             aria-label={`${row.name} quantity in ${unit}`}
-            className="w-16 border-b border-ink/25 bg-transparent pb-0.5 text-right text-ink focus:border-terracotta"
+            className="w-14 border-b border-ink/25 bg-transparent pb-0.5 text-right tabular-nums text-ink focus:border-terracotta"
           />
-          <span className="kicker w-10 text-ink-soft">{unit}</span>
+          <span className="kicker w-7 shrink-0 text-left text-ink-soft">{unit}</span>
         </label>
         <button
           type="button"
           onClick={() => commit(row.quantityG + step)}
           aria-label={`Increase ${row.name}`}
-          className="kicker h-7 w-7 rounded-full border border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
+          className="kicker h-7 w-7 shrink-0 rounded-full border border-terracotta/40 text-terracotta hover:bg-terracotta-wash"
         >
           +
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={onAddToList}
-        disabled={row.onList}
-        title={row.onList ? "Already on your grocery list" : "Add to grocery list"}
-        aria-label={
-          row.onList
-            ? `${row.name} is already on your grocery list`
-            : `Add ${row.name} to grocery list`
-        }
-        className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
-          row.onList ? "text-clay" : "text-terracotta hover:bg-terracotta-wash"
-        } disabled:cursor-default`}
-      >
-        <CartIcon />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onAddToList}
+          disabled={row.onList}
+          title={row.onList ? "Already on your grocery list" : "Add to grocery list"}
+          aria-label={
+            row.onList
+              ? `${row.name} is already on your grocery list`
+              : `Add ${row.name} to grocery list`
+          }
+          className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+            row.onList ? "text-clay" : "text-terracotta hover:bg-terracotta-wash"
+          } disabled:cursor-default`}
+        >
+          <CartIcon />
+        </button>
 
-      <button
-        type="button"
-        onClick={onDeplete}
-        title="Out of it — remove from pantry"
-        aria-label={`Out of ${row.name} — remove from pantry`}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-terracotta-wash hover:text-terracotta"
-      >
-        <XIcon />
-      </button>
+        <button
+          type="button"
+          onClick={onDeplete}
+          title="Out of it — remove from pantry"
+          aria-label={`Out of ${row.name} — remove from pantry`}
+          className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-terracotta-wash hover:text-terracotta"
+        >
+          <XIcon />
+        </button>
+      </div>
     </li>
   );
 }

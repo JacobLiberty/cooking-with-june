@@ -117,6 +117,17 @@ test("skip clears a stored buy quantity", async () => {
   });
 });
 
+test("addManualItem clears a stale buy quantity from an override row", async () => {
+  const t = convexTest(schema, modules);
+  const a = await member(t, "a@example.com");
+  await a.mutation(api.grocery.setBuyQuantity, { ingredientId: "i1", buyQuantityG: 500 });
+  await a.mutation(api.grocery.addManualItem, { ingredientId: "i1" });
+  const rows = await a.query(api.grocery.grocery, {});
+  expect(rows[0]).toEqual({
+    ingredientId: "i1", source: "manual", manualQuantity: null, buyQuantityG: null,
+  });
+});
+
 test("removeBought deletes manual and override rows but not skips", async () => {
   const t = convexTest(schema, modules);
   const a = await member(t, "a@example.com");

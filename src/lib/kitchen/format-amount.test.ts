@@ -30,7 +30,7 @@ describe("canonicalUnitLabel", () => {
   it("labels kinds", () => {
     expect(canonicalUnitLabel("mass")).toBe("g");
     expect(canonicalUnitLabel("volume")).toBe("g");
-    expect(canonicalUnitLabel("count")).toBe("count");
+    expect(canonicalUnitLabel("count")).toBe("ct");
     expect(canonicalUnitLabel(null)).toBe("units");
   });
 });

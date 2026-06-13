@@ -20,7 +20,7 @@ export function formatCanonicalAmount(quantity: number, kind: DisplayKind): stri
 /** The unit the user types into the adjust input for a given kind. */
 export function canonicalUnitLabel(kind: DisplayKind): string {
   if (kind === "mass" || kind === "volume") return "g";
-  if (kind === "count") return "count";
+  if (kind === "count") return "ct";
   return "units";
 }
 

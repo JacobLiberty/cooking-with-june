@@ -154,9 +154,11 @@ export async function getShopData() {
     ...manualRows.map((m) => m.ingredientId),
   ]);
 
+  // Only `override` rows feed a need's buy quantity. A manual row's own
+  // buyQuantityG is applied in the manual mapping below, not to needs.
   const overrideById = new Map(
     groceryRows
-      .filter((g) => g.buyQuantityG != null)
+      .filter((g) => g.source === "override" && g.buyQuantityG != null)
       .map((g) => [g.ingredientId, g.buyQuantityG] as const),
   );
 

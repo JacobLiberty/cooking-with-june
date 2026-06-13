@@ -51,10 +51,13 @@ async function writeRow(
   const { householdId, userId } = await requireMembership(ctx);
   const existing = await groceryRow(ctx, householdId, ingredientId);
   if (existing) {
+    // A plain manual-add or skip never carries a buy override; only
+    // setBuyQuantity sets one. Clear any stale value so an old override row
+    // turned manual/skip doesn't keep hijacking the shop buy quantity.
     await ctx.db.patch(existing._id, {
       source,
       manualQuantity,
-      ...(source === "skip" ? { buyQuantityG: undefined } : {}),
+      buyQuantityG: undefined,
     });
     return;
   }
