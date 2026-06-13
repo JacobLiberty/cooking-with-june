@@ -65,3 +65,28 @@ export const importRatings = internalMutation({
     return { imported, skipped };
   },
 });
+
+/**
+ * One-time (idempotent): round all pantry quantities to whole numbers.
+ * Run on each deployment that has data, BEFORE shipping the integer-write UI:
+ *
+ *   npx convex run migrations:roundPantryQuantities
+ *
+ * Table is small (one row per household ingredient), so a single collect()
+ * stays well inside transaction limits.
+ */
+export const roundPantryQuantities = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("pantryItems").collect();
+    let updated = 0;
+    for (const row of rows) {
+      const rounded = Math.round(row.quantityG);
+      if (rounded !== row.quantityG) {
+        await ctx.db.patch(row._id, { quantityG: rounded });
+        updated++;
+      }
+    }
+    return { scanned: rows.length, updated };
+  },
+});
