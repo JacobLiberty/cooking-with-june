@@ -26,8 +26,8 @@ import { JuneApprovedBadge } from "@/components/june-approved-badge";
 import { ShareButton } from "@/components/share-button";
 import { AddNoteForm } from "@/components/add-note-form";
 import { AddToPlanButton } from "@/components/add-to-plan-button";
-import { DeleteRecipeButton } from "@/components/delete-recipe-button";
 import { RecipeMacrosPanel } from "@/components/recipe-macros";
+import { RecipeActionsMenu } from "@/components/recipe-actions-menu";
 
 // revalidate removed — getViewer() (Convex auth token) makes this page dynamic
 
@@ -146,20 +146,20 @@ export default async function RecipePage({
           ) : null}
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {viewer.isMember ? (
-              <Link href={`/recipe/${recipe.slug}/edit`} className="kicker text-terracotta hover:text-terracotta-deep">
-                Edit
-              </Link>
-            ) : null}
-            {viewer.isMember ? (
               <AddToPlanButton
                 recipeId={recipe._id}
                 inPlan={Boolean(plannedIds?.includes(recipe._id))}
               />
             ) : null}
-            <ShareButton />
             {viewer.isMember ? (
-              <DeleteRecipeButton recipeId={recipe._id} title={recipe.title} />
-            ) : null}
+              <RecipeActionsMenu
+                slug={recipe.slug}
+                recipeId={recipe._id}
+                title={recipe.title}
+              />
+            ) : (
+              <ShareButton />
+            )}
           </div>
         </div>
       </header>
