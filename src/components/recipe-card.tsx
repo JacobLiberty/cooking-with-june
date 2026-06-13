@@ -34,7 +34,8 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardData }) {
           <span className="absolute left-3 top-3 inline-flex h-7 items-center rounded-full bg-paper px-2.5 shadow-sm">
             <JuneApprovedBadge />
           </span>
-        ) : recipe.toTry && avg == null ? (
+        ) : null}
+        {recipe.toTry ? (
           <span className="kicker absolute right-3 top-3 inline-flex h-7 items-center rounded-full bg-paper px-2.5 text-terracotta shadow-sm">
             To try
           </span>

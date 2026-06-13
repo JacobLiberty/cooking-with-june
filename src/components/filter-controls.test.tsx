@@ -30,7 +30,7 @@ const setup = (filters: RecipeFilters = base, showCookable = false) => {
 describe("FilterControls", () => {
   it("hides the cookable stepper unless showCookable is set", () => {
     setup(base, false);
-    expect(screen.queryByRole("group", { name: "Cookable filter" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "What can I cook?" })).not.toBeInTheDocument();
   });
 
   it("shows the cookable stepper and reports the chosen step", async () => {

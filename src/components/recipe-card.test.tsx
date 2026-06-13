@@ -60,4 +60,9 @@ describe("RecipeCard", () => {
     render(<RecipeCard recipe={{ ...base, ratingApproved: false }} />);
     expect(screen.queryByText("June approved")).not.toBeInTheDocument();
   });
+
+  it("shows the To try mark even when the recipe is rated", () => {
+    render(<RecipeCard recipe={{ ...base, toTry: true, ratingAvg: 4.5 }} />);
+    expect(screen.getByText("To try")).toBeInTheDocument();
+  });
 });

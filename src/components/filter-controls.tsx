@@ -83,25 +83,53 @@ export function FilterControls({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Collection">
-        {COLLECTIONS.map((c) => {
-          const active = filters.collection === c.key;
-          return (
-            <button
-              key={c.key}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onChange({ ...filters, collection: c.key })}
-              className={`kicker rounded-full border px-3.5 py-1.5 transition-colors ${
-                active
-                  ? "border-terracotta bg-terracotta text-paper"
-                  : "border-ink/20 text-ink-soft hover:border-terracotta hover:text-terracotta"
-              }`}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Collection">
+          {COLLECTIONS.map((c) => {
+            const active = filters.collection === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onChange({ ...filters, collection: c.key })}
+                className={`kicker rounded-full border px-3.5 py-1.5 transition-colors ${
+                  active
+                    ? "border-terracotta bg-terracotta text-paper"
+                    : "border-ink/20 text-ink-soft hover:border-terracotta hover:text-terracotta"
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+        {showCookable ? (
+          <>
+            <span className="mx-1 h-5 w-px bg-ink/15" aria-hidden />
+            <div
+              role="group"
+              aria-label="What can I cook?"
+              className="inline-flex flex-wrap items-center gap-1 rounded-full border border-ink/20 p-0.5"
             >
-              {c.label}
-            </button>
-          );
-        })}
+              {COOKABLE_STEPS.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  aria-pressed={filters.cookable === s.key}
+                  onClick={() => onChange({ ...filters, cookable: s.key })}
+                  className={`kicker rounded-full px-3 py-1 transition-colors ${
+                    filters.cookable === s.key
+                      ? "bg-terracotta text-paper"
+                      : "text-ink-soft hover:text-terracotta"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-end justify-between gap-6">
@@ -130,29 +158,6 @@ export function FilterControls({
           </select>
         </label>
       </div>
-
-      {showCookable ? (
-        <div role="group" aria-label="Cookable filter" className="space-y-2">
-          <span className="kicker text-ink-soft">What can I cook?</span>
-          <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-ink/20 p-0.5">
-            {COOKABLE_STEPS.map((s) => (
-              <button
-                key={s.key}
-                type="button"
-                aria-pressed={filters.cookable === s.key}
-                onClick={() => onChange({ ...filters, cookable: s.key })}
-                className={`kicker rounded-full px-3 py-1 transition-colors ${
-                  filters.cookable === s.key
-                    ? "bg-terracotta text-paper"
-                    : "text-ink-soft hover:text-terracotta"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       {tags.length > 0 && (
         <div className="flex flex-wrap items-center gap-2" role="group" aria-labelledby="tag-filter-label">
