@@ -7,6 +7,7 @@ const KITCHEN_LINKS = [
   { href: "/menu", label: "Menu" },
   { href: "/shop", label: "Shop" },
   { href: "/pantry", label: "Pantry" },
+  { href: "/household", label: "Household" },
 ] as const;
 
 export function KitchenSubnav() {

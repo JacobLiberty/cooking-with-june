@@ -8,11 +8,12 @@ vi.mock("next/navigation", () => ({
 import { KitchenSubnav } from "@/components/kitchen-subnav";
 
 describe("KitchenSubnav", () => {
-  it("renders Menu, Shop, and Pantry links", () => {
+  it("renders Menu, Shop, Pantry, and Household links", () => {
     render(<KitchenSubnav />);
     expect(screen.getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/menu");
     expect(screen.getByRole("link", { name: "Shop" })).toHaveAttribute("href", "/shop");
     expect(screen.getByRole("link", { name: "Pantry" })).toHaveAttribute("href", "/pantry");
+    expect(screen.getByRole("link", { name: "Household" })).toHaveAttribute("href", "/household");
   });
 
   it("marks the current route as the active page", () => {
