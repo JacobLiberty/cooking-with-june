@@ -36,6 +36,8 @@ describe("generateRecipeCover", () => {
     expect(arg.instruction).toContain("Weeknight Chili");
     // `images` is an array — target the array so a new item is appended.
     expect(arg.target).toEqual({ path: ["images"] });
+    // Write to the published recipe, not a draft (recipes have no draft flow).
+    expect(arg.forcePublishedWrite).toBe(true);
   });
 
   it("never throws when generation fails (best-effort)", async () => {

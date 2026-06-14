@@ -31,6 +31,9 @@ export async function generateRecipeCover(documentId: string, title: string): Pr
         // `images` is an array of image; target the array so Generate appends a
         // new item. Targeting `["images", "asset"]` is invalid for an array.
         target: { path: ["images"] },
+        // Recipes are published directly (no draft workflow). Without this, the
+        // cover would land on a draft and never appear on the live recipe.
+        forcePublishedWrite: true,
       });
   } catch (err) {
     // Best-effort: never block publishing, but log so the failure isn't silent.
